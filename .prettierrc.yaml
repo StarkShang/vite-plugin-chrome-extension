@@ -1,0 +1,8 @@
+semi: false
+tabWidth: 2
+trailingComma: "all"
+jsxSingleQuote: true
+printWidth: 65
+singleQuote: true
+arrowParens: "always"
+proseWrap: "always"

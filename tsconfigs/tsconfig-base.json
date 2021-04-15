@@ -1,0 +1,24 @@
+{
+    "compilerOptions": {
+        "allowJs": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "jsx": "react",
+        "lib": [
+            "es2017",
+            "dom",
+            "es2019.array"
+        ],
+        "module": "esnext",
+        "moduleResolution": "node",
+        "noEmit": true,
+        "noImplicitReturns": true,
+        "noUnusedLocals": true,
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "strict": true,
+        "target": "es2017",
+        "rootDir": "..",
+        "resolveJsonModule": true
+    }
+}

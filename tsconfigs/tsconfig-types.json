@@ -1,0 +1,18 @@
+{
+    "extends": "./tsconfig-base.json",
+    "compilerOptions": {
+        "declaration": true,
+        "declarationDir": "../types",
+        "emitDeclarationOnly": true,
+        "noEmit": false,
+        "rootDir": "../src"
+    },
+    "include": [
+        "../src"
+    ],
+    "exclude": [
+        "../**/__tests__/**/*",
+        "../src/plugin-reloader-simple/client",
+        "../src/manifest-input/browser"
+    ]
+}
