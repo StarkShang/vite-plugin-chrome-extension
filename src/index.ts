@@ -39,7 +39,6 @@ export const chromeExtension = (
         async options(options) {
             try {
                 const inputs = await [manifest, html].reduce(async (opts, plugin) => {
-                    // eslint-disable-next-line @typescript-eslint/await-thenable
                     const result = await plugin.options.call(this, await opts);
                     return result || options;
                 }, Promise.resolve(options));
@@ -87,6 +86,7 @@ export const chromeExtension = (
 
         async generateBundle(...args) {
             await manifest.generateBundle.call(this, ...args);
+            await html.generateBundle.call(this, ...args);
             await validate.generateBundle.call(this, ...args);
             await browser.generateBundle.call(this, ...args);
             // TODO: should skip this if not needed

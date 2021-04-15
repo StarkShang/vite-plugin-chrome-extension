@@ -9,10 +9,10 @@ import { HtmlInputsOptions } from "../plugin-options";
 export type HtmlFilePathData = {
     filePath: string
     rootPath: string
-}
+};
 
 /** cheerio.Root objects with a file path */
-export type CheerioFile = cheerio.Root & HtmlFilePathData
+export type CheerioFile = cheerio.Root & HtmlFilePathData;
 
 export const formatHtml = ($: CheerioFile) =>
     prettier.format($.html(), { parser: "html" });

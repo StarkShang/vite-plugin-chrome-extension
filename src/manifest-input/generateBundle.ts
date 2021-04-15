@@ -1,4 +1,4 @@
-import { basename, join, relative } from "path";
+import { basename, join } from "path";
 import { OutputChunk, PluginContext } from "rollup";
 import slash from "slash";
 import memoize from "mem";

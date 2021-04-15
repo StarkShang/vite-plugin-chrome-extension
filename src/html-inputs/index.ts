@@ -4,7 +4,7 @@ import { readFile } from "fs-extra";
 import flatten from "lodash.flatten";
 import { relative } from "path";
 
-import { not } from "../utils/helpers";
+import { isChunk, not } from "../utils/helpers";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
 import {
     HtmlInputsOptions,
@@ -12,14 +12,13 @@ import {
     HtmlInputsPlugin,
 } from "../plugin-options";
 import {
-    formatHtml,
     getCssHrefs,
     getImgSrcs,
     getJsAssets,
     getScriptSrc,
     loadHtml,
-    mutateScriptElems,
 } from "./cheerio";
+import { generateHtml } from "./generateBundle";
 
 const isHtml = (path: string) => /\.html?$/.test(path);
 
@@ -100,9 +99,6 @@ export default function htmlInputs(
                 // Cache jsEntries with existing options.input
                 cache.input = input.filter(not(isHtml)).concat(cache.js);
 
-                // Prepare cache.html$ for asset emission
-                cache.html$.forEach(mutateScriptElems(htmlInputsOptions));
-
                 if (cache.input.length === 0) {
                     throw new Error(
                         "At least one HTML file must have at least one script.",
@@ -125,6 +121,10 @@ export default function htmlInputs(
         /*              HANDLE FILE CHANGES             */
         /* ============================================ */
 
+        /**
+         * Output asset files in html
+         * css, img, script(not local import)
+         */
         async buildStart() {
             const { srcDir } = htmlInputsOptions;
 
@@ -156,17 +156,6 @@ export default function htmlInputs(
                 });
             });
 
-            cache.html$.map(($) => {
-                const source = formatHtml($);
-                const fileName = relative(srcDir, $.filePath);
-
-                this.emitFile({
-                    type: "asset",
-                    source, // String
-                    fileName,
-                });
-            });
-
             await Promise.all(emitting);
         },
 
@@ -175,6 +164,14 @@ export default function htmlInputs(
                 // Dump cache if html file or manifest changes
                 cache.html$ = [];
             }
+        },
+
+        generateBundle(options, bundle) {
+            if (!cache.srcDir) {
+                throw new TypeError("cache.srcDir not initialized");
+            }
+            const chunks = Object.values(bundle).filter(isChunk);
+            generateHtml(this, cache.html$, chunks, htmlInputsOptions, cache.srcDir);
         },
     };
 }

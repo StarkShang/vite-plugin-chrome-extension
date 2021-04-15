@@ -249,7 +249,7 @@ export function manifestInput(
 
         load(id) {
             if (id === stubChunkName) {
-                return { code: `console.log(${stubChunkName})` };
+                return { code: `console.log("${stubChunkName}")` };
             }
             return null;
         },

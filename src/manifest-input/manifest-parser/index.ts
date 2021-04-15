@@ -63,7 +63,7 @@ export function deriveFiles(
 
     const js = [
         ...files.filter((f: string) => /\.[jt]sx?$/.test(f)),
-        get(manifest, "background.service_worker", "" as string),
+        get(manifest, "background.service_worker"),
         ...get(
             manifest,
             "content_scripts",
@@ -73,12 +73,10 @@ export function deriveFiles(
 
     const html = [
         ...files.filter((f: string) => /\.html?$/.test(f)),
-        get(manifest, "background.page"),
         get(manifest, "options_page"),
         get(manifest, "options_ui.page"),
         get(manifest, "devtools_page"),
-        get(manifest, "browser_action.default_popup"),
-        get(manifest, "page_action.default_popup"),
+        get(manifest, "action.default_popup"),
         ...Object.values(get(manifest, "chrome_url_overrides", {})),
     ];
 

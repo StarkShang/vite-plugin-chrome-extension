@@ -119,6 +119,7 @@ type HtmlInputsPluginHooks =
     | "options"
     | "buildStart"
     | "watchChange"
+    | "generateBundle"
 
 export type HtmlInputsPlugin = Pick<
     Required<Plugin>,
