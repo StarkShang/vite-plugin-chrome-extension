@@ -5,7 +5,7 @@ import memoize from "mem";
 import path from "path";
 import { EmittedAsset } from "rollup";
 import {
-    isChunk,
+    findChunk,
     isJsonFilePath,
 } from "../utils/helpers";
 import { ChromeExtensionManifest } from "../manifest";
@@ -16,7 +16,7 @@ import {
 } from "../plugin-options";
 import { cloneObject } from "../utils/cloneObject";
 import { manifestName } from "./common/constants";
-import { generateBackgroundScriptWrapper, generateContentScriptsWrapper, generateManifest } from "./generateBundle";
+import { generateBackgroundScriptWrapper, generateContentScriptsWrapper, generateManifest, processContentScripts } from "./generateBundle";
 import { combinePerms } from "./manifest-parser/combine";
 import {
     deriveFiles,
@@ -27,6 +27,8 @@ import {
     ValidationErrorsArray,
 } from "./manifest-parser/validate";
 import { reduceToRecord } from "./reduceToRecord";
+import { join } from "path";
+import { getChunk } from "../utils/bundle";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -143,9 +145,9 @@ export function manifestInput(
                 const configResult = explorer.load(
                     inputManifestPath,
                 ) as {
-                    filepath: string
-                    config: ChromeExtensionManifest
-                    isEmpty?: true
+                    filepath: string,
+                    config: ChromeExtensionManifest,
+                    isEmpty?: true,
                 };
 
                 if (configResult.isEmpty) {
@@ -249,7 +251,7 @@ export function manifestInput(
 
         load(id) {
             if (id === stubChunkName) {
-                return { code: `console.log(${stubChunkName})` };
+                return { code: `console.log("${stubChunkName}")` };
             }
             return null;
         },
@@ -273,7 +275,7 @@ export function manifestInput(
             /* ----------------- CLEAN UP STUB ----------------- */
             delete bundle[stubChunkName + ".js"];
             /* ----------------- GET CHUNKS -----------------*/
-            const chunks = Object.values(bundle).filter(isChunk);
+            const chunks = getChunk(bundle);
             /* ---------- DERIVE PERMISSIONS START --------- */
             // Get module ids for all chunks
             let permissions: string[];
@@ -283,7 +285,7 @@ export function manifestInput(
                 cache.assetChanged = false;
             } else {
                 // Permissions may have changed
-                permissions = Array.from(chunks.reduce(derivePermissions, new Set<string>()));
+                permissions = Array.from(Object.values(chunks).reduce(derivePermissions, new Set<string>()));
                 const permsHash = JSON.stringify(permissions);
                 if (verbose && permissions.length) {
                     if (!cache.permsHash) {
@@ -332,11 +334,28 @@ export function manifestInput(
                 } = manifestBody;
                 /* ------------- SETUP CONTENT SCRIPTS ------------- */
                 if (contentScriptWrapper)
-                    generateContentScriptsWrapper(this, cts, war, manifestBody, chunks, cache.srcDir!);
+                    generateContentScriptsWrapper(this, cts, war, manifestBody, Object.values(chunks), cache.srcDir!);
+                else
+                    processContentScripts(manifestBody, chunks, cache.srcDir!);
                 /* ------------ SETUP BACKGROUND SCRIPTS ----------- */
-                if (sw && dynamicImportWrapper !== false)
-                    manifestBody.background!.service_worker
-                        = generateBackgroundScriptWrapper(this, sw, dynamicImportWrapper, chunks, cache.srcDir!);
+                if (sw && manifestBody.background) {
+                    if (dynamicImportWrapper === false) {
+                        // make background chunk output in the same directory as manifest.json
+                        if (manifestBody.background.service_worker) {
+                            const chunk = findChunk(join(cache.srcDir!, manifestBody.background.service_worker), chunks);
+                            if (chunk) {
+                                // remove original chunk
+                                delete bundle[chunk.fileName];
+                                // change background chunk output in the same directory as manifest.json
+                                chunk.fileName = chunk.fileName.replace(/assets\//, "");
+                                bundle[chunk.fileName] = chunk;
+                                manifestBody.background.service_worker = chunk.fileName;
+                            }
+                        }
+                    } else {
+                        manifestBody.background.service_worker = generateBackgroundScriptWrapper(this, sw, dynamicImportWrapper, Object.values(chunks), cache.srcDir!);
+                    }
+                }
                 /* --------- STABLE EXTENSION ID -------- */
                 if (publicKey) manifestBody.key = publicKey;
                 /* ----------- OUTPUT MANIFEST.JSON ---------- */

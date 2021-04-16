@@ -8,7 +8,6 @@
 </p>
 <br/>
 
-
 # vite-plugin-chrome-extension
 
 > fork from rollup-plugin-chrome-extension and evolve for `vite` and `Chrome Extension Manifest V3`
@@ -20,7 +19,7 @@
 
 ## Installation <a name = "installation"></a>
 
-```
+```shell
 npm install -D vite-plugin-chrome-extension
 ```
 
@@ -55,7 +54,6 @@ export default defineConfig({
 
 - [X] [Hello World](examples/hello-world)
 - [X] [Page Redder](examples/page-redder)
-- [ ] [Cookie Clearer](examples/cookie-clearer)
-- [ ] [Omnibox - New Tab Search](examples/new-tab-search)
-- [ ] [Web Accessible Resources](examples/web-accessible-resources)
-
+- [X] [Cookie Clearer](examples/cookie-clearer)
+- [X] [Omnibox - New Tab Search](examples/new-tab-search)
+- [X] [Web Accessible Resources](examples/web-accessible-resources)

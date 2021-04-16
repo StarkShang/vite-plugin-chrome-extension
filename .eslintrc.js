@@ -26,11 +26,11 @@ module.exports = {
         '@typescript-eslint/camelcase': 'off',
         '@typescript-eslint/explicit-function-return-type': 'off',
         '@typescript-eslint/member-delimiter-style': [
-            'error',
+            'warn',
             {
                 multiline: {
-                    delimiter: 'none',
-                    requireLast: false,
+                    delimiter: 'comma' | 'semi',
+                    requireLast: true,
                 },
                 singleline: {
                     delimiter: 'semi',
