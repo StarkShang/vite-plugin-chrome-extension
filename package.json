@@ -4,6 +4,10 @@
     "license": "MIT",
     "author": "Stark Shang <stark.shang@outlook.com>",
     "description": "A plugin for building Chrome extensions!",
+    "keywords": [
+        "vite-plugin",
+        "chrome extension"
+    ],
     "main": "lib/index-cjs.js",
     "module": "lib/index-esm.js",
     "types": "types/index.d.ts",
@@ -86,7 +90,6 @@
         "type": "git",
         "url": "git+https://github.com/StarkShang/vite-plugin-chrome-extension.git"
     },
-    "keywords": [],
     "bugs": {
         "url": "https://github.com/StarkShang/vite-plugin-chrome-extension/issues"
     },
