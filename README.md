@@ -1,6 +1,6 @@
 <p align="center">
     <a href="#" target="_blank" rel="noopener noreferrer">
-        <img width="180" src="./docs/icons/logo.svg" alt="Vite logo">
+        <img width="180" src="./docs/icons/logo.png" alt="Vite logo">
     </a>
 </p>
 <br/>
