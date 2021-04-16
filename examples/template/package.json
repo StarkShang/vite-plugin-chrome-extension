@@ -10,7 +10,6 @@
     "keywords": [],
     "author": "",
     "license": "ISC",
-    "dependencies": {},
     "devDependencies": {
         "vite": "^2.1.5",
         "vite-plugin-chrome-extension": "../.."

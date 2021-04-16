@@ -9,11 +9,9 @@
     "keywords": [],
     "author": "",
     "license": "ISC",
-    "dependencies": {
+    "devDependencies": {
+        "@types/chrome": "0.0.134",
         "vite": "^2.1.5",
         "vite-plugin-chrome-extension": "../.."
-    },
-    "devDependencies": {
-        "@types/chrome": "0.0.134"
     }
 }
