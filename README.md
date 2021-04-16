@@ -56,4 +56,4 @@ export default defineConfig({
 - [X] [Page Redder](examples/page-redder)
 - [X] [Cookie Clearer](examples/cookie-clearer)
 - [X] [Omnibox - New Tab Search](examples/new-tab-search)
-- [ ] [Web Accessible Resources](examples/web-accessible-resources)
+- [X] [Web Accessible Resources](examples/web-accessible-resources)

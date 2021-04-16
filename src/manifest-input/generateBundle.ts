@@ -2,14 +2,27 @@ import { basename, join } from "path";
 import { OutputChunk, PluginContext } from "rollup";
 import slash from "slash";
 import memoize from "mem";
-import { getOutputFilenameFromChunk } from "../utils/helpers";
+import { findChunk, getOutputFilenameFromChunk } from "../utils/helpers";
 import { ChromeExtensionManifest, ContentScript, WebAccessibleResource } from "../manifest";
 import { DynamicImportWrapperOptions, prepImportWrapperScript } from "./dynamicImportWrapper";
 import { code as ctWrapperScript } from "code ./browser/contentScriptWrapper.ts";
 import { backgroundScriptName, manifestName } from "./common/constants";
+import { replaceContentScriptsPath } from "./utils/manifest";
+import { OutputChunkBundle } from "../common/models";
 
 export function dedupe<T>(x: T[]): T[] {
     return [...new Set(x)];
+}
+
+export function processContentScripts(
+    manifest: ChromeExtensionManifest,
+    chunks: OutputChunkBundle,
+    srcDir: string,
+) {
+    replaceContentScriptsPath(manifest, path => {
+        const chunk = findChunk(join(srcDir, path), chunks);
+        return chunk?.fileName || "";
+    });
 }
 
 export function generateContentScriptsWrapper(

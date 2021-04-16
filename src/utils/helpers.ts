@@ -1,6 +1,7 @@
 import { OutputOptions } from "rollup";
 import { OutputAsset, OutputChunk, OutputBundle } from "rollup";
 import slash from "slash";
+import { OutputChunkBundle } from "../common/models";
 import { ChromeExtensionManifest } from "../manifest";
 
 export const not = <T>(fn: (x: T) => boolean) => (x: T) => !fn(x);
@@ -40,6 +41,9 @@ export const normalizeFilename = (p: string) =>
 export function getOutputFilenameFromChunk(sourceFileName: string, chunks: OutputChunk[]) {
     const chunk = chunks.find(c => c.facadeModuleId && slash(c.facadeModuleId) === slash(sourceFileName));
     return slash(chunk?.fileName || "");
+}
+export function findChunk(sourceFileName: string, chunks: OutputChunkBundle) {
+    return Object.values(chunks).find(c => c.facadeModuleId && slash(c.facadeModuleId) === slash(sourceFileName));
 }
 
 /**
