@@ -2,7 +2,7 @@ import { OutputOptions } from "rollup";
 import { OutputAsset, OutputChunk, OutputBundle } from "rollup";
 import slash from "slash";
 import { OutputChunkBundle } from "../common/models";
-import { ChromeExtensionManifest } from "../manifest";
+import { ChromeExtensionManifest } from "../manifest.v2";
 
 export const not = <T>(fn: (x: T) => boolean) => (x: T) => !fn(x);
 

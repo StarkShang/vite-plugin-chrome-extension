@@ -8,7 +8,7 @@ import {
     findChunk,
     isJsonFilePath,
 } from "../utils/helpers";
-import { ChromeExtensionManifest } from "../manifest";
+import { ChromeExtensionManifest } from "../manifest.v2";
 import {
     ManifestInputPlugin,
     ManifestInputPluginCache,

@@ -1,11 +1,12 @@
 {
-    "title": "JSON schema for Google Chrome extension manifest v3 files",
+    "title": "Chrome Extension Manifest",
     "$schema": "http://json-schema.org/draft-07/schema#",
     "additionalProperties": true,
     "type": "object",
     "properties": {
         "action": {
             "type": "object",
+            "additionalProperties": false,
             "properties": {
                 "default_icon": {
                     "type": "object",
@@ -33,6 +34,7 @@
         },
         "background": {
             "type": "object",
+            "additionalProperties": false,
             "properties": {
                 "service_worker": {
                     "type": "string",
@@ -40,25 +42,12 @@
                     "description": "Specify the service worker of the background page."
                 }
             },
-            "dependencies": {
-                "page": {
-                    "not": {
-                        "required": [
-                            "scripts"
-                        ]
-                    }
-                },
-                "scripts": {
-                    "not": {
-                        "required": [
-                            "page"
-                        ]
-                    }
-                }
-            },
+            "required": ["service_worker"],
             "description": "The background page is an HTML page that runs in the extension process. It exists for the lifetime of your extension, and only one instance of it at a time is active."
         },
-        "chrome_settings_overrides": {},
+        "chrome_settings_overrides": {
+            "$ref": "#/definitions/chrome_settings_overrides"
+        },
         "chrome_url_overrides": {
             "additionalProperties": false,
             "description": "Override pages are a way to substitute an HTML file from your extension for a page that Google Chrome normally provides.",
@@ -100,45 +89,8 @@
         "content_scripts": {
             "type": "array",
             "uniqueItems": true,
-            "minItems": 1,
             "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                    "matches": {
-                        "type": "array",
-                        "uniqueItems": true,
-                        "minItems": 1,
-                        "items": {
-                            "$ref": "#/definitions/match_pattern"
-                        },
-                        "description": "Specifies which pages this content script will be injected into."
-                    },
-                    "css": {
-                        "type": "array",
-                        "uniqueItems": true,
-                        "items": {
-                            "$ref": "#/definitions/uri"
-                        },
-                        "description": "The list of CSS files to be injected into matching pages. These are injected in the order they appear in this array, before any DOM is constructed or displayed for the page."
-                    },
-                    "js": {
-                        "type": "array",
-                        "uniqueItems": true,
-                        "items": {
-                            "$ref": "#/definitions/scripts"
-                        },
-                        "description": "The list of JavaScript files to be injected into matching pages. These are injected in the order they appear in this array."
-                    },
-                    "match_about_blank": {
-                        "type": "boolean",
-                        "default": false,
-                        "description": "Whether the script should inject into an about:blank frame where the parent or opener frame matches one of the patterns declared in matches. Defaults to false."
-                    }
-                },
-                "required": [
-                    "matches"
-                ]
+                "$ref": "#/definitions/content_script"
             },
             "description": "Content scripts are JavaScript files that run in the context of web pages."
         },
@@ -249,6 +201,7 @@
             "type": "array",
             "items": {
                 "type": "object",
+                "additionalProperties": false,
                 "properties": {
                     "id": {
                         "type": "string"
@@ -577,35 +530,7 @@
             "minItems": 1,
             "uniqueItems": true,
             "items": {
-                "type": "object",
-                "additionalProperties": false,
-                "properties": {
-                    "resources": {
-                        "type": "array",
-                        "description": "",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "matches": {
-                        "type": "array",
-                        "description": "",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "extension_ids": {
-                        "type": "array",
-                        "description": "",
-                        "items": {
-                            "type": "string"
-                        }
-                    },
-                    "use_dynamic_url": {
-                        "type": "boolean",
-                        "description": ""
-                    }
-                }
+                "$ref": "#/definitions/web_accessible_resources"
             },
             "description": "An array of strings specifying the paths (relative to the package root) of packaged resources that are expected to be usable in the context of a web page."
         }
@@ -681,6 +606,149 @@
         "version_string": {
             "pattern": "^(?:\\d{1,5}\\.){0,3}\\d{1,5}$",
             "type": "string"
+        },
+        "content_script": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "matches": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/match_pattern"
+                    },
+                    "description": "Specifies which pages this content script will be injected into."
+                },
+                "css": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "$ref": "#/definitions/uri"
+                    },
+                    "description": "The list of CSS files to be injected into matching pages. These are injected in the order they appear in this array, before any DOM is constructed or displayed for the page."
+                },
+                "js": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                        "$ref": "#/definitions/scripts"
+                    },
+                    "description": "The list of JavaScript files to be injected into matching pages. These are injected in the order they appear in this array."
+                },
+                "match_about_blank": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether the script should inject into an about:blank frame where the parent or opener frame matches one of the patterns declared in matches. Defaults to false."
+                }
+            },
+            "required": [
+                "matches"
+            ]
+        },
+        "web_accessible_resources": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "resources": {
+                    "type": "array",
+                    "description": "",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "matches": {
+                    "type": "array",
+                    "description": "",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "extension_ids": {
+                    "type": "array",
+                    "description": "",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "use_dynamic_url": {
+                    "type": "boolean",
+                    "description": ""
+                }
+            },
+            "required": [ "resources" ]
+        },
+        "chrome_settings_overrides": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "homepage": {
+                    "$ref": "#/definitions/uri"
+                },
+                "search_provider": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "keyword": {
+                            "type": "string"
+                        },
+                        "search_url": {
+                            "$ref": "#/definitions/uri"
+                        },
+                        "favicon_url": {
+                            "$ref": "#/definitions/uri"
+                        },
+                        "suggest_url": {
+                            "$ref": "#/definitions/uri"
+                        },
+                        "instant_url": {
+                            "$ref": "#/definitions/uri"
+                        },
+                        "image_url": {
+                            "$ref": "#/definitions/uri"
+                        },
+                        "search_url_post_params": {
+                            "type": "string"
+                        },
+                        "suggest_url_post_params": {
+                            "type": "string"
+                        },
+                        "instant_url_post_params": {
+                            "type": "string"
+                        },
+                        "image_url_post_params": {
+                            "type": "string"
+                        },
+                        "alternate_urls": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/uri"
+                            }
+                        },
+                        "prepopulated_id": {
+                            "type": "number"
+                        },
+                        "encoding": {
+                            "type": "string"
+                        },
+                        "is_default": {
+                            "type": "boolean"
+                        }
+                    },
+                    "required": [
+                        "search_url",
+                        "is_default"
+                    ]
+                },
+                "startup_pages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/uri"
+                    }
+                }
+            }
         }
     }
 }

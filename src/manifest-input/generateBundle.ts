@@ -3,7 +3,7 @@ import { OutputChunk, PluginContext } from "rollup";
 import slash from "slash";
 import memoize from "mem";
 import { findChunk, getOutputFilenameFromChunk } from "../utils/helpers";
-import { ChromeExtensionManifest, ContentScript, WebAccessibleResource } from "../manifest";
+import { ChromeExtensionManifest, ContentScript, WebAccessibleResource } from "../manifest.v2";
 import { DynamicImportWrapperOptions, prepImportWrapperScript } from "./dynamicImportWrapper";
 import { code as ctWrapperScript } from "code ./browser/contentScriptWrapper.ts";
 import { backgroundScriptName, manifestName } from "./common/constants";

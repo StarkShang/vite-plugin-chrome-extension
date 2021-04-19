@@ -1,6 +1,6 @@
 import { OutputAsset, rollup, RollupOptions, RollupOutput } from "rollup";
 import { isAsset, isChunk } from "../src/utils/helpers";
-import { ChromeExtensionManifest } from "../src/manifest";
+import { ChromeExtensionManifest } from "../src/manifest.v2";
 import { byFileName, getExtPath, requireExtFile } from "../__fixtures__/utils";
 
 let outputPromise: Promise<RollupOutput>;

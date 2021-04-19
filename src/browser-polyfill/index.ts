@@ -2,7 +2,7 @@ import fs from "fs-extra";
 import { Plugin } from "rollup";
 import { isAsset } from "../utils/helpers";
 import { code as executeScriptPolyfill } from "code ./browser/executeScriptPolyfill.ts";
-import { ChromeExtensionManifest } from "../manifest";
+import { ChromeExtensionManifest } from "../manifest.v2";
 import {
     ChromeExtensionPlugin,
     ManifestInputPlugin,

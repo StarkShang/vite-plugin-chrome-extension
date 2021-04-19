@@ -1,7 +1,7 @@
 import { Plugin, PluginHooks } from "rollup";
 import { ValidateNamesPlugin } from "./validate-names/index";
 import { DynamicImportWrapperOptions } from "./manifest-input/dynamicImportWrapper";
-import { ChromeExtensionManifest } from "./manifest";
+import { ChromeExtensionManifest } from "./manifest.v2";
 import { CheerioFile } from "./html-inputs/cheerio";
 import { ModuleFormat } from "rollup";
 

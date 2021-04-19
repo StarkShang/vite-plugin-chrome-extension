@@ -1,5 +1,5 @@
 import { OutputAsset, rollup, RollupOptions, RollupOutput } from "rollup";
-import { ChromeExtensionManifest } from "../src/manifest";
+import { ChromeExtensionManifest } from "../src/manifest.v2";
 import { stubChunkName } from "../src/manifest-input";
 import { byFileName, requireExtFile } from "../__fixtures__/utils";
 

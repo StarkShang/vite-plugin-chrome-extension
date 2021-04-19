@@ -11,7 +11,7 @@ import { manifestJson } from '../../../__fixtures__/kitchen-sink-paths'
 import { context as minContext } from '../../../__fixtures__/minimal-plugin-context'
 import { context } from '../../../__fixtures__/plugin-context'
 import { requireExtFile } from '../../../__fixtures__/utils'
-import { ChromeExtensionManifest } from '../../manifest'
+import { ChromeExtensionManifest } from '../../manifest.v2'
 import {
   ManifestInputPlugin,
   ManifestInputPluginCache,

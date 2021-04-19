@@ -8,7 +8,7 @@ import {
     ChromeExtensionManifest,
     ContentScript,
     WebAccessibleResource,
-} from "../../manifest";
+} from "../../manifest.v2";
 
 /* ============================================ */
 /*              DERIVE PERMISSIONS              */

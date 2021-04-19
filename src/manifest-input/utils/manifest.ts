@@ -1,5 +1,5 @@
 import slash from "slash";
-import { ChromeExtensionManifest } from "../../manifest";
+import { ChromeExtensionManifest } from "../../manifest.v2";
 
 export function replaceServiceWorkerPath(
     manifest: ChromeExtensionManifest,
