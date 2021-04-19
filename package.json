@@ -1,6 +1,6 @@
 {
     "name": "vite-plugin-chrome-extension",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "license": "MIT",
     "author": "Stark Shang <stark.shang@outlook.com>",
     "description": "A plugin for building Chrome extensions!",

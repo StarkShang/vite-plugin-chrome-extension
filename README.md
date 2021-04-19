@@ -71,3 +71,23 @@ See [Work flow](./docs/workflow.md)
 ## Feedback
 
 If you have problems using this plugin, welcome to let us know.
+
+## Change logs
+
+### 0.0.4
+
+- feat: upgrade bundle architecture to solve es6 import problem
+- feat: add a vue example: [Vue in content scripts](examples/vue-content-scripts)
+
+### 0.0.3
+
+- feat: add examples from [chrome-extensions-samples](https://github.com/GoogleChrome/chrome-extensions-samples)
+- fix: fix some bugs to make examples work
+
+### 0.0.2
+
+- feat: initial release
+
+### 0.0.1
+
+- chore: create project
