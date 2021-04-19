@@ -1,9 +1,9 @@
-import { Plugin, PluginHooks } from "rollup";
+import { PluginHooks, ModuleFormat } from "rollup";
+import { Plugin } from "vite";
 import { ValidateNamesPlugin } from "./validate-names/index";
 import { DynamicImportWrapperOptions } from "./manifest-input/dynamicImportWrapper";
 import { ChromeExtensionManifest } from "./manifest.v2";
 import { CheerioFile } from "./html-inputs/cheerio";
-import { ModuleFormat } from "rollup";
 
 /* -------------- MAIN PLUGIN OPTIONS -------------- */
 
@@ -35,7 +35,7 @@ export interface ChromeExtensionOptions {
 
 export type ChromeExtensionPlugin = Pick<
     Required<Plugin>,
-    "name" | ManifestInputPluginHooks | HtmlInputsPluginHooks
+    "name" | "configResolved" | ManifestInputPluginHooks | HtmlInputsPluginHooks
 > & {
     // For testing
     _plugins: {

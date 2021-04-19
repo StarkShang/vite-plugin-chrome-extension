@@ -592,14 +592,6 @@
             "type": "array",
             "uniqueItems": true
         },
-        "scripts": {
-            "items": {
-                "$ref": "#/definitions/uri"
-            },
-            "minItems": 1,
-            "type": "array",
-            "uniqueItems": true
-        },
         "uri": {
             "type": "string"
         },
@@ -632,7 +624,7 @@
                     "type": "array",
                     "uniqueItems": true,
                     "items": {
-                        "$ref": "#/definitions/scripts"
+                        "$ref": "#/definitions/uri"
                     },
                     "description": "The list of JavaScript files to be injected into matching pages. These are injected in the order they appear in this array."
                 },

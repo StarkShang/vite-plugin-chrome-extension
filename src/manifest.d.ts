@@ -7,7 +7,6 @@
 
 export type Icon = string;
 export type MatchPattern = string;
-export type Scripts = [Icon, ...Icon[]];
 /**
  * This introduces some fairly strict policies that will make extensions more secure by default, and provides you with the ability to create and enforce rules governing the types of content that can be loaded and executed by your extensions and applications.
  */
@@ -417,7 +416,7 @@ export interface ContentScript {
     /**
      * The list of JavaScript files to be injected into matching pages. These are injected in the order they appear in this array.
      */
-    js?: Scripts[];
+    js?: Icon[];
     /**
      * Whether the script should inject into an about:blank frame where the parent or opener frame matches one of the patterns declared in matches. Defaults to false.
      */

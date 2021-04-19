@@ -50,6 +50,10 @@ export default defineConfig({
 })
 ```
 
+## How does this plugin work
+
+See [Work flow](./docs/workflow.md)
+
 ## Examples from [chrome-extensions-samples](https://github.com/GoogleChrome/chrome-extensions-samples) are test
 
 - [X] [Hello World](examples/hello-world)
