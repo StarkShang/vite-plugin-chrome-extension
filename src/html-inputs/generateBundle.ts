@@ -1,4 +1,4 @@
-import { join, relative } from "path";
+import { resolve, dirname, relative } from "path";
 import { OutputChunk, PluginContext } from "rollup";
 import { HtmlInputsOptions } from "../plugin-options";
 import { getOutputFilenameFromChunk } from "../utils/helpers";
@@ -32,12 +32,9 @@ function replaceImportScriptPath(
     getScriptElems($)
         .attr("type", "module")
         .attr("src", (i, value) => {
-            const chunkName = getOutputFilenameFromChunk(join(srcDir, value as unknown as string), chunks);
-            // FIXME: @types/cheerio is wrong for AttrFunction: index.d.ts, line 16
-            // declare type AttrFunction = (i: number, currentValue: string) => any;
-            // eslint-disable-next-line
-            // @ts-ignore
-            return chunkName;
+            const basePath = dirname($.filePath);
+            const chunkName = getOutputFilenameFromChunk(resolve(basePath, value as unknown as string), chunks);
+            return relative(basePath, resolve(srcDir, chunkName));
         });
 
     if (browserPolyfill) {

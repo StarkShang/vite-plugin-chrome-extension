@@ -357,11 +357,6 @@
         "options_ui": {
             "type": "object",
             "properties": {
-                "chrome_style": {
-                    "default": true,
-                    "description": "If true, a Chrome user agent stylesheet will be applied to your options page. The default value is false, but we recommend you enable it for a consistent UI with Chrome.",
-                    "type": "boolean"
-                },
                 "open_in_tab": {
                     "default": false,
                     "description": "If true, your extension's options page will be opened in a new tab rather than embedded in chrome://extensions. The default is false, and we recommend that you don't change it. This is only useful to delay the inevitable deprecation of the old options UI! It will be removed soon, so try not to use it. It will break.",
