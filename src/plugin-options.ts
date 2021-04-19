@@ -35,7 +35,7 @@ export interface ChromeExtensionOptions {
 
 export type ChromeExtensionPlugin = Pick<
     Required<Plugin>,
-    "name" | "configResolved" | ManifestInputPluginHooks | HtmlInputsPluginHooks
+    "name" | "configResolved" | "resolveId" | "load" | ManifestInputPluginHooks | HtmlInputsPluginHooks
 > & {
     // For testing
     _plugins: {
@@ -69,8 +69,6 @@ export interface ManifestInputPluginCache {
 type ManifestInputPluginHooks =
     | "options"
     | "buildStart"
-    | "resolveId"
-    | "load"
     | "watchChange"
     | "generateBundle"
 
