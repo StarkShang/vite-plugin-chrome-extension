@@ -132,11 +132,10 @@ export const chromeExtension = (
                 });
                 return b;
             }, bundle);
-            console.log(bundle);
             /* ----------------- UPDATE ENTRY PATH IN MANIFEST.JSON ----------------- */
             await manifest.generateBundle.call(this, options, bundle, isWrite);
-            // // await html.generateBundle.call(this, ...args);
-            // // await validate.generateBundle.call(this, ...args);
+            await html.generateBundle.call(this, options, bundle, isWrite);
+            await validate.generateBundle.call(this, options, bundle, isWrite);
         },
     };
 };

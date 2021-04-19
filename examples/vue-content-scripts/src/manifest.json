@@ -2,6 +2,19 @@
     "name": "vue in Content Scripts",
     "version": "1.0",
     "manifest_version": 3,
+    "action": {
+        "default_icon": {
+            "16": "assets/icon16.png",
+            "48": "assets/icon48.png",
+            "128": "assets/icon128.png"
+        },
+        "default_title": "Vue Popup"
+    },
+    "icons": {
+        "16": "assets/icon16.png",
+        "48": "assets/icon48.png",
+        "128": "assets/icon128.png"
+    },
     "background": {
         "service_worker": "background.ts"
     },

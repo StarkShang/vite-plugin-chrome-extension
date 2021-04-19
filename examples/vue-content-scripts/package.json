@@ -2,7 +2,7 @@
     "name": "vue-content-scripts",
     "version": "0.0.1",
     "scripts": {
-        "dev": "vite",
+        "dev": "vite build --mode developmemnt",
         "build": "vite build",
         "serve": "vite preview"
     },

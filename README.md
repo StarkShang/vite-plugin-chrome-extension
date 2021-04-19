@@ -54,10 +54,20 @@ export default defineConfig({
 
 See [Work flow](./docs/workflow.md)
 
-## Examples from [chrome-extensions-samples](https://github.com/GoogleChrome/chrome-extensions-samples) are test
+## Examples
+
+### Examples from [chrome-extensions-samples](https://github.com/GoogleChrome/chrome-extensions-samples) are test
 
 - [X] [Hello World](examples/hello-world)
 - [X] [Page Redder](examples/page-redder)
 - [X] [Cookie Clearer](examples/cookie-clearer)
 - [X] [Omnibox - New Tab Search](examples/new-tab-search)
 - [X] [Web Accessible Resources](examples/web-accessible-resources)
+
+### Examples with Vue
+
+- [X] [Vue in content scripts](examples/vue-content-scripts)
+
+## Feedback
+
+If you have problems using this plugin, welcome to let us know.

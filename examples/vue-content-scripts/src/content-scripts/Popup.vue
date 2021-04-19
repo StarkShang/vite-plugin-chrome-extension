@@ -1,8 +1,8 @@
 <template>
-    <div class="ce-mask">
+    <div v-show="visible" class="ce-mask">
         <div class="ce-popup">
             <div class="ce-popup-content">
-                Hello vue
+                Hello, Vite-Plugin-Chrome-Extension
             </div>
         </div>
     </div>
@@ -11,9 +11,7 @@
 <script>
 import { defineComponent } from "vue";
 export default defineComponent({
-    data: {
-        return: { }
-    }
+    data: () => ({ visible: false }),
 });
 </script>
 
@@ -37,6 +35,8 @@ export default defineComponent({
     box-shadow: 0 1px 10px 0 rgb(0 0 0 / 50%);
 }
 .ce-popup-content {
-
+    font-size: 1.5em;
+    font-weight: 700;
+    color: deepskyblue;
 }
 </style>
