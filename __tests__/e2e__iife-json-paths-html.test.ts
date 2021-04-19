@@ -1,6 +1,6 @@
 import { byFileName, requireExtFile } from "../__fixtures__/utils";
 import { rollup, RollupOutput, OutputAsset } from "rollup";
-import { ChromeExtensionManifest } from "../src/manifest";
+import { ChromeExtensionManifest } from "../src/manifest.v2";
 import { RollupOptions } from "rollup";
 import { OutputChunk } from "rollup";
 

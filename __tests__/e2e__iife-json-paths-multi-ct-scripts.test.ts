@@ -1,6 +1,6 @@
 import { OutputChunk } from "rollup";
 import { OutputAsset, rollup, RollupOptions, RollupOutput } from "rollup";
-import { ChromeExtensionManifest } from "../src/manifest";
+import { ChromeExtensionManifest } from "../src/manifest.v2";
 import { byFileName, requireExtFile } from "../__fixtures__/utils";
 
 const config = requireExtFile<RollupOptions>(__filename, "rollup.config.js");

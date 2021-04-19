@@ -1,5 +1,5 @@
 import Ajv from "ajv";
-import { ChromeExtensionManifest } from "../../manifest";
+import { ChromeExtensionManifest } from "../../manifest.v2";
 import jsonSchema from "./json-schema-draft-04.json";
 import manifestSchema from "./schema-web-ext-manifest-v3.json";
 
