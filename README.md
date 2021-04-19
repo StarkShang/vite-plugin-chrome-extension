@@ -76,10 +76,15 @@ If you have problems using this plugin, welcome to let us know.
 
 ## Change logs
 
+### 0.0.5
+
+- fix: fix error script paths in options html files
+- feat: add vue examples: [Vue in Full Options Page](examples/vue-full-options-page) and [Vue in Embedded Options Page](examples/vue-embedded-options-page)
+
 ### 0.0.4
 
 - feat: upgrade bundle architecture to solve es6 import problem
-- feat: add a vue example: [Vue in content scripts](examples/vue-content-scripts)
+- feat: add a vue example: [Vue in Content Scripts](examples/vue-content-scripts)
 
 ### 0.0.3
 
