@@ -66,7 +66,9 @@ See [Work flow](./docs/workflow.md)
 
 ### Examples with Vue
 
-- [X] [Vue in content scripts](examples/vue-content-scripts)
+- [X] [Vue in Content Scripts](examples/vue-content-scripts)
+- [X] [Vue in Full Options Page](examples/vue-full-options-page)
+- [X] [Vue in Embedded Options Page](examples/vue-embedded-options-page)
 
 ## Feedback
 
