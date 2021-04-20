@@ -29,7 +29,7 @@ import {
 } from "./manifest-parser/validate";
 import { reduceToRecord } from "./reduceToRecord";
 import { join } from "path";
-import { getChunk } from "../utils/bundle";
+import { getAssets, getChunk } from "../utils/bundle";
 import slash from "slash";
 
 export const explorer = cosmiconfigSync("manifest", {
@@ -257,6 +257,7 @@ export function manifestInput(
         generateBundle(options, bundle) {
             /* ----------------- GET CHUNKS -----------------*/
             const chunks = getChunk(bundle);
+            const assets = getAssets(bundle);
             /* ---------- DERIVE PERMISSIONS START --------- */
             // Get module ids for all chunks
             let permissions: string[];
@@ -338,6 +339,12 @@ export function manifestInput(
                         manifestBody.background.service_worker = chunk.fileName;
                     }
                 }
+                /* ------------ SETUP ASSETS IN WEB ACCESSIBLE RESOURCES ----------- */
+                manifestBody.web_accessible_resources = [
+                    ...war, {
+                    resources: Object.keys(assets),
+                    matches: ["<all_urls>"]
+                }];
                 /* --------- STABLE EXTENSION ID -------- */
                 if (publicKey) manifestBody.key = publicKey;
                 /* ----------- OUTPUT MANIFEST.JSON ---------- */

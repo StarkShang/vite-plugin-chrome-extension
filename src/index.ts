@@ -1,6 +1,6 @@
 import { join, relative, resolve, dirname } from "path";
 import { readJSONSync } from "fs-extra";
-import { rollup } from "rollup";
+import { rollup, Plugin, OutputBundle } from "rollup";
 import { ResolvedConfig } from "vite";
 import htmlInputs from "./html-inputs";
 import manifestInput from "./manifest-input";
@@ -11,6 +11,7 @@ import {
     ChromeExtensionPlugin,
 } from "./plugin-options";
 import { isChunk } from "./utils/helpers";
+import probe from "rollup-plugin-probe";
 
 export { simpleReloader } from "./plugin-reloader-simple";
 
@@ -115,12 +116,12 @@ export const chromeExtension = (
                     ...viteConfig.build.rollupOptions,
                     input: entry,
                     preserveEntrySignatures: "strict",
-                    plugins: plugins,
+                    plugins: [...plugins, probe({ options: {}, outputOption: {}, generateBundle: {} })],
                 });
                 const { output } = await build.generate({ format: "iife", dir: viteConfig.build.outDir });
                 return output;
             }));
-            outputs.reduce((b, outs) => {
+            const subBundles = outputs.reduce((b, outs) => {
                 outs.forEach(o => {
                     if (isChunk(o) && o.facadeModuleId) {
                         const filePath = relative(sourcePath, resolve(dirname(o.facadeModuleId), o.fileName));
@@ -131,11 +132,15 @@ export const chromeExtension = (
                     }
                 });
                 return b;
-            }, bundle);
+            }, {} as OutputBundle);
             /* ----------------- UPDATE ENTRY PATH IN MANIFEST.JSON ----------------- */
-            await manifest.generateBundle.call(this, options, bundle, isWrite);
-            await html.generateBundle.call(this, options, bundle, isWrite);
-            await validate.generateBundle.call(this, options, bundle, isWrite);
+            await manifest.generateBundle.call(this, options, subBundles, isWrite);
+            await html.generateBundle.call(this, options, subBundles, isWrite);
+            await validate.generateBundle.call(this, options, subBundles, isWrite);
+            /* ----------------- UPDATE ENTRY PATH IN MANIFEST.JSON ----------------- */
+            Object.keys(subBundles).forEach(key => {
+                bundle[key] = subBundles[key];
+            });
         },
     };
 };
