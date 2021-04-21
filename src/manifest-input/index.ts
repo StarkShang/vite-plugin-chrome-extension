@@ -9,7 +9,7 @@ import {
     getOutputFilenameFromChunk,
     isJsonFilePath,
 } from "../utils/helpers";
-import { ChromeExtensionManifest } from "../manifest.v2";
+import { ChromeExtensionManifest } from "../manifest";
 import {
     ManifestInputPlugin,
     ManifestInputPluginCache,
@@ -142,6 +142,7 @@ export function manifestInput(
                     );
                 }
 
+                // Load content of manifest.json
                 const configResult = explorer.load(
                     inputManifestPath,
                 ) as {
@@ -149,7 +150,6 @@ export function manifestInput(
                     config: ChromeExtensionManifest,
                     isEmpty?: true,
                 };
-
                 if (configResult.isEmpty) {
                     throw new Error(`${options.input} is an empty file.`);
                 }
@@ -298,9 +298,9 @@ export function manifestInput(
                 const clonedManifest = cloneObject(cache.manifest);
 
                 const manifestBody: ChromeExtensionManifest = validateManifest({
-                    manifest_version: 3,
-                    name: pkg.name,
-                    version: pkg.version,
+                    // manifest_version: 3,
+                    // name: pkg.name,
+                    // version: pkg.version,
                     description: pkg.description,
                     ...clonedManifest,
                     permissions: combinePerms(

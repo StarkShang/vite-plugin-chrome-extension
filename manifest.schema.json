@@ -525,7 +525,7 @@
             "minItems": 1,
             "uniqueItems": true,
             "items": {
-                "$ref": "#/definitions/web_accessible_resources"
+                "$ref": "#/definitions/web_accessible_resource"
             },
             "description": "An array of strings specifying the paths (relative to the package root) of packaged resources that are expected to be usable in the context of a web page."
         }
@@ -633,7 +633,7 @@
                 "matches"
             ]
         },
-        "web_accessible_resources": {
+        "web_accessible_resource": {
             "type": "object",
             "additionalProperties": false,
             "properties": {

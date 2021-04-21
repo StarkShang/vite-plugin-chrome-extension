@@ -3,7 +3,7 @@ import { OutputChunk, PluginContext } from "rollup";
 import slash from "slash";
 import memoize from "mem";
 import { findChunk, getOutputFilenameFromChunk } from "../utils/helpers";
-import { ChromeExtensionManifest, ContentScript, WebAccessibleResource } from "../manifest.v2";
+import { ChromeExtensionManifest, ContentScript, WebAccessibleResource } from "../manifest";
 import { DynamicImportWrapperOptions, prepImportWrapperScript } from "./dynamicImportWrapper";
 import { code as ctWrapperScript } from "code ./browser/contentScriptWrapper.ts";
 import { backgroundScriptName, manifestName } from "./common/constants";
@@ -88,14 +88,14 @@ export function generateContentScriptsWrapper(
         ...compiled_content_scripts,
     ]).map((p) => slash(p));
     manifest.web_accessible_resources = [
+        {
+            resources: [...webAccessResourcesFileNames],
+            matches: ["<all_urls>"],
+        } as WebAccessibleResource,
         ...dedupe(web_accessible_resources).map(resource => {
             resource.resources = resource.resources.map(p => slash(p));
             return resource;
         }),
-        {
-            resources: [...webAccessResourcesFileNames],
-            matches: ["<all_urls>"],
-        },
     ];
 }
 

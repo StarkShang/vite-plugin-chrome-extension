@@ -2,7 +2,7 @@ import { PluginHooks, ModuleFormat } from "rollup";
 import { Plugin } from "vite";
 import { ValidateNamesPlugin } from "./validate-names/index";
 import { DynamicImportWrapperOptions } from "./manifest-input/dynamicImportWrapper";
-import { ChromeExtensionManifest } from "./manifest.v2";
+import { ChromeExtensionManifest } from "./manifest";
 import { CheerioFile } from "./html-inputs/cheerio";
 
 /* -------------- MAIN PLUGIN OPTIONS -------------- */

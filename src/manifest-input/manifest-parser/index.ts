@@ -8,7 +8,7 @@ import {
     ChromeExtensionManifest,
     ContentScript,
     WebAccessibleResource,
-} from "../../manifest.v2";
+} from "../../manifest";
 
 /* ============================================ */
 /*              DERIVE PERMISSIONS              */
@@ -100,7 +100,7 @@ export function deriveFiles(
         const result: string | { [size: string]: string } = get(
             manifest,
             query,
-            {},
+            {} as any,
         );
 
         if (typeof result === "string") {

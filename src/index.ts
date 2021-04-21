@@ -1,6 +1,5 @@
-import { join, relative, resolve, dirname } from "path";
+import { join } from "path";
 import { readJSONSync } from "fs-extra";
-import { rollup, Plugin, OutputBundle } from "rollup";
 import { ResolvedConfig } from "vite";
 import htmlInputs from "./html-inputs";
 import manifestInput from "./manifest-input";
@@ -10,8 +9,9 @@ import {
     ChromeExtensionOptions,
     ChromeExtensionPlugin,
 } from "./plugin-options";
-import { isChunk } from "./utils/helpers";
-import probe from "rollup-plugin-probe";
+import { ManifestProcessor } from "./processors/manifest";
+import { contentScriptProcessor } from "./processors/content-script";
+import { ChromeExtensionManifest } from "./manifest";
 
 export { simpleReloader } from "./plugin-reloader-simple";
 
@@ -27,35 +27,30 @@ export const chromeExtension = (
     } catch (error) { }
 
     /* ----------------- SETUP PLUGINS ----------------- */
-    const manifest = manifestInput(options);
-    const html = htmlInputs(manifest);
+    const manifest2 = manifestInput(options);
+    const manifestProcessor = new ManifestProcessor();
+    const html = htmlInputs(manifest2);
     const validate = v();
-    let entries: string[] = [];
+    let manifest: ChromeExtensionManifest | undefined;
     let viteConfig: ResolvedConfig;
-    let sourcePath = "";
 
     /* ----------------- RETURN PLUGIN ----------------- */
     return {
         name: "chrome-extension",
 
         // For testing
-        _plugins: { manifest, html, validate },
+        _plugins: { manifest: manifest2, html, validate },
 
         configResolved(config) {
             viteConfig = config;
         },
 
         async options(options) {
+            manifest = manifestProcessor.load(options.input);
             try {
-                entries = Object.values((await [manifest, html].reduce(async (opts, plugin) => {
-                    const result = await plugin.options.call(this, await opts);
-                    return result || options;
-                }, Promise.resolve(options))).input || {});
-                if (options.input && typeof options.input === "string") {
-                    sourcePath = dirname(resolve(viteConfig.root, options.input));
-                }
-                // add stub input
-                options.input = stubChunkName;
+                options.input = manifestProcessor.resolveInput(options.input);
+                const newOptions = await html.options.call(this, options);
+                logger.logInputFiles(newOptions?.input);
                 return options;
             } catch (error) {
                 const manifestError =
@@ -78,7 +73,7 @@ export const chromeExtension = (
 
         async buildStart(options) {
             await Promise.all([
-                manifest.buildStart.call(this, options),
+                manifest2.buildStart.call(this, options),
                 html.buildStart.call(this, options),
             ]);
         },
@@ -98,49 +93,18 @@ export const chromeExtension = (
         },
 
         watchChange(id) {
-            manifest.watchChange.call(this, id, { event: "create" });
+            manifest2.watchChange.call(this, id, { event: "create" });
             html.watchChange.call(this, id, { event: "create" });
         },
 
         async generateBundle(options, bundle, isWrite) {
-            /* ----------------- CLEAN UP STUB ----------------- */
-            const stubChunkKey = Object.keys(bundle).find(key => key.includes(stubChunkName));
-            if (stubChunkKey) {
-                delete bundle[stubChunkKey];
-            }
-            /* ----------------- GENERATE BUNDLES FOR ALL ENTRIES ----------------- */
-            logger.logInputFiles(entries);
-            const plugins = [...viteConfig.plugins as Plugin[]].filter(plugin => plugin.name !== "chrome-extension");
-            const outputs = await Promise.all(entries.map(async entry => {
-                const build = await rollup({
-                    ...viteConfig.build.rollupOptions,
-                    input: entry,
-                    preserveEntrySignatures: "strict",
-                    plugins: [...plugins, probe({ options: {}, outputOption: {}, generateBundle: {} })],
-                });
-                const { output } = await build.generate({ format: "iife", dir: viteConfig.build.outDir });
-                return output;
-            }));
-            const subBundles = outputs.reduce((b, outs) => {
-                outs.forEach(o => {
-                    if (isChunk(o) && o.facadeModuleId) {
-                        const filePath = relative(sourcePath, resolve(dirname(o.facadeModuleId), o.fileName));
-                        o.fileName = filePath;
-                        b[filePath] = o;
-                    } else {
-                        b[o.fileName] = o;
-                    }
-                });
-                return b;
-            }, {} as OutputBundle);
+            /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
+            contentScriptProcessor.regenerateBundle(bundle);
             /* ----------------- UPDATE ENTRY PATH IN MANIFEST.JSON ----------------- */
-            await manifest.generateBundle.call(this, options, subBundles, isWrite);
-            await html.generateBundle.call(this, options, subBundles, isWrite);
-            await validate.generateBundle.call(this, options, subBundles, isWrite);
             /* ----------------- UPDATE ENTRY PATH IN MANIFEST.JSON ----------------- */
-            Object.keys(subBundles).forEach(key => {
-                bundle[key] = subBundles[key];
-            });
+            await manifest2.generateBundle.call(this, options, bundle, isWrite);
+            await html.generateBundle.call(this, options, bundle, isWrite);
+            await validate.generateBundle.call(this, options, bundle, isWrite);
         },
     };
 };
