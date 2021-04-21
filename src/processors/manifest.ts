@@ -3,8 +3,10 @@ import { cosmiconfigSync } from "cosmiconfig";
 import { InputOption } from "rollup";
 import { ChromeExtensionManifest } from "../manifest";
 import { deriveFiles } from "../manifest-input/manifest-parser";
-import { isJsonFilePath } from "../utils/helpers";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
+import { NormalizedChromeExtensionOptions } from "../plugin-options";
+import chalk from "chalk";
+import { basename } from "path";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -14,53 +16,91 @@ export type ExtendManifest =
     | Partial<ChromeExtensionManifest>
     | ((manifest: ChromeExtensionManifest) => ChromeExtensionManifest);
 
+export type ChromeExtensionConfigurationInfo = {
+    filepath: string,
+    config: ChromeExtensionManifest,
+    isEmpty?: true,
+};
+
 export class ManifestProcessor {
-    public rootPath = "";
     public manifestPath = "";
-    public extendManifest: ExtendManifest = {};
     public manifest?: ChromeExtensionManifest;
 
-    public constructor() {
-
-    }
+    public constructor(private options = {} as NormalizedChromeExtensionOptions) {}
 
     /**
      * Load content from manifest.json
-     * @param option 
+     * @param input
      */
-    public load(option?: InputOption) {
+    public load(input?: InputOption) {
         /* --------------- GET MANIFEST.JSON PATH --------------- */
-        let inputManifestPath: string | undefined;
-        if (Array.isArray(option)) {
-            const manifestIndex = option.findIndex(isJsonFilePath);
-            inputManifestPath = option[manifestIndex];
-            option.splice(manifestIndex, 1);
-        } else if (typeof option === "object") {
-            inputManifestPath = option.manifest;
-            delete option["manifest"];
-        } else {
-            inputManifestPath = option;
-        }
-
-        /* --------------- VALIDATE MANIFEST.JSON PATH --------------- */
-        if (!isJsonFilePath(inputManifestPath)) {
-            throw new TypeError("RollupOptions.input must be a single Chrome extension manifest.");
-        }
-
+        const inputManifestPath = this.resolveManifestPath(input);
         /* --------------- LOAD CONTENT FROM MANIFEST.JSON --------------- */
-        const configResult = explorer.load(
-            inputManifestPath,
-        ) as {
-            filepath: string,
-            config: ChromeExtensionManifest,
-            isEmpty?: true,
-        };
-
+        const configResult = explorer.load(inputManifestPath) as ChromeExtensionConfigurationInfo;
         /* --------------- VALIDATE MANIFEST.JSON CONTENT --------------- */
-        if (configResult.isEmpty) {
-            throw new Error(`${option} is an empty file.`);
+        this.validateManifestContent(configResult);
+        /* --------------- APPLY USER CUSTOM CONFIG --------------- */
+        this.manifest = this.applyExternalManifestConfiguration(configResult);
+        /* --------------- RECORD OPTIONS --------------- */
+        this.options.manifestPath = configResult.filepath;
+        this.options.srcDir = dirname(this.manifestPath);
+        return this.manifest;
+    }
+
+    public resolveInput(input?: InputOption) {
+        if (!this.manifest || !this.options.srcDir) { return; }
+        // Derive entry paths from manifest
+        const { js, html, css, img, others } = deriveFiles(
+            this.manifest,
+            this.options.srcDir,
+        );
+        const assets = [...new Set([...css, ...img, ...others])];
+        const inputs = Array.isArray(input)
+            ? [...input, ...js, ...html].reduce(reduceToRecord(this.options.srcDir), {})
+            : typeof input === "object"
+                ? [...js, ...html].reduce(reduceToRecord(this.options.srcDir), input)
+                : [...js, ...html].reduce(reduceToRecord(this.options.srcDir), {});
+        return inputs;
+    }
+
+    private resolveManifestPath(input?: InputOption): string {
+        if (!input) {
+            console.log(chalk.red("No input is provided."))
+            throw new Error("No input is provided.")
         }
-        const { options_page, options_ui } = configResult.config;
+        let inputManifestPath: string | undefined;
+        if (Array.isArray(input)) {
+            const manifestIndex = input.findIndex(i => basename(i) === "manifest.json");
+            if (manifestIndex > -1) {
+                inputManifestPath = input[manifestIndex];
+                input.splice(manifestIndex, 1);
+            } else {
+                console.log(chalk.red("RollupOptions.input array must contain a Chrome extension manifest with filename 'manifest.json'."));
+                throw new Error("RollupOptions.input array must contain a Chrome extension manifest with filename 'manifest.json'.");
+            }
+        } else if (typeof input === "object") {
+            if (input.manifest) {
+                inputManifestPath = input.manifest;
+                delete input["manifest"];
+            } else {
+                console.log(chalk.red("RollupOptions.input object must contain a Chrome extension manifest with Key manifest."));
+                throw new Error("RollupOptions.input object must contain a Chrome extension manifest with Key manifest.");
+            }
+        } else {
+            inputManifestPath = input;
+        }
+        /* --------------- VALIDATE MANIFEST.JSON PATH --------------- */
+        if (basename(inputManifestPath) !== "manifest.json") {
+            throw new TypeError("Input for a Chrome extension manifest must have filename 'manifest.json'.");
+        }
+        return inputManifestPath;
+    }
+
+    private validateManifestContent(config: ChromeExtensionConfigurationInfo) {
+        if (config.isEmpty) {
+            throw new Error(`${config.filepath} is an empty file.`);
+        }
+        const { options_page, options_ui } = config.config;
         if (
             options_page !== undefined &&
             options_ui !== undefined
@@ -69,40 +109,20 @@ export class ManifestProcessor {
                 "options_ui and options_page cannot both be defined in manifest.json.",
             );
         }
+    }
 
-        /* --------------- RECORD MANIFEST.JSON PATH --------------- */
-        this.manifestPath = configResult.filepath;
-
-        /* --------------- APPLY USER CUSTOM CONFIG --------------- */
-        if (typeof this.extendManifest === "function") {
-            this.manifest = this.extendManifest(configResult.config);
-        } else if (typeof this.extendManifest === "object") {
-            this.manifest = {
-                ...configResult.config,
-                ...this.extendManifest,
+    private applyExternalManifestConfiguration(
+        config: ChromeExtensionConfigurationInfo
+    ): ChromeExtensionManifest {
+        if (typeof this.options.extendManifest === "function") {
+            return this.options.extendManifest(config.config);
+        } else if (typeof this.options.extendManifest === "object") {
+            return {
+                ...config.config,
+                ...this.options.extendManifest,
             };
         } else {
-            this.manifest = configResult.config;
+            return config.config;
         }
-        this.rootPath = dirname(this.manifestPath);
-        return this.manifest;
-    }
-
-    public resolveInput(input?: InputOption) {
-        if (!this.manifest) { return; }
-        // Derive entry paths from manifest
-        const { js, html, css, img, others } = deriveFiles(
-            this.manifest,
-            this.rootPath,
-        );
-        const assets = [...new Set([...css, ...img, ...others])];
-        const inputs = Array.isArray(input)
-            ? [...input, ...js, ...html].reduce(reduceToRecord(this.rootPath), {})
-            : typeof input === "object"
-                ? [...js, ...html].reduce(reduceToRecord(this.rootPath), input)
-                : [...js, ...html].reduce(reduceToRecord(this.rootPath), {});
-        return inputs;
     }
 }
-
-export const manifestProcessor = new ManifestProcessor();

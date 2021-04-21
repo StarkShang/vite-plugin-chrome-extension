@@ -8,10 +8,13 @@ import { validateNames as v } from "./validate-names";
 import {
     ChromeExtensionOptions,
     ChromeExtensionPlugin,
+    HtmlInputsOptions,
+    NormalizedChromeExtensionOptions,
 } from "./plugin-options";
 import { ManifestProcessor } from "./processors/manifest";
 import { contentScriptProcessor } from "./processors/content-script";
 import { ChromeExtensionManifest } from "./manifest";
+import { HtmlProcessor } from "./processors/html";
 
 export { simpleReloader } from "./plugin-reloader-simple";
 
@@ -27,9 +30,11 @@ export const chromeExtension = (
     } catch (error) { }
 
     /* ----------------- SETUP PLUGINS ----------------- */
+    const normalizedOptions = { ...options } as NormalizedChromeExtensionOptions;
     const manifest2 = manifestInput(options);
-    const manifestProcessor = new ManifestProcessor();
-    const html = htmlInputs(manifest2);
+    const html2 = htmlInputs(normalizedOptions as HtmlInputsOptions);
+    const manifestProcessor = new ManifestProcessor(normalizedOptions);
+    const htmlProcessor = new HtmlProcessor(normalizedOptions);
     const validate = v();
     let manifest: ChromeExtensionManifest | undefined;
     let viteConfig: ResolvedConfig;
@@ -39,7 +44,7 @@ export const chromeExtension = (
         name: "chrome-extension",
 
         // For testing
-        _plugins: { manifest: manifest2, html, validate },
+        _plugins: { manifest: manifest2, html: html2, validate },
 
         configResolved(config) {
             viteConfig = config;
@@ -47,9 +52,10 @@ export const chromeExtension = (
 
         async options(options) {
             manifest = manifestProcessor.load(options.input);
+
             try {
                 options.input = manifestProcessor.resolveInput(options.input);
-                const newOptions = await html.options.call(this, options);
+                const newOptions = await html2.options.call(this, options);
                 logger.logInputFiles(newOptions?.input);
                 return options;
             } catch (error) {
@@ -74,7 +80,7 @@ export const chromeExtension = (
         async buildStart(options) {
             await Promise.all([
                 manifest2.buildStart.call(this, options),
-                html.buildStart.call(this, options),
+                html2.buildStart.call(this, options),
             ]);
         },
 
@@ -94,7 +100,7 @@ export const chromeExtension = (
 
         watchChange(id) {
             manifest2.watchChange.call(this, id, { event: "create" });
-            html.watchChange.call(this, id, { event: "create" });
+            html2.watchChange.call(this, id, { event: "create" });
         },
 
         async generateBundle(options, bundle, isWrite) {
@@ -103,7 +109,7 @@ export const chromeExtension = (
             /* ----------------- UPDATE ENTRY PATH IN MANIFEST.JSON ----------------- */
             /* ----------------- UPDATE ENTRY PATH IN MANIFEST.JSON ----------------- */
             await manifest2.generateBundle.call(this, options, bundle, isWrite);
-            await html.generateBundle.call(this, options, bundle, isWrite);
+            await html2.generateBundle.call(this, options, bundle, isWrite);
             await validate.generateBundle.call(this, options, bundle, isWrite);
         },
     };
