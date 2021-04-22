@@ -52,8 +52,12 @@ export class ManifestProcessor {
      * @param input: Input not in manifest.json but specify by user
      * @returns
      */
-    public resolveInput(input?: InputOption) {
-        if (!this.manifest || !this.options.srcDir) { return; }
+    public resolveInput(input?: InputOption): {
+        [entryAlias: string]: string;
+    } {
+        if (!this.manifest || !this.options.srcDir) {
+            throw new TypeError("manifest and options.srcDir not initialized");
+        }
         // Derive all resources from manifest
         const { js, html, css, img, others } = deriveFiles(
             this.manifest,

@@ -42,28 +42,24 @@ export const chromeExtension = (
     /* ----------------- RETURN PLUGIN ----------------- */
     return {
         name: "chrome-extension",
-
         // For testing
         _plugins: { manifest: manifest2, html: html2, validate },
-
         configResolved(config) {
             viteConfig = config;
         },
-
         async options(options) {
             manifest = manifestProcessor.load(options);
-
             try {
                 options.input = manifestProcessor.resolveInput(options.input);
-                const newOptions = await html2.options.call(this, options);
-                logger.logInputFiles(newOptions?.input);
+                // resolve scripts and assets in html
+                options.input = htmlProcessor.resolveInput(options.input);
+                logger.logInputFiles(options.input);
                 return options;
             } catch (error) {
                 const manifestError =
                     "The manifest must have at least one script or HTML file.";
                 const htmlError =
                     "At least one HTML file must have at least one script.";
-
                 if (
                     error.message === manifestError ||
                     error.message === htmlError
@@ -76,7 +72,6 @@ export const chromeExtension = (
                 }
             }
         },
-
         async buildStart(options) {
             await Promise.all([
                 manifest2.buildStart.call(this, options),

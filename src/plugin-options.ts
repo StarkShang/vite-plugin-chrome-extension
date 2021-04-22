@@ -119,7 +119,6 @@ export interface HtmlInputsPluginCache {
 
 type HtmlInputsPluginHooks =
     | "name"
-    | "options"
     | "buildStart"
     | "watchChange"
     | "generateBundle"

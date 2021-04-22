@@ -5,7 +5,7 @@ import { assert } from "chai";
 describe("ManifestProcessor", () => {
     describe("resolveManifestPath", () => {
         let processor: ManifestProcessor;
-        beforeEach(function() {
+        beforeEach(() => {
             processor = new ManifestProcessor();
         });
         it("No input", () => {
