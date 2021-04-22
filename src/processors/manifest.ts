@@ -47,6 +47,11 @@ export class ManifestProcessor {
         return this.manifest;
     }
 
+    /**
+     * Resolve input files for rollup
+     * @param input: Input not in manifest.json but specify by user
+     * @returns
+     */
     public resolveInput(input?: InputOption) {
         if (!this.manifest || !this.options.srcDir) { return; }
         // Derive entry paths from manifest

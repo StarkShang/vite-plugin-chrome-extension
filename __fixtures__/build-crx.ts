@@ -1,62 +1,62 @@
 import {
-  OutputBundle,
-  PluginHooks,
-  rollup,
-  RollupBuild,
-  RollupOutput,
+    OutputBundle,
+    PluginHooks,
+    rollup,
+    RollupBuild,
+    RollupOutput,
 } from "rollup";
 import { getExtPath } from "./utils";
 
 type RollupBuildData = {
-  build: RollupBuild
-  bundle: OutputBundle
-  output: RollupOutput
+    build: RollupBuild
+    bundle: OutputBundle
+    output: RollupOutput
 }
 
 export function buildCRX(
-  crxPath = "kitchen-sink/rollup.config.js",
+    crxPath = "kitchen-sink/rollup.config.js",
 ): ReturnType<typeof innerBuildCRX> {
-  return new Promise((resolve, reject) => {
-    beforeAll(async () => {
-      try {
-        const buildPromise = await innerBuildCRX(crxPath);
+    return new Promise((resolve, reject) => {
+        beforeAll(async () => {
+            try {
+                const buildPromise = await innerBuildCRX(crxPath);
 
-        resolve(buildPromise);
-      } catch (error) {
-        reject(error);
-      }
-    }, 15000);
-  });
+                resolve(buildPromise);
+            } catch (error) {
+                reject(error);
+            }
+        }, 15000);
+    });
 }
 
 /** Builds the kitchen-sink example crx by default */
 export async function innerBuildCRX(
-  crxPath: string,
+    crxPath: string,
 ): Promise<RollupBuildData> {
-  const extPath = getExtPath(crxPath);
-  const config = require(extPath).default;
+    const extPath = getExtPath(crxPath);
+    const config = require(extPath).default;
 
-  if (typeof config.output === "undefined")
-    throw new TypeError("Rollup config must have output");
+    if (typeof config.output === "undefined")
+        throw new TypeError("Rollup config must have output");
 
-  const bundlePromise: Promise<OutputBundle> = new Promise(
-    (resolve) => {
-      config.plugins = config.plugins || [];
-      config.plugins.push({
-        name: "save-bundle-plugin",
-        generateBundle(o, b) {
-          resolve(b);
+    const bundlePromise: Promise<OutputBundle> = new Promise(
+        (resolve) => {
+            config.plugins = config.plugins || [];
+            config.plugins.push({
+                name: "save-bundle-plugin",
+                generateBundle(o, b) {
+                    resolve(b);
+                },
+            } as Pick<PluginHooks, "generateBundle"> & { name: string });
         },
-      } as Pick<PluginHooks, "generateBundle"> & { name: string });
-    },
-  );
+    );
 
-  const build = await rollup(config);
-  const output = await build.generate(
-    Array.isArray(config.output)
-      ? config.output[0]
-      : config.output,
-  );
+    const build = await rollup(config);
+    const output = await build.generate(
+        Array.isArray(config.output)
+            ? config.output[0]
+            : config.output,
+    );
 
-  return { build, bundle: await bundlePromise, output };
+    return { build, bundle: await bundlePromise, output };
 }

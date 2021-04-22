@@ -47,22 +47,30 @@ export function deriveFiles(
     manifest: ChromeExtensionManifest,
     srcDir: string,
 ) {
-    // get scripts from section web_accessible_resources
-    const files = get(
+    // get resources from section web_accessible_resources
+    const web_accessible_resources = get(
         manifest,
         "web_accessible_resources",
         [] as WebAccessibleResource[],
-    ).reduce((resources, resourse) => resourse.resources.reduce((r, x) => {
-        if (glob.hasMagic(x)) {
-            const files = glob.sync(x, { cwd: srcDir });
-            return [...r, ...files.map((f) => f.replace(srcDir, ""))];
-        } else {
-            return [...r, x];
-        }
-    }, resources), [] as string[]);
+    ).reduce((resource_paths, web_accessible_resource) =>
+        web_accessible_resource.resources.reduce((r, x) => {
+            if (glob.hasMagic(x)) {
+                const files = glob.sync(x, { cwd: srcDir });
+                return [...r, ...files.map((f) => f.replace(srcDir, ""))];
+            } else {
+                return [...r, x];
+            }
+        }, resource_paths),
+    [] as string[]);
 
+    /**
+     * js files come from:
+     *  - web_accessible_resources
+     *  - background.service_worker
+     *  - content_scripts
+     */
     const js = [
-        ...files.filter((f: string) => /\.[jt]sx?$/.test(f)),
+        ...web_accessible_resources.filter((f: string) => /\.[jt]sx?$/.test(f)),
         get(manifest, "background.service_worker"),
         ...get(
             manifest,
@@ -71,8 +79,17 @@ export function deriveFiles(
         ).reduce((r, { js = [] }) => [...r, ...js], [] as string[]),
     ];
 
+    /**
+     * html files come from:
+     *  - web_accessible_resources
+     *  - options_page
+     *  - options_ui.page
+     *  - devtools_page
+     *  - action.default_popup
+     *  - chrome_url_overrides
+     */
     const html = [
-        ...files.filter((f: string) => /\.html?$/.test(f)),
+        ...web_accessible_resources.filter((f: string) => /\.html?$/.test(f)),
         get(manifest, "options_page"),
         get(manifest, "options_ui.page"),
         get(manifest, "devtools_page"),
@@ -80,8 +97,13 @@ export function deriveFiles(
         ...Object.values(get(manifest, "chrome_url_overrides", {})),
     ];
 
+    /**
+     * css files come from:
+     *  - web_accessible_resources
+     *  - content_scripts
+     */
     const css = [
-        ...files.filter((f: string) => f.endsWith(".css")),
+        ...web_accessible_resources.filter((f: string) => f.endsWith(".css")),
         ...get(
             manifest,
             "content_scripts",
@@ -92,36 +114,39 @@ export function deriveFiles(
         ),
     ];
 
-    // TODO: this can be a string or object
-    const actionIconSet = [
-        "browser_action.default_icon",
-        "page_action.default_icon",
-    ].reduce((set, query) => {
-        const result: string | { [size: string]: string } = get(
-            manifest,
-            query,
-            {} as any,
-        );
+    /**
+     * action icons come from:
+     *  - web_accessible_resources
+     *  - content_scripts
+     */
+    const actionIconSet = new Set<string>();
+    const default_icons: string | { [size: string]: string } = get(
+        manifest,
+        "action.default_icon",
+        {} as any,
+    );
+    if (typeof default_icons === "string") {
+        actionIconSet.add(default_icons);
+    } else {
+        Object.values(default_icons).forEach((x) => actionIconSet.add(x));
+    }
 
-        if (typeof result === "string") {
-            set.add(result);
-        } else {
-            Object.values(result).forEach((x) => set.add(x));
-        }
-
-        return set;
-    }, new Set<string>());
-
+    /**
+     * image files come from:
+     *  - web_accessible_resources
+     *  - action.default_icon
+     *  - icons
+     */
     const img = [
         ...actionIconSet,
-        ...files.filter((f) =>
+        ...web_accessible_resources.filter((f) =>
             /\.(jpe?g|png|svg|tiff?|gif|webp|bmp|ico)$/i.test(f),
         ),
         ...Object.values(get(manifest, "icons", {})),
     ];
 
     // Files like fonts, things that are not expected
-    const others = diff(files, css, js, html, img);
+    const others = diff(web_accessible_resources, css, js, html, img);
 
     return {
         css: validate(css),
