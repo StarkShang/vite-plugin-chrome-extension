@@ -27,7 +27,6 @@ export type ChromeExtensionConfigurationInfo = {
 };
 
 export class ManifestProcessor {
-    public manifestPath = "";
     public cache = {
         assetChanged: false,
         assets: [],
@@ -58,7 +57,7 @@ export class ManifestProcessor {
         this.manifest = this.applyExternalManifestConfiguration(configResult);
         /* --------------- RECORD OPTIONS --------------- */
         this.options.manifestPath = configResult.filepath;
-        this.options.srcDir = dirname(this.manifestPath);
+        this.options.srcDir = dirname(this.options.manifestPath);
         return this.manifest;
     }
 
@@ -93,7 +92,7 @@ export class ManifestProcessor {
      */
     public addWatchFiles(context: PluginContext) {
         // watch manifest.json file
-        context.addWatchFile(this.manifestPath);
+        context.addWatchFile(this.options.manifestPath!);
         // watch asset files
         this.cache.assets.forEach(srcPath => context.addWatchFile(srcPath));
     }
