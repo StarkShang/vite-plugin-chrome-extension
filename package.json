@@ -23,7 +23,7 @@
         "lint:eslint": "eslint . --ext js --ext ts --ext tsx",
         "lint:types": "tsc --noEmit",
         "types:manifest": "json2ts --input manifest.schema.json --output manifest.d.ts",
-        "test": "cross-env TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' mocha --file tests/unit/setup.ts --require ts-node/register --require tsconfig-paths/register"
+        "test": "cross-env TS_NODE_COMPILER_OPTIONS={\\\"module\\\":\\\"commonjs\\\"} mocha --file tests/unit/setup.ts --require ts-node/register --require tsconfig-paths/register"
     },
     "dependencies": {
         "ajv": "^6.11.0",

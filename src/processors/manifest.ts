@@ -1,6 +1,6 @@
 import { dirname } from "path";
 import { cosmiconfigSync } from "cosmiconfig";
-import { InputOption } from "rollup";
+import { InputOption, InputOptions } from "rollup";
 import { ChromeExtensionManifest } from "../manifest";
 import { deriveFiles } from "../manifest-input/manifest-parser";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
@@ -30,11 +30,11 @@ export class ManifestProcessor {
 
     /**
      * Load content from manifest.json
-     * @param input
+     * @param options: rollup input options
      */
-    public load(input?: InputOption) {
+    public load(options: InputOptions) {
         /* --------------- GET MANIFEST.JSON PATH --------------- */
-        const inputManifestPath = this.resolveManifestPath(input);
+        const inputManifestPath = this.resolveManifestPath(options);
         /* --------------- LOAD CONTENT FROM MANIFEST.JSON --------------- */
         const configResult = explorer.load(inputManifestPath) as ChromeExtensionConfigurationInfo;
         /* --------------- VALIDATE MANIFEST.JSON CONTENT --------------- */
@@ -54,7 +54,7 @@ export class ManifestProcessor {
      */
     public resolveInput(input?: InputOption) {
         if (!this.manifest || !this.options.srcDir) { return; }
-        // Derive entry paths from manifest
+        // Derive all resources from manifest
         const { js, html, css, img, others } = deriveFiles(
             this.manifest,
             this.options.srcDir,
@@ -68,31 +68,32 @@ export class ManifestProcessor {
         return inputs;
     }
 
-    private resolveManifestPath(input?: InputOption): string {
-        if (!input) {
+    private resolveManifestPath(options: InputOptions): string {
+        if (!options.input) {
             console.log(chalk.red("No input is provided."))
             throw new Error("No input is provided.")
         }
         let inputManifestPath: string | undefined;
-        if (Array.isArray(input)) {
-            const manifestIndex = input.findIndex(i => basename(i) === "manifest.json");
+        if (Array.isArray(options.input)) {
+            const manifestIndex = options.input.findIndex(i => basename(i) === "manifest.json");
             if (manifestIndex > -1) {
-                inputManifestPath = input[manifestIndex];
-                input.splice(manifestIndex, 1);
+                inputManifestPath = options.input[manifestIndex];
+                options.input.splice(manifestIndex, 1);
             } else {
                 console.log(chalk.red("RollupOptions.input array must contain a Chrome extension manifest with filename 'manifest.json'."));
                 throw new Error("RollupOptions.input array must contain a Chrome extension manifest with filename 'manifest.json'.");
             }
-        } else if (typeof input === "object") {
-            if (input.manifest) {
-                inputManifestPath = input.manifest;
-                delete input["manifest"];
+        } else if (typeof options.input === "object") {
+            if (options.input.manifest) {
+                inputManifestPath = options.input.manifest;
+                delete options.input["manifest"];
             } else {
                 console.log(chalk.red("RollupOptions.input object must contain a Chrome extension manifest with Key manifest."));
                 throw new Error("RollupOptions.input object must contain a Chrome extension manifest with Key manifest.");
             }
         } else {
-            inputManifestPath = input;
+            inputManifestPath = options.input;
+            delete options.input;
         }
         /* --------------- VALIDATE MANIFEST.JSON PATH --------------- */
         if (basename(inputManifestPath) !== "manifest.json") {

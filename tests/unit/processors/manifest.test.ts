@@ -9,35 +9,35 @@ describe("ManifestProcessor", () => {
             processor = new ManifestProcessor();
         });
         it("No input", () => {
-            assert.throws((processor as any).resolveManifestPath, "No input is provided.");
+            assert.throws(() => (processor as any).resolveManifestPath({}), "No input is provided.");
         });
         it("Input array without manifest.json", () => {
             assert.throws(
-                () => {(processor as any).resolveManifestPath([])},
+                () => (processor as any).resolveManifestPath({ input: [] }),
                 "RollupOptions.input array must contain a Chrome extension manifest with filename 'manifest.json'.");
         });
         it("Input object without key manifest", () => {
             assert.throws(
-                () => {(processor as any).resolveManifestPath({})},
+                () => (processor as any).resolveManifestPath({ input: {} }),
                 "RollupOptions.input object must contain a Chrome extension manifest with Key manifest.");
         });
         ["manifest", "manifest.js", { manifest: "manifest.js" }].forEach(input => {
             const inputFilename = typeof input === "string" ? input : input.manifest;
             it(`Input manifest filename ${inputFilename} isn't manifest.json`, () => {
                 assert.throws(
-                    () => {(processor as any).resolveManifestPath(input)},
+                    () => (processor as any).resolveManifestPath({ input }),
                     "Input for a Chrome extension manifest must have filename 'manifest.json'.");
             })
         });
         ["manifest.json", "src/manifest.json"].forEach(input => it(`Correct string input ${input}`, () => {
-            assert.equal((processor as any).resolveManifestPath(input), input);
+            assert.equal((processor as any).resolveManifestPath({ input }), input);
         }));
         [["manifest.json"], ["src/manifest.json"]].forEach(input => it(`Correct array input with ${input[0]}`, () => {
-            assert.equal((processor as any).resolveManifestPath([...input]), input[0]);
+            assert.equal((processor as any).resolveManifestPath({ input: [...input] }), input[0]);
         }));
         [{ manifest: "manifest.json" }, { manifest: "src/manifest.json" }].forEach(
             input => it(`Correct object input with ${input.manifest}`, () => {
-                assert.equal((processor as any).resolveManifestPath({...input}), input.manifest);
+                assert.equal((processor as any).resolveManifestPath({ input: {...input} }), input.manifest);
         }));
     });
     describe("load", () => {

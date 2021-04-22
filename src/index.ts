@@ -51,7 +51,7 @@ export const chromeExtension = (
         },
 
         async options(options) {
-            manifest = manifestProcessor.load(options.input);
+            manifest = manifestProcessor.load(options);
 
             try {
                 options.input = manifestProcessor.resolveInput(options.input);
