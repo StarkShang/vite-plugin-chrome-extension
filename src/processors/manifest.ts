@@ -10,6 +10,7 @@ import { ManifestInputPluginCache, NormalizedChromeExtensionOptions } from "../p
 import chalk from "chalk";
 import { basename } from "path";
 import { cloneObject } from "../utils/cloneObject";
+import { manifestName } from "../manifest-input/common/constants";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -112,6 +113,17 @@ export class ManifestProcessor {
         assets.forEach((asset) => {
             context.emitFile(asset);
         });
+    }
+
+    public clearCacheById(id: string) {
+        if (id.endsWith(manifestName)) {
+            // Dump cache.manifest if manifest changes
+            delete this.manifest;
+            this.cache.assetChanged = false;
+        } else {
+            // Force new read of changed asset
+            this.cache.assetChanged = this.cache.readFile.delete(id);
+        }
     }
 
     private resolveManifestPath(options: InputOptions): string {

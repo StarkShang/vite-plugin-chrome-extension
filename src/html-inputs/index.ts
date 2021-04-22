@@ -44,17 +44,6 @@ export default function htmlInputs(
         name,
         cache,
 
-        /* ============================================ */
-        /*              HANDLE FILE CHANGES             */
-        /* ============================================ */
-
-        watchChange(id) {
-            if (id.endsWith(".html") || id.endsWith("manifest.json")) {
-                // Dump cache if html file or manifest changes
-                cache.html$ = [];
-            }
-        },
-
         generateBundle(options, bundle) {
             if (!cache.srcDir) {
                 throw new TypeError("cache.srcDir not initialized");

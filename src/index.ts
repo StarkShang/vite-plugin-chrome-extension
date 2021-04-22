@@ -94,8 +94,8 @@ export const chromeExtension = (
             return null;
         },
         watchChange(id) {
-            manifest2.watchChange.call(this, id, { event: "create" });
-            html2.watchChange.call(this, id, { event: "create" });
+            manifestProcessor.clearCacheById(id);
+            htmlProcessor.clearCacheById(id);
         },
         async generateBundle(options, bundle, isWrite) {
             /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */

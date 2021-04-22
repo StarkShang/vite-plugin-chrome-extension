@@ -206,21 +206,6 @@ export function manifestInput(
         },
 
         /* ============================================ */
-        /*              HANDLE WATCH FILES              */
-        /* ============================================ */
-
-        watchChange(id) {
-            if (id.endsWith(manifestName)) {
-                // Dump cache.manifest if manifest changes
-                delete cache.manifest;
-                cache.assetChanged = false;
-            } else {
-                // Force new read of changed asset
-                cache.assetChanged = cache.readFile.delete(id);
-            }
-        },
-
-        /* ============================================ */
         /*                GENERATEBUNDLE                */
         /* ============================================ */
 

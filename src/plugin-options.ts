@@ -45,6 +45,7 @@ export type ChromeExtensionPlugin = Pick<
     | "buildStart"
     | "resolveId"
     | "load"
+    | "watchChange"
     | ManifestInputPluginHooks
     | HtmlInputsPluginHooks
 > & {
@@ -79,7 +80,6 @@ export interface ManifestInputPluginCache {
 
 type ManifestInputPluginHooks =
     | "options"
-    | "watchChange"
     | "generateBundle"
 
 export type ManifestInputPlugin = Pick<
@@ -124,7 +124,6 @@ export interface HtmlInputsPluginCache {
 
 type HtmlInputsPluginHooks =
     | "name"
-    | "watchChange"
     | "generateBundle"
 
 export type HtmlInputsPlugin = Pick<

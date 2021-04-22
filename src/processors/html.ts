@@ -103,4 +103,11 @@ export class HtmlProcessor {
         });
         await Promise.all(emitting);
     }
+
+    public clearCacheById(id: string) {
+        if (id.endsWith(".html") || id.endsWith("manifest.json")) {
+            // Dump cache if html file or manifest changes
+            this.cache.html$ = [];
+        }
+    }
 }
