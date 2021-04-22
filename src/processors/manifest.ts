@@ -1,6 +1,8 @@
-import { dirname } from "path";
+import { dirname, relative } from "path";
 import { cosmiconfigSync } from "cosmiconfig";
-import { InputOption, InputOptions } from "rollup";
+import fs from "fs-extra";
+import memoize from "mem";
+import { EmittedAsset, InputOption, InputOptions, PluginContext } from "rollup";
 import { ChromeExtensionManifest } from "../manifest";
 import { deriveFiles } from "../manifest-input/manifest-parser";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
@@ -84,6 +86,34 @@ export class ManifestProcessor {
         return inputs;
     }
 
+    /**
+     * Add watch files
+     * @param context Rollup Plugin Context
+     */
+    public addWatchFiles(context: PluginContext) {
+        // watch manifest.json file
+        context.addWatchFile(this.manifestPath);
+        // watch asset files
+        this.cache.assets.forEach(srcPath => context.addWatchFile(srcPath));
+    }
+
+    public async emitFiles(context: PluginContext) {
+        // Copy asset files
+        const assets: EmittedAsset[] = await Promise.all(
+            this.cache.assets.map(async (srcPath) => {
+                const source = await this.readAssetAsBuffer(srcPath);
+                return {
+                    type: "asset" as const,
+                    source,
+                    fileName: relative(this.options.srcDir!, srcPath),
+                };
+            }),
+        );
+        assets.forEach((asset) => {
+            context.emitFile(asset);
+        });
+    }
+
     private resolveManifestPath(options: InputOptions): string {
         if (!options.input) {
             console.log(chalk.red("No input is provided."))
@@ -148,4 +178,13 @@ export class ManifestProcessor {
             return config.config;
         }
     }
+
+    private readAssetAsBuffer = memoize(
+        (filepath: string) => {
+            return fs.readFile(filepath);
+        },
+        {
+            cache: this.cache.readFile,
+        },
+    );
 }

@@ -2,7 +2,6 @@ import "array-flat-polyfill";
 
 import { readFile } from "fs-extra";
 
-import { relative } from "path";
 
 import { isChunk, not } from "../utils/helpers";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
@@ -48,44 +47,6 @@ export default function htmlInputs(
         /* ============================================ */
         /*              HANDLE FILE CHANGES             */
         /* ============================================ */
-
-        /**
-         * Output asset files in html
-         * css, img, script(not local import)
-         */
-        async buildStart() {
-            const { srcDir } = htmlInputsOptions;
-
-            if (srcDir) {
-                cache.srcDir = srcDir;
-            } else {
-                throw new TypeError("options.srcDir not initialized");
-            }
-
-            const assets = [
-                ...cache.css,
-                ...cache.img,
-                ...cache.scripts,
-            ];
-
-            assets.concat(cache.html).forEach((asset) => {
-                this.addWatchFile(asset);
-            });
-
-            const emitting = assets.map(async (asset) => {
-                // Read these files as Buffers
-                const source = await readFile(asset);
-                const fileName = relative(srcDir, asset);
-
-                this.emitFile({
-                    type: "asset",
-                    source, // Buffer
-                    fileName,
-                });
-            });
-
-            await Promise.all(emitting);
-        },
 
         watchChange(id) {
             if (id.endsWith(".html") || id.endsWith("manifest.json")) {

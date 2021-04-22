@@ -75,32 +75,28 @@ export const chromeExtension = (
                 }
             }
         },
-        async buildStart(options) {
-            await Promise.all([
-                manifest2.buildStart.call(this, options),
-                html2.buildStart.call(this, options),
-            ]);
+        async buildStart() {
+            manifestProcessor.addWatchFiles(this);
+            htmlProcessor.addWatchFiles(this);
+            await manifestProcessor.emitFiles(this);
+            await htmlProcessor.emitFiles(this);
         },
-
         resolveId(source) {
             if (source === stubChunkName) {
                 return source;
             }
             return null;
         },
-
         load(id) {
             if (id === stubChunkName) {
                 return { code: `console.log("${stubChunkName}")` };
             }
             return null;
         },
-
         watchChange(id) {
             manifest2.watchChange.call(this, id, { event: "create" });
             html2.watchChange.call(this, id, { event: "create" });
         },
-
         async generateBundle(options, bundle, isWrite) {
             /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
             contentScriptProcessor.regenerateBundle(bundle);

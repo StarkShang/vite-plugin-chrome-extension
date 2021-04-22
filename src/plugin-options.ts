@@ -40,7 +40,13 @@ export interface NormalizedChromeExtensionOptions extends ChromeExtensionOptions
 
 export type ChromeExtensionPlugin = Pick<
     Required<Plugin>,
-    "name" | "configResolved" | "resolveId" | "load" | ManifestInputPluginHooks | HtmlInputsPluginHooks
+    | "name"
+    | "configResolved"
+    | "buildStart"
+    | "resolveId"
+    | "load"
+    | ManifestInputPluginHooks
+    | HtmlInputsPluginHooks
 > & {
     // For testing
     _plugins: {
@@ -73,7 +79,6 @@ export interface ManifestInputPluginCache {
 
 type ManifestInputPluginHooks =
     | "options"
-    | "buildStart"
     | "watchChange"
     | "generateBundle"
 
@@ -119,7 +124,6 @@ export interface HtmlInputsPluginCache {
 
 type HtmlInputsPluginHooks =
     | "name"
-    | "buildStart"
     | "watchChange"
     | "generateBundle"
 

@@ -1,5 +1,7 @@
-import { InputOption } from "rollup";
+import { relative } from "path";
+import { InputOption, PluginContext } from "rollup";
 import flatten from "lodash.flatten";
+import { readFile } from "fs-extra";
 import { flattenRollupInput } from "../common/utils/rollup";
 import { getCssHrefs, getImgSrcs, getJsAssets, getScriptSrc, loadHtml } from "../html-inputs/cheerio";
 import { HtmlInputsPluginCache, NormalizedChromeExtensionOptions } from "../plugin-options";
@@ -66,5 +68,39 @@ export class HtmlProcessor {
 
         // - Parse HTML and emit chunks and assets in buildStart
         return this.cache.input.reduce(reduceToRecord(srcDir), {});
+    }
+
+    public addWatchFiles(context: PluginContext) {
+        [
+            ...this.cache.css,
+            ...this.cache.img,
+            ...this.cache.scripts,
+            ...this.cache.html,
+        ].concat(this.cache.html).forEach((asset) => {
+            context.addWatchFile(asset);
+        });
+    }
+
+    /**
+     * Output asset files in html
+     * css, img, script(not local import)
+     */
+    public async emitFiles(context: PluginContext) {
+        const assets = [
+            ...this.cache.css,
+            ...this.cache.img,
+            ...this.cache.scripts,
+        ];
+        const emitting = assets.map(async (asset) => {
+            // Read these files as Buffers
+            const source = await readFile(asset);
+            const fileName = relative(this.options.srcDir!, asset);
+            context.emitFile({
+                type: "asset",
+                source, // Buffer
+                fileName,
+            });
+        });
+        await Promise.all(emitting);
     }
 }

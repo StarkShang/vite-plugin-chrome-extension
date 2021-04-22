@@ -1,7 +1,5 @@
 import { cosmiconfigSync } from "cosmiconfig";
-import fs from "fs-extra";
 import { JSONPath } from "jsonpath-plus";
-import memoize from "mem";
 import path from "path";
 import { EmittedAsset } from "rollup";
 import {
@@ -82,14 +80,6 @@ export function manifestInput(
         } as ManifestInputPluginCache,
     } = {} as ManifestInputPluginOptions,
 ): ManifestInputPlugin {
-    const readAssetAsBuffer = memoize(
-        (filepath: string) => {
-            return fs.readFile(filepath);
-        },
-        {
-            cache: cache.readFile,
-        },
-    );
 
     /* ----------- HOOKS CLOSURES START ----------- */
     let manifestPath: string;
@@ -218,26 +208,6 @@ export function manifestInput(
         /* ============================================ */
         /*              HANDLE WATCH FILES              */
         /* ============================================ */
-
-        async buildStart() {
-            // Add watch files
-            this.addWatchFile(manifestPath);    // watch manifest.json file
-            cache.assets.forEach((srcPath) => { this.addWatchFile(srcPath); });  // watch asset files
-            // Copy asset files
-            const assets: EmittedAsset[] = await Promise.all(
-                cache.assets.map(async (srcPath) => {
-                    const source = await readAssetAsBuffer(srcPath);
-                    return {
-                        type: "asset" as const,
-                        source,
-                        fileName: path.relative(cache.srcDir!, srcPath),
-                    };
-                }),
-            );
-            assets.forEach((asset) => {
-                this.emitFile(asset);
-            });
-        },
 
         watchChange(id) {
             if (id.endsWith(manifestName)) {
