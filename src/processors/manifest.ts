@@ -4,9 +4,10 @@ import { InputOption, InputOptions } from "rollup";
 import { ChromeExtensionManifest } from "../manifest";
 import { deriveFiles } from "../manifest-input/manifest-parser";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
-import { NormalizedChromeExtensionOptions } from "../plugin-options";
+import { ManifestInputPluginCache, NormalizedChromeExtensionOptions } from "../plugin-options";
 import chalk from "chalk";
 import { basename } from "path";
+import { cloneObject } from "../utils/cloneObject";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -24,6 +25,17 @@ export type ChromeExtensionConfigurationInfo = {
 
 export class ManifestProcessor {
     public manifestPath = "";
+    public cache = {
+        assetChanged: false,
+        assets: [],
+        iife: [],
+        input: [],
+        inputAry: [],
+        inputObj: {},
+        permsHash: "",
+        readFile: new Map<string, any>(),
+        srcDir: null,
+    } as ManifestInputPluginCache;
     public manifest?: ChromeExtensionManifest;
 
     public constructor(private options = {} as NormalizedChromeExtensionOptions) {}
@@ -63,12 +75,12 @@ export class ManifestProcessor {
             this.manifest,
             this.options.srcDir,
         );
-        const assets = [...new Set([...css, ...img, ...others])];
-        const inputs = Array.isArray(input)
-            ? [...input, ...js, ...html].reduce(reduceToRecord(this.options.srcDir), {})
-            : typeof input === "object"
-                ? [...js, ...html].reduce(reduceToRecord(this.options.srcDir), input)
-                : [...js, ...html].reduce(reduceToRecord(this.options.srcDir), {});
+        // Cache derived inputs
+        this.cache.input = [...this.cache.inputAry, ...js, ...html];
+        this.cache.assets = [...new Set([...css, ...img, ...others])];
+        const inputs = this.cache.input.reduce(
+            reduceToRecord(this.options.srcDir),
+            this.cache.inputObj);
         return inputs;
     }
 
@@ -82,7 +94,7 @@ export class ManifestProcessor {
             const manifestIndex = options.input.findIndex(i => basename(i) === "manifest.json");
             if (manifestIndex > -1) {
                 inputManifestPath = options.input[manifestIndex];
-                options.input.splice(manifestIndex, 1);
+                this.cache.inputAry = options.input.splice(manifestIndex, 1);
             } else {
                 console.log(chalk.red("RollupOptions.input array must contain a Chrome extension manifest with filename 'manifest.json'."));
                 throw new Error("RollupOptions.input array must contain a Chrome extension manifest with filename 'manifest.json'.");
@@ -91,6 +103,7 @@ export class ManifestProcessor {
             if (options.input.manifest) {
                 inputManifestPath = options.input.manifest;
                 delete options.input["manifest"];
+                this.cache.inputObj = cloneObject(options.input);
             } else {
                 console.log(chalk.red("RollupOptions.input object must contain a Chrome extension manifest with Key manifest."));
                 throw new Error("RollupOptions.input object must contain a Chrome extension manifest with Key manifest.");

@@ -48,9 +48,12 @@ export const chromeExtension = (
             viteConfig = config;
         },
         async options(options) {
-            manifest = manifestProcessor.load(options);
-            try {
+            // Do not reload manifest without changes
+            if (manifestProcessor.manifest) {
+                manifest = manifestProcessor.load(options);
                 options.input = manifestProcessor.resolveInput(options.input);
+            }
+            try {
                 // resolve scripts and assets in html
                 options.input = htmlProcessor.resolveInput(options.input);
                 logger.logInputFiles(options.input);
