@@ -40,12 +40,8 @@ const validator = ajv.compile(manifestSchema);
 export const validateManifest = (
     manifest: ChromeExtensionManifest,
 ) => {
-    if (validator(manifest)) {
-        return manifest;
-    }
-
+    if (validator(manifest)) { return manifest; }
     const { errors } = validator;
     const msg = "There were problems with the extension manifest.";
-
     throw new ValidationError(msg, errors);
 };

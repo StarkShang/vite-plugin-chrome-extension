@@ -2,26 +2,12 @@ import glob from "glob";
 import get from "lodash.get";
 import diff from "lodash.difference";
 import { join } from "path";
-import { OutputChunk } from "rollup";
-import * as permissions from "./permissions";
+
 import {
     ChromeExtensionManifest,
     ContentScript,
     WebAccessibleResource,
 } from "../../manifest";
-
-/* ============================================ */
-/*              DERIVE PERMISSIONS              */
-/* ============================================ */
-
-export const derivePermissions = (
-    set: Set<string>,
-    { code }: OutputChunk,
-) =>
-    Object.entries(permissions)
-        .filter(([, fn]) => fn(code))
-        .map(([key]) => key)
-        .reduce((s, p) => s.add(p), set);
 
 // /* ============================================ */
 // /*                DERIVE MANIFEST               */

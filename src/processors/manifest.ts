@@ -1,16 +1,23 @@
+import fs from "fs-extra";
+import chalk from "chalk";
+import memoize from "mem";
 import { dirname, relative } from "path";
 import { cosmiconfigSync } from "cosmiconfig";
-import fs from "fs-extra";
-import memoize from "mem";
-import { EmittedAsset, InputOption, InputOptions, PluginContext } from "rollup";
+import { EmittedAsset, InputOption, InputOptions, OutputBundle, PluginContext } from "rollup";
 import { ChromeExtensionManifest } from "../manifest";
 import { deriveFiles } from "../manifest-input/manifest-parser";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
 import { ManifestInputPluginCache, NormalizedChromeExtensionOptions } from "../plugin-options";
-import chalk from "chalk";
 import { basename } from "path";
 import { cloneObject } from "../utils/cloneObject";
 import { manifestName } from "../manifest-input/common/constants";
+import { ContentScriptProcessor } from "./content-script";
+import { PermissionProcessor, PermissionProcessorOptions } from "./permission";
+import { getAssets, getChunk } from "../utils/bundle";
+import {
+    validateManifest,
+    ValidationErrorsArray,
+} from "../manifest-input/manifest-parser/validate";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -39,8 +46,13 @@ export class ManifestProcessor {
         srcDir: null,
     } as ManifestInputPluginCache;
     public manifest?: ChromeExtensionManifest;
+    public contentScriptProcessor: ContentScriptProcessor;
+    public permissionProcessor: PermissionProcessor;
 
-    public constructor(private options = {} as NormalizedChromeExtensionOptions) {}
+    public constructor(private options = {} as NormalizedChromeExtensionOptions) {
+        this.contentScriptProcessor = new ContentScriptProcessor(options);
+        this.permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
+    }
 
     /**
      * Load content from manifest.json
@@ -125,6 +137,17 @@ export class ManifestProcessor {
         }
     }
 
+    public generateBundle(context: PluginContext, bundle: OutputBundle) {
+        if (!this.manifest) { throw new Error("[generate bundle] Manifest cannot be empty"); }
+        /* ----------------- GET CHUNKS -----------------*/
+        const chunks = getChunk(bundle);
+        const assets = getAssets(bundle);
+        this.manifest.permissions = this.permissionProcessor.derivePermissions(context, chunks);
+        this.manifest.content_scripts = this.contentScriptProcessor.generateBundle(context, bundle, this.manifest.content_scripts || []);
+        // validate manifest
+        this.validateManifest();
+    }
+
     private resolveManifestPath(options: InputOptions): string {
         if (!options.input) {
             console.log(chalk.red("No input is provided."))
@@ -172,6 +195,14 @@ export class ManifestProcessor {
             throw new Error(
                 "options_ui and options_page cannot both be defined in manifest.json.",
             );
+        }
+    }
+
+    private validateManifest() {
+        if (this.manifest) {
+            validateManifest(this.manifest)
+        } else {
+            throw new Error("Manifest cannot be empty");
         }
     }
 

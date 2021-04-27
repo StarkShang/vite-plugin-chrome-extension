@@ -12,9 +12,9 @@ import {
     NormalizedChromeExtensionOptions,
 } from "./plugin-options";
 import { ManifestProcessor } from "./processors/manifest";
-import { contentScriptProcessor } from "./processors/content-script";
 import { ChromeExtensionManifest } from "./manifest";
 import { HtmlProcessor } from "./processors/html";
+import { OutputAsset, OutputChunk } from "rollup";
 
 export { simpleReloader } from "./plugin-reloader-simple";
 
@@ -49,31 +49,14 @@ export const chromeExtension = (
         },
         async options(options) {
             // Do not reload manifest without changes
-            if (manifestProcessor.manifest) {
+            if (!manifestProcessor.manifest) {
                 manifest = manifestProcessor.load(options);
                 options.input = manifestProcessor.resolveInput(options.input);
             }
-            try {
-                // resolve scripts and assets in html
-                options.input = htmlProcessor.resolveInput(options.input);
-                logger.logInputFiles(options.input);
-                return options;
-            } catch (error) {
-                const manifestError =
-                    "The manifest must have at least one script or HTML file.";
-                const htmlError =
-                    "At least one HTML file must have at least one script.";
-                if (
-                    error.message === manifestError ||
-                    error.message === htmlError
-                ) {
-                    throw new Error(
-                        "A Chrome extension must have at least one script or HTML file.",
-                    );
-                } else {
-                    throw error;
-                }
-            }
+            // resolve scripts and assets in html
+            options.input = htmlProcessor.resolveInput(options.input);
+            logger.logInputFiles(options.input);
+            return options;
         },
         async buildStart() {
             manifestProcessor.addWatchFiles(this);
@@ -97,14 +80,32 @@ export const chromeExtension = (
             manifestProcessor.clearCacheById(id);
             htmlProcessor.clearCacheById(id);
         },
+        outputOptions(options) {
+            return {
+                ...options,
+                chunkFileNames: "[name].[hash].js",
+                entryFileNames: "[name].js"
+            };
+        },
         async generateBundle(options, bundle, isWrite) {
+            const chunkId = Object.keys(bundle).find(key => /content-scripts.*js/.test(key));
+            const { modules, facadeModuleId, referencedFiles } = bundle[chunkId!] as OutputChunk;
+            console.log(referencedFiles);
+            // const relatedModuleIds = this.getModuleInfo(facadeModuleId!)!.importedIds;
+            // const cssModule = this.getModuleInfo(relatedModuleIds[relatedModuleIds.length - 1]);
+            // // console.log({ ...cssModule, code: ""});
+            // const cssChunkId = Object.keys(bundle).find(key => /assets\/content-scripts.*css/.test(key));
+            // const cssChunk = bundle[cssChunkId!] as OutputAsset;
+            // console.log(Object.keys(cssChunk));
+            // console.log({...cssChunk, source: ""});
+            // manifestProcessor.generateBundle(this, bundle);
             /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
-            contentScriptProcessor.regenerateBundle(bundle);
+
             /* ----------------- UPDATE ENTRY PATH IN MANIFEST.JSON ----------------- */
             /* ----------------- UPDATE ENTRY PATH IN MANIFEST.JSON ----------------- */
-            await manifest2.generateBundle.call(this, options, bundle, isWrite);
-            await html2.generateBundle.call(this, options, bundle, isWrite);
-            await validate.generateBundle.call(this, options, bundle, isWrite);
+            // await manifest2.generateBundle.call(this, options, bundle, isWrite);
+            // await html2.generateBundle.call(this, options, bundle, isWrite);
+            // await validate.generateBundle.call(this, options, bundle, isWrite);
         },
     };
 };

@@ -19,7 +19,6 @@ import { generateManifest } from "./generateBundle";
 import { combinePerms } from "./manifest-parser/combine";
 import {
     deriveFiles,
-    derivePermissions,
 } from "./manifest-parser/index";
 import {
     validateManifest,
@@ -66,7 +65,6 @@ export function manifestInput(
         iifeJsonPaths = [],
         pkg = npmPkgDetails,
         publicKey,
-        verbose = true,
         cache = {
             assetChanged: false,
             assets: [],
@@ -213,30 +211,6 @@ export function manifestInput(
             /* ----------------- GET CHUNKS -----------------*/
             const chunks = getChunk(bundle);
             const assets = getAssets(bundle);
-            /* ---------- DERIVE PERMISSIONS START --------- */
-            // Get module ids for all chunks
-            let permissions: string[];
-            if (cache.assetChanged && cache.permsHash) {
-                // Permissions did not change
-                permissions = JSON.parse(cache.permsHash) as string[];
-                cache.assetChanged = false;
-            } else {
-                // Permissions may have changed
-                permissions = Array.from(Object.values(chunks).reduce(derivePermissions, new Set<string>()));
-                const permsHash = JSON.stringify(permissions);
-                if (verbose && permissions.length) {
-                    if (!cache.permsHash) {
-                        this.warn(
-                            `Detected permissions: ${permissions.toString()}`,
-                        );
-                    } else if (permsHash !== cache.permsHash) {
-                        this.warn(
-                            `Detected new permissions: ${permissions.toString()}`,
-                        );
-                    }
-                }
-                cache.permsHash = permsHash;
-            }
 
             if (Object.keys(bundle).length === 0) {
                 throw new Error(
@@ -253,9 +227,6 @@ export function manifestInput(
                 const clonedManifest = cloneObject(cache.manifest);
 
                 const manifestBody: ChromeExtensionManifest = validateManifest({
-                    // manifest_version: 3,
-                    // name: pkg.name,
-                    // version: pkg.version,
                     description: pkg.description,
                     ...clonedManifest,
                     permissions: combinePerms(

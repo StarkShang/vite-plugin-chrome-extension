@@ -19,10 +19,10 @@ export default defineConfig({
     plugins: [
         vue(),
         chromeExtension(),
-        probe({
-            options: {},
-            outputOption: {},
-            generateBundle: {},
-        }),
+        // probe({
+        //     // options: {},
+        //     // outputOption: {},
+        //     // generateBundle: {},
+        // }),
     ],
 })

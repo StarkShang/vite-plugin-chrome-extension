@@ -46,6 +46,7 @@ export type ChromeExtensionPlugin = Pick<
     | "resolveId"
     | "load"
     | "watchChange"
+    | "outputOptions"
     | ManifestInputPluginHooks
     | HtmlInputsPluginHooks
 > & {
