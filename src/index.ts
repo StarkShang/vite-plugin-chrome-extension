@@ -1,6 +1,6 @@
 import { join } from "path";
 import { readJSONSync } from "fs-extra";
-import { build, ResolvedConfig } from "vite";
+import { ResolvedConfig } from "vite";
 import htmlInputs from "./html-inputs";
 import manifestInput from "./manifest-input";
 import { logger } from "./utils/logger";
@@ -14,7 +14,6 @@ import {
 import { ManifestProcessor } from "./processors/manifest";
 import { ChromeExtensionManifest } from "./manifest";
 import { HtmlProcessor } from "./processors/html";
-import { OutputAsset, OutputChunk } from "rollup";
 
 export { simpleReloader } from "./plugin-reloader-simple";
 
@@ -84,11 +83,12 @@ export const chromeExtension = (
             return {
                 ...options,
                 chunkFileNames: "[name].[hash].js",
+                assetFileNames: "[name].[hash].[ext]",
                 entryFileNames: "[name].js"
             };
         },
         async generateBundle(options, bundle, isWrite) {
-            manifestProcessor.generateBundle(this, bundle);
+            await manifestProcessor.generateBundle(this, bundle);
             // await manifest2.generateBundle.call(this, options, bundle, isWrite);
             // await html2.generateBundle.call(this, options, bundle, isWrite);
             // await validate.generateBundle.call(this, options, bundle, isWrite);

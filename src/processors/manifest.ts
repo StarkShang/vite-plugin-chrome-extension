@@ -15,7 +15,7 @@ import {
     validateManifest,
     ValidationErrorsArray,
 } from "../manifest-input/manifest-parser/validate";
-import { ContentScriptProcessor } from "./content-script";
+import { ContentScriptProcessor } from "./content-script/content-script";
 import { PermissionProcessor, PermissionProcessorOptions } from "./permission";
 import { BackgroundProcesser } from "./background";
 
@@ -139,7 +139,7 @@ export class ManifestProcessor {
         }
     }
 
-    public generateBundle(context: PluginContext, bundle: OutputBundle) {
+    public async generateBundle(context: PluginContext, bundle: OutputBundle) {
         if (!this.manifest) { throw new Error("[generate bundle] Manifest cannot be empty"); }
         /* ----------------- GET CHUNKS -----------------*/
         const chunks = getChunk(bundle);
@@ -147,7 +147,7 @@ export class ManifestProcessor {
         /* ----------------- UPDATE PERMISSIONS ----------------- */
         this.manifest.permissions = this.permissionProcessor.derivePermissions(context, chunks);
         /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
-        this.manifest.content_scripts = this.contentScriptProcessor.generateBundle(context, bundle, this.manifest.content_scripts || []);
+        this.manifest.content_scripts = await this.contentScriptProcessor.generateBundle(context, bundle, this.manifest.content_scripts || []);
         /* ----------------- SETUP BACKGROUND SCRIPTS ----------------- */
         this.manifest.background = this.backgroundProcessor.generateBundle(bundle, this.manifest.background);
         /* ----------------- SETUP ASSETS IN WEB ACCESSIBLE RESOURCES ----------------- */
