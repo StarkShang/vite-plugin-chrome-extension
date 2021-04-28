@@ -26,15 +26,7 @@ export interface ChromeExtensionManifest {
         default_title?: string;
         default_popup?: string;
     };
-    /**
-     * The background page is an HTML page that runs in the extension process. It exists for the lifetime of your extension, and only one instance of it at a time is active.
-     */
-    background?: {
-        /**
-         * Specify the service worker of the background page.
-         */
-        service_worker: string;
-    };
+    background?: Background;
     chrome_settings_overrides?: ChromeSettingsOverrides;
     /**
      * Override pages are a way to substitute an HTML file from your extension for a page that Google Chrome normally provides.
@@ -356,7 +348,15 @@ export interface ChromeExtensionManifest {
      * An array of strings specifying the paths (relative to the package root) of packaged resources that are expected to be usable in the context of a web page.
      */
     web_accessible_resources?: [WebAccessibleResource, ...WebAccessibleResource[]];
-    [k: string]: unknown;
+}
+/**
+ * The background page is an HTML page that runs in the extension process. It exists for the lifetime of your extension, and only one instance of it at a time is active.
+ */
+export interface Background {
+    /**
+     * Specify the service worker of the background page.
+     */
+    service_worker: string;
 }
 export interface ChromeSettingsOverrides {
     homepage?: Icon;

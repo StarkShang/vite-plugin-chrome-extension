@@ -1,6 +1,6 @@
 import { join } from "path";
 import { readJSONSync } from "fs-extra";
-import { ResolvedConfig } from "vite";
+import { build, ResolvedConfig } from "vite";
 import htmlInputs from "./html-inputs";
 import manifestInput from "./manifest-input";
 import { logger } from "./utils/logger";
@@ -88,21 +88,7 @@ export const chromeExtension = (
             };
         },
         async generateBundle(options, bundle, isWrite) {
-            const chunkId = Object.keys(bundle).find(key => /content-scripts.*js/.test(key));
-            const { modules, facadeModuleId, referencedFiles } = bundle[chunkId!] as OutputChunk;
-            console.log(referencedFiles);
-            // const relatedModuleIds = this.getModuleInfo(facadeModuleId!)!.importedIds;
-            // const cssModule = this.getModuleInfo(relatedModuleIds[relatedModuleIds.length - 1]);
-            // // console.log({ ...cssModule, code: ""});
-            // const cssChunkId = Object.keys(bundle).find(key => /assets\/content-scripts.*css/.test(key));
-            // const cssChunk = bundle[cssChunkId!] as OutputAsset;
-            // console.log(Object.keys(cssChunk));
-            // console.log({...cssChunk, source: ""});
-            // manifestProcessor.generateBundle(this, bundle);
-            /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
-
-            /* ----------------- UPDATE ENTRY PATH IN MANIFEST.JSON ----------------- */
-            /* ----------------- UPDATE ENTRY PATH IN MANIFEST.JSON ----------------- */
+            manifestProcessor.generateBundle(this, bundle);
             // await manifest2.generateBundle.call(this, options, bundle, isWrite);
             // await html2.generateBundle.call(this, options, bundle, isWrite);
             // await validate.generateBundle.call(this, options, bundle, isWrite);

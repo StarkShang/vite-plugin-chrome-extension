@@ -1,23 +1,23 @@
 import fs from "fs-extra";
 import chalk from "chalk";
 import memoize from "mem";
-import { dirname, relative } from "path";
+import { dirname, relative, basename } from "path";
 import { cosmiconfigSync } from "cosmiconfig";
 import { EmittedAsset, InputOption, InputOptions, OutputBundle, PluginContext } from "rollup";
-import { ChromeExtensionManifest } from "../manifest";
+import { ChromeExtensionManifest, Background } from "../manifest";
 import { deriveFiles } from "../manifest-input/manifest-parser";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
 import { ManifestInputPluginCache, NormalizedChromeExtensionOptions } from "../plugin-options";
-import { basename } from "path";
 import { cloneObject } from "../utils/cloneObject";
 import { manifestName } from "../manifest-input/common/constants";
-import { ContentScriptProcessor } from "./content-script";
-import { PermissionProcessor, PermissionProcessorOptions } from "./permission";
 import { getAssets, getChunk } from "../utils/bundle";
 import {
     validateManifest,
     ValidationErrorsArray,
 } from "../manifest-input/manifest-parser/validate";
+import { ContentScriptProcessor } from "./content-script";
+import { PermissionProcessor, PermissionProcessorOptions } from "./permission";
+import { BackgroundProcesser } from "./background";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -48,10 +48,12 @@ export class ManifestProcessor {
     public manifest?: ChromeExtensionManifest;
     public contentScriptProcessor: ContentScriptProcessor;
     public permissionProcessor: PermissionProcessor;
+    public backgroundProcessor: BackgroundProcesser;
 
     public constructor(private options = {} as NormalizedChromeExtensionOptions) {
         this.contentScriptProcessor = new ContentScriptProcessor(options);
         this.permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
+        this.backgroundProcessor = new BackgroundProcesser();
     }
 
     /**
@@ -142,8 +144,18 @@ export class ManifestProcessor {
         /* ----------------- GET CHUNKS -----------------*/
         const chunks = getChunk(bundle);
         const assets = getAssets(bundle);
+        /* ----------------- UPDATE PERMISSIONS ----------------- */
         this.manifest.permissions = this.permissionProcessor.derivePermissions(context, chunks);
+        /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
         this.manifest.content_scripts = this.contentScriptProcessor.generateBundle(context, bundle, this.manifest.content_scripts || []);
+        /* ----------------- SETUP BACKGROUND SCRIPTS ----------------- */
+        this.manifest.background = this.backgroundProcessor.generateBundle(bundle, this.manifest.background);
+        /* ----------------- SETUP ASSETS IN WEB ACCESSIBLE RESOURCES ----------------- */
+
+        /* ----------------- STABLE EXTENSION ID ----------------- */
+        /* ----------------- OUTPUT MANIFEST.JSON ----------------- */
+        /* ----------- OUTPUT MANIFEST.JSON ---------- */
+        this.generateManifest(context, this.manifest);
         // validate manifest
         this.validateManifest();
     }
@@ -229,4 +241,19 @@ export class ManifestProcessor {
             cache: this.cache.readFile,
         },
     );
+
+    private generateManifest(
+        context: PluginContext,
+        manifest: ChromeExtensionManifest,
+    ) {
+        const manifestJson = JSON.stringify(manifest, null, 4)
+            // SMELL: is this necessary?
+            .replace(/\.[jt]sx?"/g, '.js"');
+        // Emit manifest.json
+        context.emitFile({
+            type: "asset",
+            fileName: manifestName,
+            source: manifestJson,
+        });
+    }
 }

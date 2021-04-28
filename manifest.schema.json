@@ -33,17 +33,7 @@
             "description": "Use the chrome.action API to control the extension's icon in the Google Chrome toolbar."
         },
         "background": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "service_worker": {
-                    "type": "string",
-                    "default": "background.js",
-                    "description": "Specify the service worker of the background page."
-                }
-            },
-            "required": ["service_worker"],
-            "description": "The background page is an HTML page that runs in the extension process. It exists for the lifetime of your extension, and only one instance of it at a time is active."
+            "$ref": "#/definitions/background"
         },
         "chrome_settings_overrides": {
             "$ref": "#/definitions/chrome_settings_overrides"
@@ -593,6 +583,19 @@
         "version_string": {
             "pattern": "^(?:\\d{1,5}\\.){0,3}\\d{1,5}$",
             "type": "string"
+        },
+        "background": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "service_worker": {
+                    "type": "string",
+                    "default": "background.js",
+                    "description": "Specify the service worker of the background page."
+                }
+            },
+            "required": ["service_worker"],
+            "description": "The background page is an HTML page that runs in the extension process. It exists for the lifetime of your extension, and only one instance of it at a time is active."
         },
         "content_script": {
             "type": "object",

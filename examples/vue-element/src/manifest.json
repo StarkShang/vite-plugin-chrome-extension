@@ -1,5 +1,5 @@
 {
-    "name": "vue in Content Scripts",
+    "name": "vue element",
     "version": "1.0",
     "manifest_version": 3,
     "action": {
@@ -21,7 +21,8 @@
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
-            "js": ["content-scripts/main.ts"]
+            "js": ["content-scripts/main.ts"],
+            "css": ["content-scripts/main.css"]
         }
     ]
 }

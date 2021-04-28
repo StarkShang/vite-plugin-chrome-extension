@@ -1,9 +1,9 @@
-import { resolve } from "path";
-import { OutputBundle, PluginContext, RenderedModule } from "rollup";
+import { OutputBundle, PluginContext } from "rollup";
+import slash from "slash";
+import { removeFileExtension } from "../common/utils";
 import { ContentScript } from "../manifest";
 import { NormalizedChromeExtensionOptions } from "../plugin-options";
-import { getAssets, getChunk } from "../utils/bundle";
-import { findChunk } from "../utils/helpers";
+import { findAssetByName, findChunkByName } from "../utils/helpers";
 
 export class ContentScriptProcessor {
     constructor(private options: NormalizedChromeExtensionOptions) {}
@@ -12,21 +12,20 @@ export class ContentScriptProcessor {
         bundle: OutputBundle,
         content_scripts: ContentScript[]
     ): ContentScript[] {
-        const chunks = getChunk(bundle);
-        const assets = getAssets(bundle);
-        console.log(Object.keys(chunks).reduce((result, key) => {
-            result[key] = {...chunks[key], code: ""}; return result; }, {} as any));
-        console.log(Object.keys(assets).reduce((result, key) => {
-            result[key] = {...assets[key], source: ""}; return result; }, {} as any));
-        content_scripts.map(scripts => {
-            scripts.js?.forEach(script => {
-                const chunk = findChunk(resolve(this.options.srcDir!, script), chunks);
-                const chunkModules = ({...chunk, code: ""}).modules as { [id: string]: RenderedModule };
-                Object.keys(chunkModules).forEach(key => {
-                    console.log({...chunkModules[key], code: "" });
-                });
-            })
-        })
-        return [];
+        return content_scripts.map(({js, css, ...rest}) => typeof js === "undefined"
+            ? { css, ...rest }
+            : {
+                js: js
+                    .map(name => findChunkByName(removeFileExtension(name), bundle)?.fileName as string)
+                    .filter(filename => !!filename)
+                    .map(p => slash(p)),
+                css: [
+                    ...js.map(name => findAssetByName(`${removeFileExtension(name)}.css`, bundle)?.fileName as string)
+                        .filter(filename => !!filename)
+                        .map(p => slash(p)),
+                    ...(css || [])
+                ],
+                ...rest,
+            });
     }
 }
