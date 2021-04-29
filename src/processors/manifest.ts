@@ -149,7 +149,7 @@ export class ManifestProcessor {
         /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
         await this.contentScriptProcessor.generateBundle(context, bundle, this.manifest);
         /* ----------------- SETUP BACKGROUND SCRIPTS ----------------- */
-        this.manifest.background = this.backgroundProcessor.generateBundle(bundle, this.manifest.background);
+        this.backgroundProcessor.generateBundle(bundle, this.manifest);
         /* ----------------- SETUP ASSETS IN WEB ACCESSIBLE RESOURCES ----------------- */
 
         /* ----------------- STABLE EXTENSION ID ----------------- */
