@@ -1,5 +1,6 @@
 import { OutputChunk, PluginContext } from "rollup";
 import { OutputChunkBundle } from "../common/models";
+import { ChromeExtensionManifest } from "../manifest";
 import * as permissions from "../manifest-input/manifest-parser/permissions";
 
 /* ============================================ */
@@ -30,8 +31,9 @@ export class PermissionProcessor {
 
     public derivePermissions(
         context: PluginContext,
-        chunks: OutputChunkBundle
-    ): string[] {
+        chunks: OutputChunkBundle,
+        manifest: ChromeExtensionManifest,
+    ): void {
         let permissions: string[];
         if (this.cache.assetChanged && this.cache.permsHash) {
             // Permissions did not change
@@ -55,6 +57,13 @@ export class PermissionProcessor {
             }
             this.cache.permsHash = permsHash;
         }
-        return permissions;
+        // update permissions in manifest.json
+        if (permissions.length > 0) {
+            if (manifest.permissions) {
+                manifest.permissions.push(...permissions);
+            } else {
+                manifest.permissions = permissions;
+            }
+        }
     }
 }

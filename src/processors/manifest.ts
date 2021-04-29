@@ -145,7 +145,7 @@ export class ManifestProcessor {
         const chunks = getChunk(bundle);
         const assets = getAssets(bundle);
         /* ----------------- UPDATE PERMISSIONS ----------------- */
-        this.manifest.permissions = this.permissionProcessor.derivePermissions(context, chunks);
+        this.permissionProcessor.derivePermissions(context, chunks, this.manifest);
         /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
         await this.contentScriptProcessor.generateBundle(context, bundle, this.manifest);
         /* ----------------- SETUP BACKGROUND SCRIPTS ----------------- */
