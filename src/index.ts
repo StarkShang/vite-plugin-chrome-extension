@@ -89,8 +89,7 @@ export const chromeExtension = (
         },
         async generateBundle(options, bundle, isWrite) {
             await manifestProcessor.generateBundle(this, bundle);
-            // await manifest2.generateBundle.call(this, options, bundle, isWrite);
-            // await html2.generateBundle.call(this, options, bundle, isWrite);
+            await htmlProcessor.generateBundle(this, bundle);
             // await validate.generateBundle.call(this, options, bundle, isWrite);
         },
     };

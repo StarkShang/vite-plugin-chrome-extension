@@ -1,11 +1,11 @@
-import { relative } from "path";
-import { InputOption, PluginContext } from "rollup";
+import { dirname, relative, resolve } from "path";
+import { InputOption, OutputBundle, OutputChunk, PluginContext } from "rollup";
 import flatten from "lodash.flatten";
 import { readFile } from "fs-extra";
 import { flattenRollupInput } from "../common/utils/rollup";
-import { getCssHrefs, getImgSrcs, getJsAssets, getScriptSrc, loadHtml } from "../html-inputs/cheerio";
+import { CheerioFile, formatHtml, getCssHrefs, getImgSrcs, getJsAssets, getScriptElems, getScriptSrc, loadHtml } from "../html-inputs/cheerio";
 import { HtmlInputsPluginCache, NormalizedChromeExtensionOptions } from "../plugin-options";
-import { not } from "../utils/helpers";
+import { getOutputFilenameFromChunk, isChunk, not } from "../utils/helpers";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
 
 const isHtml = (path: string) => /\.html?$/.test(path);
@@ -81,6 +81,22 @@ export class HtmlProcessor {
         });
     }
 
+    public generateBundle(context: PluginContext, bundle: OutputBundle) {
+        if (!this.options.srcDir) { throw new TypeError("[html] options.srcDir not initialized"); }
+        const chunks = Object.values(bundle).filter(isChunk);
+
+        this.cache.html$.map($ => this.replaceImportScriptPath($, chunks, this.options.srcDir!, this.options.browserPolyfill))
+            .map($ => {
+                const source = formatHtml($);
+                const fileName = relative(this.options.srcDir!, $.filePath);
+                context.emitFile({
+                    type: "asset",
+                    source,
+                    fileName,
+            });
+        });
+    }
+
     /**
      * Output asset files in html
      * css, img, script(not local import)
@@ -109,5 +125,39 @@ export class HtmlProcessor {
             // Dump cache if html file or manifest changes
             this.cache.html$ = [];
         }
+    }
+
+    private replaceImportScriptPath(
+        $: CheerioFile,
+        chunks: OutputChunk[],
+        srcDir: string,
+        browserPolyfill?: boolean | { executeScript: boolean },
+    ) {
+        getScriptElems($)
+            .attr("type", "module")
+            .attr("src", (i, value) => {
+                const basePath = dirname($.filePath);
+                const chunkName = getOutputFilenameFromChunk(resolve(basePath, value as unknown as string), chunks);
+                return relative(basePath, resolve(srcDir, chunkName));
+            });
+
+        if (browserPolyfill) {
+            const head = $("head");
+            if (
+                browserPolyfill === true ||
+                (typeof browserPolyfill === "object" &&
+                    browserPolyfill.executeScript)
+            ) {
+                head.prepend(
+                    '<script src="/assets/browser-polyfill-executeScript.js"></script>',
+                );
+            }
+
+            head.prepend(
+                '<script src="/assets/browser-polyfill.js"></script>',
+            );
+        }
+
+        return $;
     }
 }
