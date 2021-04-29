@@ -1,10 +1,11 @@
 import slash from "slash";
-import { OutputBundle, OutputChunk, PluginContext, rollup } from "rollup";
+import { OutputAsset, OutputBundle, OutputChunk, PluginContext, rollup } from "rollup";
 import { removeFileExtension } from "../../common/utils";
 import { ContentScript } from "../../manifest";
 import { NormalizedChromeExtensionOptions } from "../../plugin-options";
 import { findAssetByName, findChunkByName } from "../../utils/helpers";
 import { contentScriptPlugin } from "./plugin";
+import { updateCss } from "../../common/utils/css";
 
 export class ContentScriptProcessor {
     constructor(private options: NormalizedChromeExtensionOptions) {}
@@ -17,10 +18,10 @@ export class ContentScriptProcessor {
             const {js, css, ...rest} = content_script
             if (typeof js === "undefined") { continue; }
             // process related css
-            js.map(name => findAssetByName(`${removeFileExtension(name)}.css`, bundle)?.fileName as string)
-                .filter(name => !!name)
-                .map(name => slash(name))
-                .forEach(name => css?.push(name));
+            js.map(name => findAssetByName(`${removeFileExtension(name)}.css`, bundle) as OutputAsset)
+                .filter(asset => !!asset)
+                .map(updateCss)
+                .forEach(asset => css?.push(slash(asset.fileName)));
             // mixin related js
             content_script.js = [];
             for (const jsName of js) {

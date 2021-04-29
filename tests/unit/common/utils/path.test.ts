@@ -24,7 +24,7 @@ describe("common/utils/path", () => {
         }].forEach(usecase => {
             it("remove extension", () => {
                 const result = removeFileExtension(usecase.in);
-                assert.include(result, usecase.out);
+                assert.equal(result, usecase.out);
             })
         });
     });
