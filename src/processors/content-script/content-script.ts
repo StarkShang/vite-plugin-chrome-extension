@@ -1,7 +1,7 @@
 import slash from "slash";
 import { OutputAsset, OutputBundle, OutputChunk, PluginContext, rollup } from "rollup";
 import { removeFileExtension } from "../../common/utils";
-import { ContentScript } from "../../manifest";
+import { ChromeExtensionManifest, ContentScript, WebAccessibleResource } from "../../manifest";
 import { NormalizedChromeExtensionOptions } from "../../plugin-options";
 import { findAssetByName, findChunkByName } from "../../utils/helpers";
 import { contentScriptPlugin } from "./plugin";
@@ -12,15 +12,30 @@ export class ContentScriptProcessor {
     public async generateBundle(
         context: PluginContext,
         bundle: OutputBundle,
-        content_scripts: ContentScript[]
-    ): Promise<ContentScript[]> {
-        for (const content_script of content_scripts) {
+        manifest: ChromeExtensionManifest
+    ): Promise<void> {
+        for (const content_script of manifest.content_scripts || []) {
             const {js, css, ...rest} = content_script
             if (typeof js === "undefined") { continue; }
             // process related css
             js.map(name => findAssetByName(`${removeFileExtension(name)}.css`, bundle) as OutputAsset)
                 .filter(asset => !!asset)
-                .map(updateCss)
+                .map(asset => {
+                    const { asset: ast, resources } = updateCss(asset);
+                    // add resource to web_accessible_resources
+                    if (resources) {
+                        const web_accessible_resources: WebAccessibleResource = {
+                            resources,
+                            matches: rest.matches
+                        }
+                        if (!manifest.web_accessible_resources) {
+                            manifest.web_accessible_resources = [web_accessible_resources];
+                        } else {
+                            manifest.web_accessible_resources.push(web_accessible_resources);
+                        }
+                    }
+                    return ast;
+                })
                 .forEach(asset => css?.push(slash(asset.fileName)));
             // mixin related js
             content_script.js = [];
@@ -31,7 +46,6 @@ export class ContentScriptProcessor {
                 }
             }
         }
-        return content_scripts;
     }
 
     private async mixJsChunks(

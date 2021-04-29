@@ -147,7 +147,7 @@ export class ManifestProcessor {
         /* ----------------- UPDATE PERMISSIONS ----------------- */
         this.manifest.permissions = this.permissionProcessor.derivePermissions(context, chunks);
         /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
-        this.manifest.content_scripts = await this.contentScriptProcessor.generateBundle(context, bundle, this.manifest.content_scripts || []);
+        await this.contentScriptProcessor.generateBundle(context, bundle, this.manifest);
         /* ----------------- SETUP BACKGROUND SCRIPTS ----------------- */
         this.manifest.background = this.backgroundProcessor.generateBundle(bundle, this.manifest.background);
         /* ----------------- SETUP ASSETS IN WEB ACCESSIBLE RESOURCES ----------------- */
