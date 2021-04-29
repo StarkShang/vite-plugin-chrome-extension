@@ -1,7 +1,7 @@
 {
     "title": "Chrome Extension Manifest",
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "additionalProperties": true,
+    "additionalProperties": false,
     "type": "object",
     "properties": {
         "action": {
@@ -33,17 +33,7 @@
             "description": "Use the chrome.action API to control the extension's icon in the Google Chrome toolbar."
         },
         "background": {
-            "type": "object",
-            "additionalProperties": false,
-            "properties": {
-                "service_worker": {
-                    "type": "string",
-                    "default": "background.js",
-                    "description": "Specify the service worker of the background page."
-                }
-            },
-            "required": ["service_worker"],
-            "description": "The background page is an HTML page that runs in the extension process. It exists for the lifetime of your extension, and only one instance of it at a time is active."
+            "$ref": "#/definitions/background"
         },
         "chrome_settings_overrides": {
             "$ref": "#/definitions/chrome_settings_overrides"
@@ -376,6 +366,12 @@
             "$ref": "#/definitions/permissions",
             "description": "Permissions help to limit damage if your extension or app is compromised by malware. Some permissions are also displayed to users before installation, as detailed in Permission Warnings."
         },
+        "host_permissions": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
         "platforms": {},
         "requirements": {
             "type": "object",
@@ -525,7 +521,7 @@
             "minItems": 1,
             "uniqueItems": true,
             "items": {
-                "$ref": "#/definitions/web_accessible_resources"
+                "$ref": "#/definitions/web_accessible_resource"
             },
             "description": "An array of strings specifying the paths (relative to the package root) of packaged resources that are expected to be usable in the context of a web page."
         }
@@ -594,6 +590,19 @@
             "pattern": "^(?:\\d{1,5}\\.){0,3}\\d{1,5}$",
             "type": "string"
         },
+        "background": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "service_worker": {
+                    "type": "string",
+                    "default": "background.js",
+                    "description": "Specify the service worker of the background page."
+                }
+            },
+            "required": ["service_worker"],
+            "description": "The background page is an HTML page that runs in the extension process. It exists for the lifetime of your extension, and only one instance of it at a time is active."
+        },
         "content_script": {
             "type": "object",
             "additionalProperties": false,
@@ -633,7 +642,7 @@
                 "matches"
             ]
         },
-        "web_accessible_resources": {
+        "web_accessible_resource": {
             "type": "object",
             "additionalProperties": false,
             "properties": {

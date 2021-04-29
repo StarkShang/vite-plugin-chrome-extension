@@ -8,24 +8,24 @@ export const indexHtml = getExtPath("kitchen-sink/index.html");
 export const icon16 = getExtPath("kitchen-sink/images/icon-main-16.png");
 export const icon48 = getExtPath("kitchen-sink/images/icon-main-48.png");
 export const icon128 = getExtPath(
-  "kitchen-sink/images/icon-main-128.png",
+    "kitchen-sink/images/icon-main-128.png",
 );
 export const faviconIco = getExtPath(
-  "kitchen-sink/images/favicon.ico",
+    "kitchen-sink/images/favicon.ico",
 );
 export const faviconPng = getExtPath(
-  "kitchen-sink/images/favicon.png",
+    "kitchen-sink/images/favicon.png",
 );
 
 // Fonts
 export const notoSansBlack = getExtPath(
-  "kitchen-sink/fonts/NotoSans-Black.ttf",
+    "kitchen-sink/fonts/NotoSans-Black.ttf",
 );
 export const missaaliOtf = getExtPath(
-  "kitchen-sink/fonts/Missaali-Regular.otf",
+    "kitchen-sink/fonts/Missaali-Regular.otf",
 );
 export const notoSansLight = getExtPath(
-  "kitchen-sink/fonts/NotoSans-Light.ttf",
+    "kitchen-sink/fonts/NotoSans-Light.ttf",
 );
 
 // Options assets

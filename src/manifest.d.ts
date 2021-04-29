@@ -26,15 +26,7 @@ export interface ChromeExtensionManifest {
     default_title?: string;
     default_popup?: string;
   };
-  /**
-   * The background page is an HTML page that runs in the extension process. It exists for the lifetime of your extension, and only one instance of it at a time is active.
-   */
-  background?: {
-    /**
-     * Specify the service worker of the background page.
-     */
-    service_worker: string;
-  };
+  background?: Background;
   chrome_settings_overrides?: ChromeSettingsOverrides;
   /**
    * Override pages are a way to substitute an HTML file from your extension for a page that Google Chrome normally provides.
@@ -256,6 +248,7 @@ export interface ChromeExtensionManifest {
    * Permissions help to limit damage if your extension or app is compromised by malware. Some permissions are also displayed to users before installation, as detailed in Permission Warnings.
    */
   permissions?: string[];
+  host_permissions?: string[];
   platforms?: unknown;
   /**
    * Technologies required by the app or extension. Hosting sites such as the Chrome Web Store may use this list to dissuade users from installing apps or extensions that will not work on their computer.
@@ -355,8 +348,16 @@ export interface ChromeExtensionManifest {
   /**
    * An array of strings specifying the paths (relative to the package root) of packaged resources that are expected to be usable in the context of a web page.
    */
-  web_accessible_resources?: [WebAccessibleResources, ...WebAccessibleResources[]];
-  [k: string]: unknown;
+  web_accessible_resources?: [WebAccessibleResource, ...WebAccessibleResource[]];
+}
+/**
+ * The background page is an HTML page that runs in the extension process. It exists for the lifetime of your extension, and only one instance of it at a time is active.
+ */
+export interface Background {
+  /**
+   * Specify the service worker of the background page.
+   */
+  service_worker: string;
 }
 export interface ChromeSettingsOverrides {
   homepage?: Icon;
@@ -418,7 +419,7 @@ export interface ContentScript {
    */
   match_about_blank?: boolean;
 }
-export interface WebAccessibleResources {
+export interface WebAccessibleResource {
   resources: string[];
   matches?: string[];
   extension_ids?: string[];

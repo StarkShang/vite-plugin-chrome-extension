@@ -15,8 +15,9 @@
     ],
     "typescript.tsdk": "node_modules/typescript/lib",
     "cSpell.words": [
-        "omnibox",
         "iife",
+        "omnibox",
+        "tsconfigs",
         "vite"
     ]
 }

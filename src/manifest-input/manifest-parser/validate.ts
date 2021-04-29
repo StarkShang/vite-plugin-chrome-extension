@@ -1,19 +1,19 @@
 import Ajv from "ajv";
-import { ChromeExtensionManifest } from "../../manifest.v2";
+import { ChromeExtensionManifest } from "../../manifest";
 import jsonSchema from "./json-schema-draft-04.json";
 import manifestSchema from "./schema-web-ext-manifest-v3.json";
 
 export type ValidationErrorsArray =
-  | Ajv.ErrorObject[]
-  | null
-  | undefined
+    | Ajv.ErrorObject[]
+    | null
+    | undefined
 export class ValidationError extends Error {
-  constructor(msg: string, errors: ValidationErrorsArray) {
-    super(msg);
-    this.name = "ValidationError";
-    this.errors = errors;
-  }
-  errors: ValidationErrorsArray
+    constructor(msg: string, errors: ValidationErrorsArray) {
+        super(msg);
+        this.name = "ValidationError";
+        this.errors = errors;
+    }
+    errors: ValidationErrorsArray
 }
 
 // const jsonSchema = readJSONSync(
@@ -25,12 +25,12 @@ export class ValidationError extends Error {
 // )
 
 export const ajv = new Ajv({
-  verbose: true,
-  schemaId: "auto",
-  schemas: {
-    "http://json-schema.org/draft-04/schema#": jsonSchema,
-  },
-  strictDefaults: true,
+    verbose: true,
+    schemaId: "auto",
+    schemas: {
+        "http://json-schema.org/draft-04/schema#": jsonSchema,
+    },
+    strictDefaults: true,
 });
 
 // ajv.addMetaSchema(jsonSchema)
@@ -38,14 +38,11 @@ export const ajv = new Ajv({
 const validator = ajv.compile(manifestSchema);
 
 export const validateManifest = (
-  manifest: ChromeExtensionManifest,
+    manifest: ChromeExtensionManifest,
 ) => {
-  if (validator(manifest)) {
-    return manifest;
-  }
-
-  const { errors } = validator;
-  const msg = "There were problems with the extension manifest.";
-
-  throw new ValidationError(msg, errors);
+    if (validator(manifest)) { return manifest; }
+    const { errors } = validator;
+    const msg = "There were problems with the extension manifest.";
+    console.error(errors)
+    throw new ValidationError(msg, errors);
 };

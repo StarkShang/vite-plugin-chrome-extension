@@ -1,11 +1,17 @@
 {
-    // Root project config
     "extends": "./tsconfigs/tsconfig-base.json",
+    "compilerOptions": {
+        "paths": {
+            "@root/*": ["./*"],
+            "@/*": ["src/*"]
+        }
+    },
     "include": [
         "src/**/*",
         "__fixtures__/**/*",
         "__tests__/**/*",
-        "jest.setup.ts"
+        "jest.setup.ts",
+        "tests/**/*"
     ],
     "exclude": [
         "src/manifest-input/browser"

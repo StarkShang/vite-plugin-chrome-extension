@@ -1,7 +1,5 @@
 import { cosmiconfigSync } from "cosmiconfig";
-import fs from "fs-extra";
 import { JSONPath } from "jsonpath-plus";
-import memoize from "mem";
 import path from "path";
 import { EmittedAsset } from "rollup";
 import {
@@ -9,7 +7,7 @@ import {
     getOutputFilenameFromChunk,
     isJsonFilePath,
 } from "../utils/helpers";
-import { ChromeExtensionManifest } from "../manifest.v2";
+import { ChromeExtensionManifest } from "../manifest";
 import {
     ManifestInputPlugin,
     ManifestInputPluginCache,
@@ -21,7 +19,6 @@ import { generateManifest } from "./generateBundle";
 import { combinePerms } from "./manifest-parser/combine";
 import {
     deriveFiles,
-    derivePermissions,
 } from "./manifest-parser/index";
 import {
     validateManifest,
@@ -29,7 +26,7 @@ import {
 } from "./manifest-parser/validate";
 import { reduceToRecord } from "./reduceToRecord";
 import { join } from "path";
-import { getChunk } from "../utils/bundle";
+import { getAssets, getChunk } from "../utils/bundle";
 import slash from "slash";
 
 export const explorer = cosmiconfigSync("manifest", {
@@ -68,7 +65,6 @@ export function manifestInput(
         iifeJsonPaths = [],
         pkg = npmPkgDetails,
         publicKey,
-        verbose = true,
         cache = {
             assetChanged: false,
             assets: [],
@@ -82,14 +78,6 @@ export function manifestInput(
         } as ManifestInputPluginCache,
     } = {} as ManifestInputPluginOptions,
 ): ManifestInputPlugin {
-    const readAssetAsBuffer = memoize(
-        (filepath: string) => {
-            return fs.readFile(filepath);
-        },
-        {
-            cache: cache.readFile,
-        },
-    );
 
     /* ----------- HOOKS CLOSURES START ----------- */
     let manifestPath: string;
@@ -142,6 +130,7 @@ export function manifestInput(
                     );
                 }
 
+                // Load content of manifest.json
                 const configResult = explorer.load(
                     inputManifestPath,
                 ) as {
@@ -149,7 +138,6 @@ export function manifestInput(
                     config: ChromeExtensionManifest,
                     isEmpty?: true,
                 };
-
                 if (configResult.isEmpty) {
                     throw new Error(`${options.input} is an empty file.`);
                 }
@@ -216,71 +204,13 @@ export function manifestInput(
         },
 
         /* ============================================ */
-        /*              HANDLE WATCH FILES              */
-        /* ============================================ */
-
-        async buildStart() {
-            // Add watch files
-            this.addWatchFile(manifestPath);    // watch manifest.json file
-            cache.assets.forEach((srcPath) => { this.addWatchFile(srcPath); });  // watch asset files
-            // Copy asset files
-            const assets: EmittedAsset[] = await Promise.all(
-                cache.assets.map(async (srcPath) => {
-                    const source = await readAssetAsBuffer(srcPath);
-                    return {
-                        type: "asset" as const,
-                        source,
-                        fileName: path.relative(cache.srcDir!, srcPath),
-                    };
-                }),
-            );
-            assets.forEach((asset) => {
-                this.emitFile(asset);
-            });
-        },
-
-        watchChange(id) {
-            if (id.endsWith(manifestName)) {
-                // Dump cache.manifest if manifest changes
-                delete cache.manifest;
-                cache.assetChanged = false;
-            } else {
-                // Force new read of changed asset
-                cache.assetChanged = cache.readFile.delete(id);
-            }
-        },
-
-        /* ============================================ */
         /*                GENERATEBUNDLE                */
         /* ============================================ */
 
         generateBundle(options, bundle) {
             /* ----------------- GET CHUNKS -----------------*/
             const chunks = getChunk(bundle);
-            /* ---------- DERIVE PERMISSIONS START --------- */
-            // Get module ids for all chunks
-            let permissions: string[];
-            if (cache.assetChanged && cache.permsHash) {
-                // Permissions did not change
-                permissions = JSON.parse(cache.permsHash) as string[];
-                cache.assetChanged = false;
-            } else {
-                // Permissions may have changed
-                permissions = Array.from(Object.values(chunks).reduce(derivePermissions, new Set<string>()));
-                const permsHash = JSON.stringify(permissions);
-                if (verbose && permissions.length) {
-                    if (!cache.permsHash) {
-                        this.warn(
-                            `Detected permissions: ${permissions.toString()}`,
-                        );
-                    } else if (permsHash !== cache.permsHash) {
-                        this.warn(
-                            `Detected new permissions: ${permissions.toString()}`,
-                        );
-                    }
-                }
-                cache.permsHash = permsHash;
-            }
+            const assets = getAssets(bundle);
 
             if (Object.keys(bundle).length === 0) {
                 throw new Error(
@@ -297,9 +227,6 @@ export function manifestInput(
                 const clonedManifest = cloneObject(cache.manifest);
 
                 const manifestBody: ChromeExtensionManifest = validateManifest({
-                    manifest_version: 3,
-                    name: pkg.name,
-                    version: pkg.version,
                     description: pkg.description,
                     ...clonedManifest,
                     permissions: combinePerms(
@@ -338,6 +265,12 @@ export function manifestInput(
                         manifestBody.background.service_worker = chunk.fileName;
                     }
                 }
+                /* ------------ SETUP ASSETS IN WEB ACCESSIBLE RESOURCES ----------- */
+                manifestBody.web_accessible_resources = [
+                    ...war, {
+                    resources: Object.keys(assets),
+                    matches: ["<all_urls>"]
+                }];
                 /* --------- STABLE EXTENSION ID -------- */
                 if (publicKey) manifestBody.key = publicKey;
                 /* ----------- OUTPUT MANIFEST.JSON ---------- */

@@ -4,6 +4,7 @@
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
         "jsx": "react",
+        "baseUrl": "..",
         "lib": [
             "es2017",
             "dom",
@@ -13,12 +14,15 @@
         "moduleResolution": "node",
         "noEmit": true,
         "noImplicitReturns": true,
-        "noUnusedLocals": true,
+        "noUnusedLocals": false,
         "skipLibCheck": true,
         "sourceMap": true,
         "strict": true,
         "target": "es2017",
         "rootDir": "..",
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "paths": {
+            "@/*": ["src/*"]
+        }
     }
 }

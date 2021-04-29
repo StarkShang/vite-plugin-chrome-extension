@@ -2,7 +2,7 @@ import { PluginHooks, ModuleFormat } from "rollup";
 import { Plugin } from "vite";
 import { ValidateNamesPlugin } from "./validate-names/index";
 import { DynamicImportWrapperOptions } from "./manifest-input/dynamicImportWrapper";
-import { ChromeExtensionManifest } from "./manifest.v2";
+import { ChromeExtensionManifest } from "./manifest";
 import { CheerioFile } from "./html-inputs/cheerio";
 
 /* -------------- MAIN PLUGIN OPTIONS -------------- */
@@ -33,9 +33,22 @@ export interface ChromeExtensionOptions {
     verbose?: boolean
 }
 
+export interface NormalizedChromeExtensionOptions extends ChromeExtensionOptions {
+    srcDir?: string;
+    manifestPath?: string;
+}
+
 export type ChromeExtensionPlugin = Pick<
     Required<Plugin>,
-    "name" | "configResolved" | "resolveId" | "load" | ManifestInputPluginHooks | HtmlInputsPluginHooks
+    | "name"
+    | "configResolved"
+    | "buildStart"
+    | "resolveId"
+    | "load"
+    | "watchChange"
+    | "outputOptions"
+    | ManifestInputPluginHooks
+    | HtmlInputsPluginHooks
 > & {
     // For testing
     _plugins: {
@@ -68,8 +81,6 @@ export interface ManifestInputPluginCache {
 
 type ManifestInputPluginHooks =
     | "options"
-    | "buildStart"
-    | "watchChange"
     | "generateBundle"
 
 export type ManifestInputPlugin = Pick<
@@ -114,9 +125,6 @@ export interface HtmlInputsPluginCache {
 
 type HtmlInputsPluginHooks =
     | "name"
-    | "options"
-    | "buildStart"
-    | "watchChange"
     | "generateBundle"
 
 export type HtmlInputsPlugin = Pick<

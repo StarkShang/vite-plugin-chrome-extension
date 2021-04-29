@@ -42,6 +42,12 @@ export function getOutputFilenameFromChunk(sourceFileName: string, chunks: Outpu
     const chunk = chunks.find(c => c.facadeModuleId && slash(c.facadeModuleId) === slash(sourceFileName));
     return slash(chunk?.fileName || "");
 }
+export function findChunkByName(name: string, bundle: OutputBundle): OutputChunk | undefined {
+    return Object.values(bundle).find(b => b.name && slash(b.name) === slash(name) && b.type === "chunk") as OutputChunk | undefined;
+}
+export function findAssetByName(name: string, bundle: OutputBundle): OutputAsset | undefined {
+    return Object.values(bundle).find(b => b.name && slash(b.name) === slash(name) && b.type === "asset") as OutputAsset | undefined;
+}
 export function findChunk(sourceFileName: string, chunks: OutputChunkBundle) {
     return Object.values(chunks).find(c => c.facadeModuleId && slash(c.facadeModuleId) === slash(sourceFileName));
 }
