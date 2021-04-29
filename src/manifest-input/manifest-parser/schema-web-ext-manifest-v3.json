@@ -450,6 +450,12 @@
             "$ref": "#/definitions/permissions",
             "description": "Permissions help to limit damage if your extension or app is compromised by malware. Some permissions are also displayed to users before installation, as detailed in Permission Warnings."
         },
+        "host_permissions": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
         "requirements": {
             "type": "object",
             "description": "Technologies required by the app or extension. Hosting sites such as the Chrome Web Store may use this list to dissuade users from installing apps or extensions that will not work on their computer.",

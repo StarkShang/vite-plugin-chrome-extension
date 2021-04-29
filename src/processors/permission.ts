@@ -58,12 +58,11 @@ export class PermissionProcessor {
             this.cache.permsHash = permsHash;
         }
         // update permissions in manifest.json
-        if (permissions.length > 0) {
-            if (manifest.permissions) {
-                manifest.permissions.push(...permissions);
-            } else {
-                manifest.permissions = permissions;
-            }
+        const updatedPermissions = new Set<string>([...manifest.permissions || [], ...permissions]);
+        if (updatedPermissions.size > 0) {
+            manifest.permissions = Array.from(updatedPermissions);
+        } else {
+            delete manifest["permissions"];
         }
     }
 }

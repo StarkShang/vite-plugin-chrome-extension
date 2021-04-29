@@ -43,5 +43,6 @@ export const validateManifest = (
     if (validator(manifest)) { return manifest; }
     const { errors } = validator;
     const msg = "There were problems with the extension manifest.";
+    console.error(errors)
     throw new ValidationError(msg, errors);
 };
