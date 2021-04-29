@@ -1,6 +1,6 @@
 import { OutputBundle } from "rollup";
 import { removeFileExtension } from "../common/utils";
-import { Background, ChromeExtensionManifest } from "../manifest";
+import { ChromeExtensionManifest } from "../manifest";
 import { findChunkByName } from "../utils/helpers";
 
 export class BackgroundProcesser {

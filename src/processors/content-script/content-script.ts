@@ -36,7 +36,14 @@ export class ContentScriptProcessor {
                     }
                     return ast;
                 })
-                .forEach(asset => css?.push(slash(asset.fileName)));
+                .forEach(asset => {
+                    const cssFileName = slash(asset.fileName)
+                    if (css) {
+                        css.push(cssFileName);
+                    } else {
+                        content_script.css = [cssFileName];
+                    }
+                });
             // mixin related js
             content_script.js = [];
             for (const jsName of js) {
