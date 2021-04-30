@@ -74,6 +74,10 @@ See [Work flow](./docs/workflow.md)
 - [X] [Vue in Full Options Page](examples/vue-full-options-page)
 - [X] [Vue in Embedded Options Page](examples/vue-embedded-options-page)
 
+### Examples with Svelte
+
+- [X] [Svelte](examples/svelte)
+
 ## Feedback
 
 If you have problems using this plugin, welcome to let us know.

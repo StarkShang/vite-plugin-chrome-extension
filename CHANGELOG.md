@@ -1,5 +1,10 @@
 # CHANGELOGS
 
+## 0.0.6
+
+- fix: tracking assets in css (such as font files, images)
+- feat: add svelte example: [Svelte](examples/svelte)
+
 ## 0.0.5
 
 - fix: fix error script paths in options html files

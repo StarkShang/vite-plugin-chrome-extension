@@ -230,7 +230,6 @@ export function manifestInput(
                     description: pkg.description,
                     ...clonedManifest,
                     permissions: combinePerms(
-                        permissions,
                         clonedManifest.permissions || [],
                     ),
                 } as ChromeExtensionManifest);
