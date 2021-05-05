@@ -47,6 +47,8 @@ export type ChromeExtensionPlugin = Pick<
     | "load"
     | "watchChange"
     | "outputOptions"
+    | "transform"
+    | "resolveFileUrl"
     | ManifestInputPluginHooks
     | HtmlInputsPluginHooks
 > & {
@@ -72,7 +74,8 @@ export interface ManifestInputPluginCache {
     inputAry: string[]
     inputObj: Record<string, string>
     permsHash: string
-    srcDir: string | null
+    srcDir: string | null;
+    dynamicImportContentScripts: string[];
     /** for memoized fs.readFile */
     readFile: Map<string, any>
     manifest?: ChromeExtensionManifest

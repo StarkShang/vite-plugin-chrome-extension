@@ -1,11 +1,11 @@
 import { dirname, join } from "path";
 import { OutputBundle, OutputChunk, Plugin } from "rollup";
 
-export function contentScriptPlugin(
+export function mixinPlugin(
     bundle: OutputBundle,
 ): Plugin {
     return {
-        name: "content-script:mixin",
+        name: "mixin",
         resolveId(source, importer) {
             try {
                 if (typeof importer === "undefined") {

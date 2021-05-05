@@ -1,0 +1,17 @@
+{
+    "name": "Advanced Service Worker",
+    "version": "1.0",
+    "manifest_version": 3,
+    "background": {
+        "service_worker": "background.ts"
+    },
+    "content_scripts": [{
+        "js": ["content-scripts/content-script.ts"],
+        "matches": ["<all_urls>"]
+    }],
+    "action": {},
+    "permissions": [
+        "scripting",
+        "activeTab"
+    ]
+}

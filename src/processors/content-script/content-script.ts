@@ -1,18 +1,18 @@
 import slash from "slash";
 import { OutputAsset, OutputBundle, OutputChunk, PluginContext, rollup } from "rollup";
 import { removeFileExtension } from "../../common/utils";
-import { ChromeExtensionManifest, ContentScript, WebAccessibleResource } from "../../manifest";
+import { ChromeExtensionManifest, WebAccessibleResource } from "../../manifest";
 import { NormalizedChromeExtensionOptions } from "../../plugin-options";
 import { findAssetByName, findChunkByName } from "../../utils/helpers";
-import { contentScriptPlugin } from "./plugin";
 import { updateCss } from "../../common/utils/css";
+import { mixinChunksForIIFE } from "../mixin";
 
 export class ContentScriptProcessor {
     constructor(private options: NormalizedChromeExtensionOptions) {}
     public async generateBundle(
         context: PluginContext,
         bundle: OutputBundle,
-        manifest: ChromeExtensionManifest
+        manifest: ChromeExtensionManifest,
     ): Promise<void> {
         for (const content_script of manifest.content_scripts || []) {
             const {js, css, ...rest} = content_script
@@ -49,33 +49,23 @@ export class ContentScriptProcessor {
             for (const jsName of js) {
                 const chunk = findChunkByName(removeFileExtension(jsName), bundle);
                 if (chunk) {
-                    content_script.js.push(slash(await this.mixJsChunks(context, chunk, bundle)));
+                    content_script.js.push(slash(await mixinChunksForIIFE(context, chunk, bundle)));
                 }
             }
         }
     }
 
-    private async mixJsChunks(
+    public async generateBundleFromDynamicImports(
         context: PluginContext,
-        entry: OutputChunk,
-        bundle: OutputBundle
-    ): Promise<string> {
-        const build = await rollup({
-            input: entry.fileName,
-            plugins: [contentScriptPlugin(bundle)]
-        });
-        const outputs = (await build.generate({ format: "iife" })).output;
-        if (outputs.length < 1) {
-            throw new Error("");
-        } else if (outputs.length > 1) {
-            throw new Error("mix content script chunks error: output must contain only one chunk.");
+        bundle: OutputBundle,
+        dynamicImports: string[],
+    ) {
+        for (const dynamicImport of dynamicImports) {
+            const filename = context.getFileName(dynamicImport);
+            const chunk = bundle[filename];
+            if (chunk && chunk.type === "chunk") {
+                await mixinChunksForIIFE(context, chunk, bundle);
+            }
         }
-        const outputChunk = outputs[0];
-        const referenceId = context.emitFile({
-            type: "asset",
-            source: outputChunk.code,
-            fileName: entry.fileName
-        });
-        return context.getFileName(referenceId);
     }
 }

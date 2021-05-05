@@ -3,7 +3,7 @@ import chalk from "chalk";
 import memoize from "mem";
 import { dirname, relative, basename } from "path";
 import { cosmiconfigSync } from "cosmiconfig";
-import { EmittedAsset, InputOption, InputOptions, OutputBundle, PluginContext } from "rollup";
+import { EmittedAsset, InputOption, InputOptions, OutputBundle, PluginContext, TransformPluginContext } from "rollup";
 import { ChromeExtensionManifest, Background } from "../manifest";
 import { deriveFiles } from "../manifest-input/manifest-parser";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
@@ -17,7 +17,7 @@ import {
 } from "../manifest-input/manifest-parser/validate";
 import { ContentScriptProcessor } from "./content-script/content-script";
 import { PermissionProcessor, PermissionProcessorOptions } from "./permission";
-import { BackgroundProcesser } from "./background";
+import { BackgroundProcesser } from "./background/background";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -41,6 +41,7 @@ export class ManifestProcessor {
         input: [],
         inputAry: [],
         inputObj: {},
+        dynamicImportContentScripts: [],
         permsHash: "",
         readFile: new Map<string, any>(),
         srcDir: null,
@@ -53,7 +54,7 @@ export class ManifestProcessor {
     public constructor(private options = {} as NormalizedChromeExtensionOptions) {
         this.contentScriptProcessor = new ContentScriptProcessor(options);
         this.permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
-        this.backgroundProcessor = new BackgroundProcesser();
+        this.backgroundProcessor = new BackgroundProcesser(options);
     }
 
     /**
@@ -86,7 +87,8 @@ export class ManifestProcessor {
         if (!this.manifest || !this.options.srcDir) {
             throw new TypeError("manifest and options.srcDir not initialized");
         }
-        // Derive all resources from manifest
+        // Derive all static resources from manifest
+        // Dynamic entries will emit in transform hook
         const { js, html, css, img, others } = deriveFiles(
             this.manifest,
             this.options.srcDir,
@@ -98,6 +100,16 @@ export class ManifestProcessor {
             reduceToRecord(this.options.srcDir),
             this.cache.inputObj);
         return inputs;
+    }
+
+    public transform(context: TransformPluginContext, code: string, id: string, ssr?: boolean) {
+        const { code:updatedCode, imports } = this.backgroundProcessor.resolveDynamicImports(context, code);
+        this.cache.dynamicImportContentScripts.push(...imports);
+        return updatedCode;
+    }
+
+    public isDynamicImportedContentScript(referenceId: string) {
+        return this.cache.dynamicImportContentScripts.includes(referenceId);
     }
 
     /**
@@ -148,8 +160,9 @@ export class ManifestProcessor {
         this.permissionProcessor.derivePermissions(context, chunks, this.manifest);
         /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
         await this.contentScriptProcessor.generateBundle(context, bundle, this.manifest);
+        await this.contentScriptProcessor.generateBundleFromDynamicImports(context, bundle, this.cache.dynamicImportContentScripts);
         /* ----------------- SETUP BACKGROUND SCRIPTS ----------------- */
-        this.backgroundProcessor.generateBundle(bundle, this.manifest);
+        await this.backgroundProcessor.generateBundle(context, bundle, this.manifest);
         /* ----------------- SETUP ASSETS IN WEB ACCESSIBLE RESOURCES ----------------- */
 
         /* ----------------- STABLE EXTENSION ID ----------------- */

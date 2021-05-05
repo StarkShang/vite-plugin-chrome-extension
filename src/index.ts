@@ -14,6 +14,7 @@ import {
 import { ManifestProcessor } from "./processors/manifest";
 import { ChromeExtensionManifest } from "./manifest";
 import { HtmlProcessor } from "./processors/html";
+import slash from "slash";
 
 export { simpleReloader } from "./plugin-reloader-simple";
 
@@ -75,9 +76,18 @@ export const chromeExtension = (
             }
             return null;
         },
+        transform(code, id, ssr) {
+            return manifestProcessor.transform(this, code, id, ssr);
+        },
         watchChange(id) {
             manifestProcessor.clearCacheById(id);
             htmlProcessor.clearCacheById(id);
+        },
+        resolveFileUrl({ referenceId, fileName }) {
+            if (manifestProcessor.isDynamicImportedContentScript(referenceId)) {
+                return `"${slash(fileName)}"`;
+            }
+            return null;
         },
         outputOptions(options) {
             return {
