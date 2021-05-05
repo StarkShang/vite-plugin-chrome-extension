@@ -18,7 +18,7 @@
     ],
     "scripts": {
         "dev": "rollup -c -w",
-        "build:types": "tsc -p tsconfigs/tsconfig-types.json",
+        "build:types": "tsc -p tsconfigs/tsconfig.types.json",
         "build": "rollup -c",
         "lint:eslint": "eslint . --ext js --ext ts --ext tsx",
         "lint:types": "tsc --noEmit",

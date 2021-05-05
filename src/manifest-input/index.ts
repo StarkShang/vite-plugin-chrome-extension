@@ -75,6 +75,7 @@ export function manifestInput(
             permsHash: "",
             readFile: new Map<string, any>(),
             srcDir: null,
+            dynamicImportContentScripts: []
         } as ManifestInputPluginCache,
     } = {} as ManifestInputPluginOptions,
 ): ManifestInputPlugin {

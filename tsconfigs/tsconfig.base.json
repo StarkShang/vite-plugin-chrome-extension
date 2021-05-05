@@ -22,7 +22,11 @@
         "rootDir": "..",
         "resolveJsonModule": true,
         "paths": {
-            "@/*": ["src/*"]
-        }
+            "@root/*": ["./*"],
+            "@/*": ["src/*"],
+        },
+        "forceConsistentCasingInFileNames": true,
+        "importHelpers": true,
+        "removeComments": true
     }
 }
