@@ -23,8 +23,8 @@ Current solutions is:
 A service worker is a script that runs in the background. It doesn't have access to DOM and not deal with style asset.
 
 - Should be an IIFE script;
-- Dynamically imports using `chrome.scripting.executeScript` should considered, and needn't include in `web_accessible_resources`.⚠ Note: Currently, a maximum of a single file is supported by Chrome Extensions.;
-- Dynamically insert css using `chrome.scripting.insertCSS` should considered, and also needn't include in `web_accessible_resources`;
+- Dynamically imports using `chrome.scripting.executeScript` should considered, and needn't include in `web_accessible_resources`. ⚠ Note: Currently, a maximum of a single file is supported by Chrome Extensions.;
+- Dynamically insert css using `chrome.scripting.insertCSS` should considered, and also needn't include in `web_accessible_resources` ⚠ Note: Currently, a maximum of a single file is supported by Chrome Extensions.;
 
 ## Content Scripts
 

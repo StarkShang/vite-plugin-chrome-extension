@@ -14,9 +14,13 @@ chrome.action.onClicked.addListener((tab) => {
             target: { tabId: tab.id },
             files: [ " content-scripts/utils2.ts " ]
         });
-        // chrome.scripting.insertCSS({
-        //     target: { tabId: tab.id },
-        //     files: ["assets/main.css"]
-        // });
+        chrome.scripting.insertCSS({
+            target: { tabId: tab.id },
+            files: ["assets/main.css"]
+        });
+        chrome.scripting.insertCSS({
+            target: { tabId: tab.id },
+            files: ["assets/index.css"]
+        });
     }
 });

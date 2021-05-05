@@ -1,6 +1,6 @@
 import { OutputBundle, PluginContext, TransformPluginContext } from "rollup";
 import { resolve, parse, join } from "path";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import slash from "slash";
 import { ChromeExtensionManifest } from "../../manifest";
 import { removeFileExtension } from "../../common/utils";
@@ -8,7 +8,8 @@ import { findChunkByName } from "../../utils/helpers";
 import { mixinChunksForIIFE } from "../mixin";
 import { NormalizedChromeExtensionOptions } from "@root/src/plugin-options";
 
-const dynamicImportsRex = /(?<=chrome.scripting.executeScript\()[\s\S]*?(?=\))/gm;
+const dynamicImportAssetRex = /(?<=chrome.scripting.insertCSS\()[\s\S]*?(?=\))/gm;
+const dynamicImportScriptRex = /(?<=chrome.scripting.executeScript\()[\s\S]*?(?=\))/gm;
 
 export interface BackgroundDynamicImport {
     code: string;
@@ -22,10 +23,26 @@ export class BackgroundProcesser {
         if (!this.options.srcDir) {
             throw new TypeError("BackgroundProcesser: options.srcDir is not initialized");
         }
+        /* ----------------- PROCESS DYNAMICALLY IMPORTED ASSETS -----------------*/
+        code.match(dynamicImportAssetRex)
+            ?.map(m => m.match(/(?<=(files:\[)?\")[\s\S]*?(?=\]?\")/gm))
+            .reduce((f, m) => f.concat(...(m || [])) || [], [] as string[])
+            .map(m => { console.log("resolveDynamicImports", m); return m; })
+            .forEach(m => {
+                const filePath = resolve(this.options.srcDir!, m);
+                if (existsSync(filePath)) {
+                    context.emitFile({
+                        type: "asset",
+                        fileName: m,
+                        source: readFileSync(filePath),
+                    })
+                }
+            });
+        /* ----------------- PROCESS DYNAMICALLY IMPORTED SCRIPTS -----------------*/
         // dynamicImports collects files used by chrome.scripting.executeScript
         const dynamicImports: string[] = [];
         const updatedCode = code.replace(
-            dynamicImportsRex,
+            dynamicImportScriptRex,
             match => match.replace(/(?<=(files:\[)?)\"[\s\S]*?\"(?=\]?)/gm, fileStr => {
                 const file = parse(fileStr.replace(/\"/g, "").trim());
                 const filePath = resolve(this.options.srcDir!, file.dir, file.base);
