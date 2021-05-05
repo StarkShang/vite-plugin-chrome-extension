@@ -60,6 +60,8 @@ See [Work flow](./docs/workflow.md)
 
 ## Examples
 
+- [X] [Background](examples/background)
+
 ### Examples from [chrome-extensions-samples](https://github.com/GoogleChrome/chrome-extensions-samples) are test
 
 - [X] [Hello World](examples/hello-world)

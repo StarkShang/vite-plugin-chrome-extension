@@ -1,5 +1,10 @@
 # CHANGELOGS
 
+## 0.0.7
+
+- fix: process scripts dynamically imported by chrome.scripting.executeScript;
+- fix: process styles dynamically imported by chrome.scripting.insertCSS;
+
 ## 0.0.6
 
 - fix: tracking assets in css (such as font files, images)

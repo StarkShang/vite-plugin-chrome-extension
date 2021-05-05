@@ -1,50 +1,51 @@
 /* eslint-env node */
 
-// import typescript from '@rollup/plugin-typescript'
-import sucrase from '@rollup/plugin-sucrase'
-import bundleImports from 'rollup-plugin-bundle-imports'
-import json from '@rollup/plugin-json'
+// import typescript from "@rollup/plugin-typescript"
+import sucrase from "@rollup/plugin-sucrase"
+import bundleImports from "rollup-plugin-bundle-imports"
+import json from "@rollup/plugin-json"
 
-const { dependencies } = require('./package.json')
+const { dependencies } = require("./package.json")
 
 const external = Object.keys(dependencies).concat(
-    'firebase/app',
-    'firebase/auth',
-    'firebase/functions',
-    'path',
+    "firebase/app",
+    "firebase/auth",
+    "firebase/functions",
+    "path",
+    "fs",
 )
 
 // Was used for typescript plugin
 // const {
 //   compilerOptions,
-// } = require('./tsconfigs/tsconfig-base.json')
+// } = require("./tsconfigs/tsconfig-base.json")
 
 const plugins = [
     json(),
     sucrase({
-        transforms: ['typescript'],
+        transforms: ["typescript"],
     }),
     bundleImports({
         useVirtualModule: true,
         options: {
-            external: ['%PATH%'],
+            external: ["%PATH%"],
         },
     }),
 ]
 
 export default [
     {
-        input: 'src/index.ts',
+        input: "src/index.ts",
         output: [
             {
-                file: 'lib/index-esm.js',
-                format: 'esm',
-                sourcemap: 'inline',
+                file: "lib/index-esm.js",
+                format: "esm",
+                sourcemap: "inline",
             },
             {
-                file: 'lib/index-cjs.js',
-                format: 'cjs',
-                sourcemap: 'inline',
+                file: "lib/index-cjs.js",
+                format: "cjs",
+                sourcemap: "inline",
             },
         ],
         external,
