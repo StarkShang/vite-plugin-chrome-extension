@@ -1,4 +1,4 @@
-import { deriveFiles } from "@/manifest-input/manifest-parser";
+import { deriveFiles } from "@root/src/processors/manifest/parser";
 import {
     backgroundJs,
     contentJs,

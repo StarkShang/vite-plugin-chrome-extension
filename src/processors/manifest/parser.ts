@@ -1,7 +1,7 @@
 import glob from "glob";
 import get from "lodash.get";
 import diff from "lodash.difference";
-import { join } from "path";
+import path from "path";
 
 import {
     ChromeExtensionManifest,
@@ -9,25 +9,57 @@ import {
     WebAccessibleResource,
 } from "../../manifest";
 
-// /* ============================================ */
-// /*                DERIVE MANIFEST               */
-// /* ============================================ */
-
-// export function deriveManifest(
-//   manifest: ChromeExtensionManifest, // manifest.json
-//   ...permissions: string[] | string[][] // will be combined with manifest.permissions
-// ): ChromeExtensionManifest {
-//   return validateManifest({
-//     // SMELL: Is this necessary?
-//     manifest_version: 2,
-//     ...manifest,
-//     permissions: combinePerms(permissions, manifest.permissions),
-//   })
-// }
-
 /* -------------------------------------------- */
 /*                 DERIVE FILES                 */
 /* -------------------------------------------- */
+
+export class ManifestParser {
+    public entries(manifest: ChromeExtensionManifest, srcPath: string) {
+        const entries: any = {};
+        // background service worker
+        const background = this.backgroundEntry(manifest, srcPath);
+        if (background) { entries.background = background; }
+        // content scripts
+        const content_scripts = this.contentScriptEntries(manifest, srcPath);
+        if (content_scripts) { entries.content_scripts = content_scripts; }
+        // options page
+        const options_page = this.optionsPageEntry(manifest, srcPath)
+        if (options_page) { entries.options_page = options_page; }
+        // options ui
+        const options_ui = this.optionsUiEntry(manifest, srcPath);
+        if (options_ui) { entries.options_ui = options_ui; }
+        // web accessible resources
+        const web_accessible_resources = this.webAccessibleResourceEntries(manifest, srcPath);
+        if (web_accessible_resources) { entries.web_accessible_resources = web_accessible_resources; }
+        return entries;
+    }
+
+    public backgroundEntry(manifest: ChromeExtensionManifest, srcPath: string) {
+        return manifest.background ? path.resolve(srcPath, manifest.background.service_worker) : undefined;
+    }
+
+    public contentScriptEntries(manifest: ChromeExtensionManifest, srcPath: string) {
+        const scripts = manifest.content_scripts?.map(script => script.js || [])
+            .reduce((arr, item) => arr.concat(item), [])
+            .map(script => path.resolve(srcPath, script));
+        return scripts && scripts.length <= 0 ? undefined : scripts;
+    }
+
+    public optionsPageEntry(manifest: ChromeExtensionManifest, srcPath: string) {
+        return manifest.options_page ? path.resolve(srcPath, manifest.options_page) : undefined;
+    }
+
+    public optionsUiEntry(manifest: ChromeExtensionManifest, srcPath: string) {
+        return manifest.options_ui ? path.resolve(srcPath, manifest.options_ui.page) : undefined;
+    }
+
+    public webAccessibleResourceEntries(manifest: ChromeExtensionManifest, srcPath: string) {
+        const resources = manifest.web_accessible_resources?.map(resource => resource.resources)
+            .reduce((arr, item) => arr.concat(item), [])
+            .map(resource => path.resolve(srcPath, resource));
+        return resources && resources.length <= 0 ? undefined : resources;
+    }
+}
 
 export function deriveFiles(
     manifest: ChromeExtensionManifest,
@@ -144,7 +176,7 @@ export function deriveFiles(
 
     function validate(ary: any[]) {
         return [...new Set(ary.filter(isString))].map((x) =>
-            join(srcDir, x),
+            path.join(srcDir, x),
         );
     }
 

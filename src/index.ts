@@ -14,10 +14,10 @@ import {
     NormalizedChromeExtensionOptions,
 } from "./plugin-options";
 import { ChromeExtensionManifest } from "./manifest";
-
 export { simpleReloader } from "./plugin-reloader-simple";
 
 export const stubChunkName = "stub__empty-chrome-extension-manifest";
+export const chromeExtensionPluginName = "chrome-extension";
 
 export const chromeExtension = (
     options = {} as ChromeExtensionOptions,
@@ -30,7 +30,7 @@ export const chromeExtension = (
 
     /* ----------------- SETUP PLUGINS ----------------- */
     let manifestJsonPath = "";
-    let manifest: ChromeExtensionManifest | undefined;
+    let manifestProcessor: ManifestProcessor;
     let viteConfig: ResolvedConfig;
     let vitePlugins: Plugin[] = [];
 
@@ -40,12 +40,18 @@ export const chromeExtension = (
         enforce: "pre",
         configResolved(config) {
             viteConfig = config;
-        },
-        options(options) {
+            // resolve manifest.json path
             const rootPath = viteConfig.root || process.cwd();
             manifestJsonPath = path.resolve(rootPath, "manifest.json");
-            options.input = manifestJsonPath;
-            console.log(options.input);
+            config.build.rollupOptions.input = manifestJsonPath;
+            // create manifest processor
+            manifestProcessor = new ManifestProcessor({
+                ...options,
+                srcDir: rootPath,
+                manifestPath: manifestJsonPath
+            } as NormalizedChromeExtensionOptions);
+        },
+        options(options) {
             // backup plugins
             if (options.plugins) {
                 vitePlugins = options.plugins.filter(plugin => plugin.name !== "chrome-extension");
@@ -54,26 +60,18 @@ export const chromeExtension = (
             return options;
         },
         transform(code, id) {
-            if (id.endsWith("manifest.json")) {
-                manifest = JSON.parse(code);
-                return "export default manifest.json";
-            }
-            return null;
+            if (id !== manifestJsonPath) { return; }
+            manifestProcessor.load(JSON.parse(code));
+            return "export default manifest.json";
         },
         outputOptions(options) {
             const outputFile = path.resolve(options.dir || path.resolve(process.cwd(), "dist") , "manifest.json");
-            return {
-                file: outputFile,
-                format: "es",
-                exports: "none",
-                sourcemap: false,
-            };
+            return { file: outputFile, format: "es", exports: "none", sourcemap: false };
         },
         renderChunk(_code, chunk, _options) {
-            if (chunk.facadeModuleId === manifestJsonPath) {
-                return JSON.stringify(manifest, null, 4);
-            }
-            return null;
+            return chunk.facadeModuleId === manifestJsonPath
+                ? manifestProcessor.toString()
+                : null;
         },
     };
 };
