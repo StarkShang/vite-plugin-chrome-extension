@@ -41,24 +41,13 @@ export interface NormalizedChromeExtensionOptions extends ChromeExtensionOptions
 export type ChromeExtensionPlugin = Pick<
     Required<Plugin>,
     | "name"
+    | "enforce"
+    | "options"
     | "configResolved"
-    | "buildStart"
-    | "resolveId"
-    | "load"
-    | "watchChange"
-    | "outputOptions"
     | "transform"
-    | "resolveFileUrl"
-    | ManifestInputPluginHooks
-    | HtmlInputsPluginHooks
-> & {
-    // For testing
-    _plugins: {
-        manifest: ManifestInputPlugin
-        html: HtmlInputsPlugin
-        validate: ValidateNamesPlugin
-    }
-}
+    | "outputOptions"
+    | "renderChunk"
+>
 
 /* --------- MANIFEST INPUT PLUGIN OPTIONS --------- */
 

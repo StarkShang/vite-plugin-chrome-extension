@@ -1,20 +1,19 @@
-import { join } from "path";
+import path from "path";
 import { readJSONSync } from "fs-extra";
-import { ResolvedConfig } from "vite";
+import { Plugin, ResolvedConfig } from "vite";
 import htmlInputs from "./html-inputs";
 import manifestInput from "./manifest-input";
 import { logger } from "./utils/logger";
 import { validateNames as v } from "./validate-names";
+import { ManifestProcessor } from "./processors/manifest";
+import { HtmlProcessor } from "./processors/html";
 import {
     ChromeExtensionOptions,
     ChromeExtensionPlugin,
     HtmlInputsOptions,
     NormalizedChromeExtensionOptions,
 } from "./plugin-options";
-import { ManifestProcessor } from "./processors/manifest";
 import { ChromeExtensionManifest } from "./manifest";
-import { HtmlProcessor } from "./processors/html";
-import slash from "slash";
 
 export { simpleReloader } from "./plugin-reloader-simple";
 
@@ -25,82 +24,56 @@ export const chromeExtension = (
 ): ChromeExtensionPlugin => {
     /* --------------- LOAD PACKAGE.JSON --------------- */
     try {
-        const packageJsonPath = join(process.cwd(), "package.json");
+        const packageJsonPath = path.join(process.cwd(), "package.json");
         options.pkg = options.pkg || readJSONSync(packageJsonPath);
     } catch (error) { }
 
     /* ----------------- SETUP PLUGINS ----------------- */
-    const normalizedOptions = { ...options } as NormalizedChromeExtensionOptions;
-    const manifest2 = manifestInput(options);
-    const html2 = htmlInputs(normalizedOptions as HtmlInputsOptions);
-    const manifestProcessor = new ManifestProcessor(normalizedOptions);
-    const htmlProcessor = new HtmlProcessor(normalizedOptions);
-    const validate = v();
+    let manifestJsonPath = "";
     let manifest: ChromeExtensionManifest | undefined;
     let viteConfig: ResolvedConfig;
+    let vitePlugins: Plugin[] = [];
 
     /* ----------------- RETURN PLUGIN ----------------- */
     return {
         name: "chrome-extension",
-        // For testing
-        _plugins: { manifest: manifest2, html: html2, validate },
+        enforce: "pre",
         configResolved(config) {
             viteConfig = config;
         },
-        async options(options) {
-            // Do not reload manifest without changes
-            if (!manifestProcessor.manifest) {
-                manifest = manifestProcessor.load(options);
-                options.input = manifestProcessor.resolveInput(options.input);
+        options(options) {
+            const rootPath = viteConfig.root || process.cwd();
+            manifestJsonPath = path.resolve(rootPath, "manifest.json");
+            options.input = manifestJsonPath;
+            console.log(options.input);
+            // backup plugins
+            if (options.plugins) {
+                vitePlugins = options.plugins.filter(plugin => plugin.name !== "chrome-extension");
+                options.plugins = options.plugins.filter(plugin => ["alias", "commonjs", "chrome-extension"].includes(plugin.name));
             }
-            // resolve scripts and assets in html
-            options.input = htmlProcessor.resolveInput(options.input);
-            logger.logInputFiles(options.input);
             return options;
         },
-        async buildStart() {
-            manifestProcessor.addWatchFiles(this);
-            htmlProcessor.addWatchFiles(this);
-            await manifestProcessor.emitFiles(this);
-            await htmlProcessor.emitFiles(this);
-        },
-        resolveId(source) {
-            if (source === stubChunkName) {
-                return source;
-            }
-            return null;
-        },
-        load(id) {
-            if (id === stubChunkName) {
-                return { code: `console.log("${stubChunkName}")` };
-            }
-            return null;
-        },
-        transform(code, id, ssr) {
-            return manifestProcessor.transform(this, code, id, ssr);
-        },
-        watchChange(id) {
-            manifestProcessor.clearCacheById(id);
-            htmlProcessor.clearCacheById(id);
-        },
-        resolveFileUrl({ referenceId, fileName }) {
-            if (manifestProcessor.isDynamicImportedContentScript(referenceId)) {
-                return `"${slash(fileName)}"`;
+        transform(code, id) {
+            if (id.endsWith("manifest.json")) {
+                manifest = JSON.parse(code);
+                return "export default manifest.json";
             }
             return null;
         },
         outputOptions(options) {
+            const outputFile = path.resolve(options.dir || path.resolve(process.cwd(), "dist") , "manifest.json");
             return {
-                ...options,
-                chunkFileNames: "[name].[hash].js",
-                assetFileNames: "[name].[hash].[ext]",
-                entryFileNames: "[name].js"
+                file: outputFile,
+                format: "es",
+                exports: "none",
+                sourcemap: false,
             };
         },
-        async generateBundle(options, bundle, isWrite) {
-            await manifestProcessor.generateBundle(this, bundle);
-            await htmlProcessor.generateBundle(this, bundle);
-            // await validate.generateBundle.call(this, options, bundle, isWrite);
+        renderChunk(_code, chunk, _options) {
+            if (chunk.facadeModuleId === manifestJsonPath) {
+                return JSON.stringify(manifest, null, 4);
+            }
+            return null;
         },
     };
 };
