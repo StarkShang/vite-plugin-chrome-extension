@@ -348,7 +348,7 @@ export interface ChromeExtensionManifest {
   /**
    * An array of strings specifying the paths (relative to the package root) of packaged resources that are expected to be usable in the context of a web page.
    */
-  web_accessible_resources?: [WebAccessibleResource, ...WebAccessibleResource[]];
+  web_accessible_resources?: WebAccessibleResource[];
 }
 /**
  * The background page is an HTML page that runs in the extension process. It exists for the lifetime of your extension, and only one instance of it at a time is active.

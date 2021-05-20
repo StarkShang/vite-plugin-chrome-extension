@@ -44,7 +44,7 @@ describe("ManifestParser", () => {
         usecases.contentScriptEntries.empty.forEach(usecase => it("No content scripts", () => {
             expect(parser.contentScriptEntries(usecase as ChromeExtensionManifest, "")).to.be.undefined;
         }));
-        usecases.contentScriptEntries.content_scripts.forEach(usecase => it("With content scripts", () => {
+        usecases.contentScriptEntries.content_scripts.forEach(usecase => it(usecase.description, () => {
             expect(parser.contentScriptEntries(usecase.input as ChromeExtensionManifest, "src")).to.have.members(usecase.output);
         }));
     });
@@ -85,75 +85,11 @@ describe("ManifestParser", () => {
         });
     });
     describe("webAccessibleResourceEntries", () => {
-        ([{
-            name: "",
-            version: "1.0",
-            manifest_version: 3,
-        }, {
-            name: "",
-            version: "1.0",
-            manifest_version: 3,
-            web_accessible_resources: [],
-        }, {
-            name: "",
-            version: "1.0",
-            manifest_version: 3,
-            web_accessible_resources: [{
-                resources: [],
-                matches: ["<all_urls>"],
-            }],
-        }] as ChromeExtensionManifest[]).forEach(manifest => it("No web accessible resources", () => {
-            expect(parser.webAccessibleResourceEntries(manifest, "")).to.be.undefined;
+        usecases.webAccessibleResourceEntries.empty.forEach(usecase => it("No web accessible resources", () => {
+            expect(parser.webAccessibleResourceEntries(usecase as ChromeExtensionManifest, "")).to.be.undefined;
         }));
-        ([{
-            manifest: {
-                name: "",
-                version: "1.0",
-                manifest_version: 3,
-                web_accessible_resources: [{
-                    resources: ["web_accessible_resource.js"],
-                    matches: ["<all_urls>"],
-                }],
-            },
-            entries: [
-                path.resolve("src", "web_accessible_resource.js"),
-            ],
-        }, {
-            manifest: {
-                name: "",
-                version: "1.0",
-                manifest_version: 3,
-                web_accessible_resources: [{
-                    resources: [
-                        "web_accessible_resource1.js",
-                        "web_accessible_resource2.js",
-                    ],
-                    matches: ["<all_urls>"],
-                }],
-            },
-            entries: [
-                path.resolve("src", "web_accessible_resource1.js"),
-                path.resolve("src", "web_accessible_resource2.js"),
-            ],
-        }, {
-            manifest: {
-                name: "",
-                version: "1.0",
-                manifest_version: 3,
-                web_accessible_resources: [{
-                    resources: [ "web_accessible_resource1.js" ],
-                    matches: ["<all_urls>"],
-                }, {
-                    resources: [ "web_accessible_resource2.js" ],
-                    matches: ["<all_urls>"],
-                }],
-            },
-            entries: [
-                path.resolve("src", "web_accessible_resource1.js"),
-                path.resolve("src", "web_accessible_resource2.js"),
-            ],
-        }] as {manifest:ChromeExtensionManifest,entries:string[]}[]).forEach(usecase => it("With web accessible resources", () => {
-            expect(parser.webAccessibleResourceEntries(usecase.manifest, "src")).to.have.members(usecase.entries);
+        usecases.webAccessibleResourceEntries.web_accessible_resources.forEach(usecase => it(usecase.description, () => {
+            expect(parser.webAccessibleResourceEntries(usecase.input as ChromeExtensionManifest, "src")).to.have.members(usecase.output);
         }));
     });
 });

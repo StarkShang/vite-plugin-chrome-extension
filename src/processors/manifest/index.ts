@@ -6,7 +6,7 @@ import { cosmiconfigSync } from "cosmiconfig";
 import { EmittedAsset, OutputBundle, PluginContext, rollup, TransformPluginContext } from "rollup";
 import vite, { resolveConfig, ResolvedConfig } from "vite";
 import { ChromeExtensionManifest } from "../../manifest";
-import { deriveFiles, ChromeExtensionManifestEntries, ChromeExtensionManifestParser } from "./parser";
+import { deriveFiles, ChromeExtensionManifestEntries, ChromeExtensionManifestParser, ChromeExtensionManifestEntriesDiff } from "./parser";
 import { reduceToRecord } from "../../manifest-input/reduceToRecord";
 import { ManifestInputPluginCache } from "../../plugin-options";
 import { cloneObject } from "../../utils/cloneObject";
@@ -76,22 +76,55 @@ export class ManifestProcessor {
         const currentManifest = this.applyExternalManifestConfiguration(manifest);
         const entries = this.manifestParser.entries(currentManifest, this.options.rootPath!);
         // if reload manifest.json, then calculate diff and restart sub bundle tasks
-        if (this.cache.entries) {
-            // calculate diff between the last and the current manifest
-            this.manifestParser.diffEntries(this.cache.entries, entries);
-            // restart related sub build task
-        } else {
-            entries.background && this.backgroundProcessor.load(entries.background);
-            entries.content_scripts && console.log(entries.content_scripts);
-            entries.options_page && console.log(entries.options_page);
-            entries.options_ui && console.log(entries.options_ui);
-            entries.override && console.log(entries.override);
-            entries.popup && console.log(entries.popup);
-            entries.devtools && console.log(entries.devtools);
-            entries.web_accessible_resources && console.log(entries.web_accessible_resources);
-        }
+        const waitForBuild = this.cache.entries
+            ? this.manifestParser.diffEntries(this.cache.entries, entries) // calculate diff between the last and the current manifest
+            : ChromeExtensionManifestParser.entriesToDiff(entries);
+        this.buildComponents(waitForBuild);
+        // record current manifest and entries
         this.cache.manifest = currentManifest;
         this.cache.entries = entries;
+    }
+
+    private buildComponents(entries: ChromeExtensionManifestEntriesDiff) {
+        // background
+        // if (entries.background) {
+        //     switch (entries.background.status) {
+        //         case "create":
+        //         case "update":
+        //             entries.background.entry && this.backgroundProcessor.load(entries.background.entry, this.options.watch);
+        //             break;
+        //         case "delete":
+        //             entries.background.entry && this.backgroundProcessor.stop(entries.background.entry);
+        //             break;
+        //     }
+        // }
+        // content_scripts
+        // if (entries.content_scripts) {
+        //     if (entries.content_scripts.create) {
+        //         entries.content_scripts.create.forEach(script => this.contentScriptProcessor.build(script, this.options.watch));
+        //     }
+        //     if (entries.content_scripts.delete) {
+        //         entries.content_scripts.delete.forEach(script => this.contentScriptProcessor.stop(script, this.options.watch));
+        //     }
+        // }
+        // options_page
+        // if (entries.options_page) {
+        //     switch (entries.options_page.status) {
+        //         case "create":
+        //         case "update":
+        //             entries.options_page.entry && this.optionsProcessor.load(entries.options_page.entry, this.options.watch);
+        //             break;
+        //         case "delete":
+        //             entries.options_page.entry && this.optionsProcessor.stop(entries.options_page.entry);
+        //             break;
+        //     }
+        // }
+        // waitForBuild.options_page && console.log(waitForBuild.options_page);
+        // waitForBuild.options_ui && console.log(waitForBuild.options_ui);
+        // waitForBuild.override && console.log(waitForBuild.override);
+        // waitForBuild.popup && console.log(waitForBuild.popup);
+        // waitForBuild.devtools && console.log(waitForBuild.devtools);
+        // waitForBuild.web_accessible_resources && console.log(waitForBuild.web_accessible_resources);
     }
 
     public toString() {

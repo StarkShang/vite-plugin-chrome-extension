@@ -20,7 +20,7 @@ export interface BackgroundDynamicImport {
 export class BackgroundProcesser {
     private entryPath = "";
     constructor(private options: NormalizedChromeExtensionOptions) {}
-    public async load(entryPath: string) {
+    public async load(entryPath: string, watch: boolean) {
         this.entryPath = entryPath;
         await vite.build({
             build: {

@@ -20,6 +20,30 @@ export interface ChromeExtensionManifestEntries {
     web_accessible_resources?: string[];
 }
 
+export type ChromeExtensionManifestEntryDiffStatus = "create" | "update" | "delete";
+export interface ChromeExtensionManifestEntryDiff {
+    status: ChromeExtensionManifestEntryDiffStatus;
+    entry?: string;
+}
+export interface ChromeExtensionManifestEntryArrayDiff {
+    create?: string[],
+    delete?: string[],
+}
+export interface ChromeExtensionManifestEntriesDiff {
+    background?: ChromeExtensionManifestEntryDiff;
+    content_scripts?: ChromeExtensionManifestEntryArrayDiff;
+    options_page?: ChromeExtensionManifestEntryDiff;
+    options_ui?: ChromeExtensionManifestEntryDiff;
+    popup?: ChromeExtensionManifestEntryDiff;
+    devtools?: ChromeExtensionManifestEntryDiff;
+    override?: {
+        bookmarks?: ChromeExtensionManifestEntryDiff,
+        history?:ChromeExtensionManifestEntryDiff,
+        newtab?:ChromeExtensionManifestEntryDiff
+    };
+    web_accessible_resources?: ChromeExtensionManifestEntryArrayDiff;
+}
+
 /* -------------------------------------------- */
 /*                 DERIVE FILES                 */
 /* -------------------------------------------- */
@@ -55,20 +79,73 @@ export class ChromeExtensionManifestParser {
         return entries;
     }
 
-    public diffEntries(last: ChromeExtensionManifestEntries, current: ChromeExtensionManifestEntries): Partial<ChromeExtensionManifestEntries> {
-        const result: Partial<ChromeExtensionManifestEntries> = {};
-        current.background !== last.background && (result.background = current.background);
-        current.options_page !== last.options_page && (result.options_page = current.options_page);
-        current.options_ui !== last.options_ui && (result.options_ui = current.options_ui);
-        current.popup !== last.popup && (result.popup = current.popup);
-        current.devtools !== last.devtools && (result.devtools = current.devtools);
+    public diffEntries(
+        last: ChromeExtensionManifestEntries,
+        current: ChromeExtensionManifestEntries,
+    ): ChromeExtensionManifestEntriesDiff {
+        const result: ChromeExtensionManifestEntriesDiff = {};
+        // background
+        result.background = this.diffSingleEntryComponent(last.background, current.background);
         // content_scripts
-        const content_scripts = current.content_scripts?.filter(script => !last.content_scripts?.includes(script));
-        content_scripts && content_scripts.length > 0 && (result.content_scripts = content_scripts);
+        result.content_scripts = this.diffArrayEntriesComponent(last.content_scripts, current.content_scripts);
+        // options_page
+        result.options_page = this.diffSingleEntryComponent(last.options_page, current.options_page);
+        // options_ui
+        result.options_ui = this.diffSingleEntryComponent(last.options_ui, current.options_ui);
+        // popup
+        result.popup = this.diffSingleEntryComponent(last.popup, current.popup);
+        // override
+        result.override = {
+            bookmarks: this.diffSingleEntryComponent(last.override?.bookmarks, current.override?.bookmarks),
+            history: this.diffSingleEntryComponent(last.override?.history, current.override?.history),
+            newtab: this.diffSingleEntryComponent(last.override?.newtab, current.override?.newtab),
+        };
+        // devtools
+        result.devtools = this.diffSingleEntryComponent(last.devtools, current.devtools);
         // web_accessible_resources
-        const web_accessible_resources = current.web_accessible_resources?.filter(resource => !last.web_accessible_resources?.includes(resource));
-        web_accessible_resources && web_accessible_resources.length > 0 && (result.web_accessible_resources = web_accessible_resources);
+        result.web_accessible_resources = this.diffArrayEntriesComponent(last.web_accessible_resources, current.web_accessible_resources);
         return result;
+    }
+
+    public static entriesToDiff(entries: ChromeExtensionManifestEntries): ChromeExtensionManifestEntriesDiff {
+        return {
+            background: entries.background ? { status: "create", entry: entries.background } : undefined,
+            content_scripts: entries.content_scripts ? { create: entries.content_scripts } : undefined,
+            options_page: entries.options_page ? { status: "create", entry: entries.options_page } : undefined,
+            options_ui: entries.options_ui ? { status: "create", entry: entries.options_ui } : undefined,
+            popup: entries.popup ? { status: "create", entry: entries.popup } : undefined,
+            devtools: entries.devtools ? { status: "create", entry: entries.devtools } : undefined,
+            override: entries.override ? {
+                bookmarks: entries.override.bookmarks ? { status: "create", entry: entries.override.bookmarks } : undefined,
+                history: entries.override.history ? { status: "create", entry: entries.override.history } : undefined,
+                newtab: entries.override.newtab ? { status: "create", entry: entries.override.newtab } : undefined,
+            } : undefined,
+            web_accessible_resources: entries.web_accessible_resources ? { create: entries.web_accessible_resources } : undefined,
+        }
+    }
+
+    private diffSingleEntryComponent(
+        last: string | undefined,
+        current: string | undefined,
+    ): ChromeExtensionManifestEntryDiff | undefined {
+        if (!last && current) {
+            return { status: "create", entry: current };
+        } else if (last && !current) {
+            return { status: "delete" };
+        } else if (current !== last) {
+            return { status: "update", entry: current };
+        }
+        return;
+    }
+
+    private diffArrayEntriesComponent(
+        last: string[] | undefined,
+        current: string[] | undefined,
+    ): ChromeExtensionManifestEntryArrayDiff {
+        return {
+            create: current?.filter(item => !last?.includes(item)),
+            delete: last?.filter(item => !current?.includes(item))
+        }
     }
 
     public backgroundEntry(manifest: ChromeExtensionManifest, srcPath: string) {
