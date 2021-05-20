@@ -54,7 +54,9 @@ describe("HtmlProcessor", () => {
         let input: InputOption;
         beforeEach(() => {
             processor = new HtmlProcessor({
-                rootPath: join(process.cwd(), "__fixtures__/extensions/kitchen-sink")
+                rootPath: join(process.cwd(), "__fixtures__/extensions/kitchen-sink"),
+                manifestPath: "",
+                watch: false,
             });
             input = [optionsHtml, popupHtml, backgroundJs] as InputOption;
 
@@ -65,11 +67,6 @@ describe("HtmlProcessor", () => {
             cache.input = [];
             cache.js = [];
             cache.scripts = [];
-        });
-
-        it("Options.srcDir cannot be falsy", () => {
-            delete (processor as any).options.srcDir;
-            assert.throws(() => processor.resolveInput(), "options.srcDir not initialized");
         });
 
         it("Input must be string, array or onject", () => {

@@ -6,7 +6,7 @@ import { cosmiconfigSync } from "cosmiconfig";
 import { EmittedAsset, OutputBundle, PluginContext, rollup, TransformPluginContext } from "rollup";
 import vite, { resolveConfig, ResolvedConfig } from "vite";
 import { ChromeExtensionManifest } from "../../manifest";
-import { deriveFiles, ManifestParser } from "./parser";
+import { deriveFiles, ChromeExtensionManifestEntries, ChromeExtensionManifestParser } from "./parser";
 import { reduceToRecord } from "../../manifest-input/reduceToRecord";
 import { ManifestInputPluginCache } from "../../plugin-options";
 import { cloneObject } from "../../utils/cloneObject";
@@ -20,6 +20,7 @@ import { ContentScriptProcessor } from "../content-script/content-script";
 import { PermissionProcessor, PermissionProcessorOptions } from "../permission";
 import { BackgroundProcesser } from "../background/background";
 import { NormalizedChromeExtensionOptions } from "@/configs/options";
+import { ChromeExtensionManifestCache } from "./cache";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -36,7 +37,7 @@ export type ChromeExtensionConfigurationInfo = {
 };
 
 export class ManifestProcessor {
-    public cache = {
+    public cache2 = {
         assetChanged: false,
         assets: [],
         iife: [],
@@ -48,8 +49,8 @@ export class ManifestProcessor {
         readFile: new Map<string, any>(),
         srcDir: null,
     } as ManifestInputPluginCache;
-    public manifest?: ChromeExtensionManifest;
-    public manifestParser = new ManifestParser();
+    public cache = new ChromeExtensionManifestCache();
+    public manifestParser = new ChromeExtensionManifestParser();
     public contentScriptProcessor: ContentScriptProcessor;
     public permissionProcessor: PermissionProcessor;
     public backgroundProcessor: BackgroundProcesser;
@@ -73,14 +74,13 @@ export class ManifestProcessor {
         this.validateChromeExtensionManifest(manifest);
         /* --------------- APPLY USER CUSTOM CONFIG --------------- */
         const currentManifest = this.applyExternalManifestConfiguration(manifest);
+        const entries = this.manifestParser.entries(currentManifest, this.options.rootPath!);
         // if reload manifest.json, then calculate diff and restart sub bundle tasks
-        if (this.manifest) {
+        if (this.cache.entries) {
             // calculate diff between the last and the current manifest
-            const changed = true;
+            this.manifestParser.diffEntries(this.cache.entries, entries);
             // restart related sub build task
         } else {
-            this.manifest = currentManifest;
-            const entries = this.manifestParser.entries(this.manifest, this.options.rootPath!);
             entries.background && this.backgroundProcessor.load(entries.background);
             entries.content_scripts && console.log(entries.content_scripts);
             entries.options_page && console.log(entries.options_page);
@@ -90,10 +90,12 @@ export class ManifestProcessor {
             entries.devtools && console.log(entries.devtools);
             entries.web_accessible_resources && console.log(entries.web_accessible_resources);
         }
+        this.cache.manifest = currentManifest;
+        this.cache.entries = entries;
     }
 
     public toString() {
-        return JSON.stringify(this.manifest, null, 4);
+        return JSON.stringify(this.cache.manifest, null, 4);
     }
 
     /**
@@ -112,22 +114,22 @@ export class ManifestProcessor {
             this.options.rootPath,
         );
         // Cache derived inputs
-        this.cache.input = [...this.cache.inputAry, ...js, ...html];
-        this.cache.assets = [...new Set([...css, ...img, ...others])];
-        const inputs = this.cache.input.reduce(
+        this.cache2.input = [...this.cache2.inputAry, ...js, ...html];
+        this.cache2.assets = [...new Set([...css, ...img, ...others])];
+        const inputs = this.cache2.input.reduce(
             reduceToRecord(this.options.rootPath),
-            this.cache.inputObj);
+            this.cache2.inputObj);
         return inputs;
     }
 
     public transform(context: TransformPluginContext, code: string, id: string, ssr?: boolean) {
         const { code:updatedCode, imports } = this.backgroundProcessor.resolveDynamicImports(context, code);
-        this.cache.dynamicImportContentScripts.push(...imports);
+        this.cache2.dynamicImportContentScripts.push(...imports);
         return updatedCode;
     }
 
     public isDynamicImportedContentScript(referenceId: string) {
-        return this.cache.dynamicImportContentScripts.includes(referenceId);
+        return this.cache2.dynamicImportContentScripts.includes(referenceId);
     }
 
     /**
@@ -138,13 +140,13 @@ export class ManifestProcessor {
         // watch manifest.json file
         context.addWatchFile(this.options.manifestPath!);
         // watch asset files
-        this.cache.assets.forEach(srcPath => context.addWatchFile(srcPath));
+        this.cache2.assets.forEach(srcPath => context.addWatchFile(srcPath));
     }
 
     public async emitFiles(context: PluginContext) {
         // Copy asset files
         const assets: EmittedAsset[] = await Promise.all(
-            this.cache.assets.map(async (srcPath) => {
+            this.cache2.assets.map(async (srcPath) => {
                 const source = await this.readAssetAsBuffer(srcPath);
                 return {
                     type: "asset" as const,
@@ -161,32 +163,32 @@ export class ManifestProcessor {
     public clearCacheById(id: string) {
         if (id.endsWith(manifestName)) {
             // Dump cache.manifest if manifest changes
-            delete this.manifest;
-            this.cache.assetChanged = false;
+            delete this.cache.manifest;
+            this.cache2.assetChanged = false;
         } else {
             // Force new read of changed asset
-            this.cache.assetChanged = this.cache.readFile.delete(id);
+            this.cache2.assetChanged = this.cache2.readFile.delete(id);
         }
     }
 
     public async generateBundle(context: PluginContext, bundle: OutputBundle) {
-        if (!this.manifest) { throw new Error("[generate bundle] Manifest cannot be empty"); }
+        if (!this.cache.manifest) { throw new Error("[generate bundle] Manifest cannot be empty"); }
         /* ----------------- GET CHUNKS -----------------*/
         const chunks = getChunk(bundle);
         const assets = getAssets(bundle);
         /* ----------------- UPDATE PERMISSIONS ----------------- */
-        this.permissionProcessor.derivePermissions(context, chunks, this.manifest);
+        this.permissionProcessor.derivePermissions(context, chunks, this.cache.manifest);
         /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
-        await this.contentScriptProcessor.generateBundle(context, bundle, this.manifest);
-        await this.contentScriptProcessor.generateBundleFromDynamicImports(context, bundle, this.cache.dynamicImportContentScripts);
+        await this.contentScriptProcessor.generateBundle(context, bundle, this.cache.manifest);
+        await this.contentScriptProcessor.generateBundleFromDynamicImports(context, bundle, this.cache2.dynamicImportContentScripts);
         /* ----------------- SETUP BACKGROUND SCRIPTS ----------------- */
-        await this.backgroundProcessor.generateBundle(context, bundle, this.manifest);
+        await this.backgroundProcessor.generateBundle(context, bundle, this.cache.manifest);
         /* ----------------- SETUP ASSETS IN WEB ACCESSIBLE RESOURCES ----------------- */
 
         /* ----------------- STABLE EXTENSION ID ----------------- */
         /* ----------------- OUTPUT MANIFEST.JSON ----------------- */
         /* ----------- OUTPUT MANIFEST.JSON ---------- */
-        this.generateManifest(context, this.manifest);
+        this.generateManifest(context, this.cache.manifest);
         // validate manifest
         this.validateManifest();
     }
@@ -204,8 +206,8 @@ export class ManifestProcessor {
     }
 
     private validateManifest() {
-        if (this.manifest) {
-            validateManifest(this.manifest)
+        if (this.cache.manifest) {
+            validateManifest(this.cache.manifest)
         } else {
             throw new Error("Manifest cannot be empty");
         }
@@ -229,7 +231,7 @@ export class ManifestProcessor {
             return fs.readFile(filepath);
         },
         {
-            cache: this.cache.readFile,
+            cache: this.cache2.readFile,
         },
     );
 

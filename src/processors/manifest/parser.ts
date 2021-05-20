@@ -9,7 +9,7 @@ import {
     WebAccessibleResource,
 } from "../../manifest";
 
-export interface ManifestEntries {
+export interface ChromeExtensionManifestEntries {
     background?: string;
     content_scripts?: string[];
     options_page?: string;
@@ -24,9 +24,9 @@ export interface ManifestEntries {
 /*                 DERIVE FILES                 */
 /* -------------------------------------------- */
 
-export class ManifestParser {
-    public entries(manifest: ChromeExtensionManifest, srcPath: string): ManifestEntries {
-        const entries: ManifestEntries = {};
+export class ChromeExtensionManifestParser {
+    public entries(manifest: ChromeExtensionManifest, srcPath: string): ChromeExtensionManifestEntries {
+        const entries: ChromeExtensionManifestEntries = {};
         // background service worker
         const background = this.backgroundEntry(manifest, srcPath);
         background && (entries.background = background);
@@ -53,6 +53,22 @@ export class ManifestParser {
         const web_accessible_resources = this.webAccessibleResourceEntries(manifest, srcPath);
         web_accessible_resources && (entries.web_accessible_resources = web_accessible_resources);
         return entries;
+    }
+
+    public diffEntries(last: ChromeExtensionManifestEntries, current: ChromeExtensionManifestEntries): Partial<ChromeExtensionManifestEntries> {
+        const result: Partial<ChromeExtensionManifestEntries> = {};
+        current.background !== last.background && (result.background = current.background);
+        current.options_page !== last.options_page && (result.options_page = current.options_page);
+        current.options_ui !== last.options_ui && (result.options_ui = current.options_ui);
+        current.popup !== last.popup && (result.popup = current.popup);
+        current.devtools !== last.devtools && (result.devtools = current.devtools);
+        // content_scripts
+        const content_scripts = current.content_scripts?.filter(script => !last.content_scripts?.includes(script));
+        content_scripts && content_scripts.length > 0 && (result.content_scripts = content_scripts);
+        // web_accessible_resources
+        const web_accessible_resources = current.web_accessible_resources?.filter(resource => !last.web_accessible_resources?.includes(resource));
+        web_accessible_resources && web_accessible_resources.length > 0 && (result.web_accessible_resources = web_accessible_resources);
+        return result;
     }
 
     public backgroundEntry(manifest: ChromeExtensionManifest, srcPath: string) {

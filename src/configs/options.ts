@@ -6,29 +6,22 @@ export interface ChromeExtensionComponentOptions {
 }
 
 export interface ChromeExtensionOptions {
-    browserPolyfill?:
-    | boolean
-    | { executeScript: boolean}
-    pkg?: {
-        description: string
-        name: string
-        version: string
-    }
-    extendManifest?:
-    | Partial<ChromeExtensionManifest>
-    | ((manifest: ChromeExtensionManifest) => ChromeExtensionManifest)
+    browserPolyfill?: boolean | { executeScript: boolean };
+    pkg?: { description: string, name: string, version: string };
+    extendManifest?: Partial<ChromeExtensionManifest> | ((manifest: ChromeExtensionManifest) => ChromeExtensionManifest);
     components?: {
-        background?: true | ChromeExtensionComponentOptions,
-        popup?: true | ChromeExtensionComponentOptions,
-        options?: true | ChromeExtensionComponentOptions,
-        contentScripts?: true | ChromeExtensionComponentOptions,
-        override?: true | ChromeExtensionComponentOptions,
-        standalone?: true | ChromeExtensionComponentOptions,
-        devtools?: true | ChromeExtensionComponentOptions,
+        background?: boolean | ChromeExtensionComponentOptions,
+        popup?: boolean | ChromeExtensionComponentOptions,
+        options?: boolean | ChromeExtensionComponentOptions,
+        contentScripts?: boolean | ChromeExtensionComponentOptions,
+        override?: boolean | ChromeExtensionComponentOptions,
+        standalone?: boolean | ChromeExtensionComponentOptions,
+        devtools?: boolean | ChromeExtensionComponentOptions,
     };
 }
 
 export interface NormalizedChromeExtensionOptions extends ChromeExtensionOptions {
-    rootPath?: string;
-    manifestPath?: string;
+    rootPath: string;
+    manifestPath: string;
+    watch: boolean;
 }

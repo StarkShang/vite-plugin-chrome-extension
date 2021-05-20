@@ -15,7 +15,7 @@ export const chromeExtension = (
     /* ----------------- PREPARE PLUGIN ----------------- */
     // load package.json
     options.pkg = options.pkg || loadPackageJson();
-    const manifestProcessor = new ManifestProcessor(options);
+    const manifestProcessor = new ManifestProcessor(options as NormalizedChromeExtensionOptions);
     /* ----------------- RETURN PLUGIN ----------------- */
     return {
         name: chromeExtensionPluginName,
@@ -24,7 +24,10 @@ export const chromeExtension = (
             // resolve manifest.json path
             const rootPath = path.join(config.root || process.cwd(), "src");
             const manifestJsonPath = path.resolve(rootPath, "manifest.json");
+            // update plugin options
             (options as NormalizedChromeExtensionOptions).rootPath = rootPath;
+            (options as NormalizedChromeExtensionOptions).manifestPath = manifestJsonPath;
+            (options as NormalizedChromeExtensionOptions).watch = !!config.build.watch;
             manifestProcessor.filePath = manifestJsonPath;
             // override input file path
             config.build.rollupOptions.input = manifestProcessor.filePath;
