@@ -1,4 +1,4 @@
-import { OutputBundle, PluginContext, TransformPluginContext } from "rollup";
+import { OutputBundle, PluginContext, rollup, TransformPluginContext } from "rollup";
 import { resolve, parse, join } from "path";
 import { existsSync, readFileSync } from "fs";
 import slash from "slash";
@@ -6,7 +6,8 @@ import { ChromeExtensionManifest } from "../../manifest";
 import { removeFileExtension } from "../../common/utils";
 import { findChunkByName } from "../../utils/helpers";
 import { mixinChunksForIIFE } from "../mixin";
-import { NormalizedChromeExtensionOptions } from "@root/src/plugin-options";
+import { NormalizedChromeExtensionOptions } from "@/configs/options";
+import vite, { resolveConfig } from "vite";
 
 const dynamicImportAssetRex = /(?<=chrome.scripting.insertCSS\()[\s\S]*?(?=\))/gm;
 const dynamicImportScriptRex = /(?<=chrome.scripting.executeScript\()[\s\S]*?(?=\))/gm;
@@ -17,10 +18,23 @@ export interface BackgroundDynamicImport {
 }
 
 export class BackgroundProcesser {
+    private entryPath = "";
     constructor(private options: NormalizedChromeExtensionOptions) {}
+    public async load(entryPath: string) {
+        this.entryPath = entryPath;
+        await vite.build({
+            build: {
+                rollupOptions: {
+                    input: this.entryPath,
+                },
+                emptyOutDir: false,
+            },
+            configFile: false, // must set to false, to avoid load config from vite.config.ts
+        });
+    }
 
     public resolveDynamicImports(context: TransformPluginContext, code: string): BackgroundDynamicImport {
-        if (!this.options.srcDir) {
+        if (!this.options.rootPath) {
             throw new TypeError("BackgroundProcesser: options.srcDir is not initialized");
         }
         /* ----------------- PROCESS DYNAMICALLY IMPORTED ASSETS -----------------*/
@@ -29,7 +43,7 @@ export class BackgroundProcesser {
             .reduce((f, m) => f.concat(...(m || [])) || [], [] as string[])
             .map(m => { console.log("resolveDynamicImports", m); return m; })
             .forEach(m => {
-                const filePath = resolve(this.options.srcDir!, m);
+                const filePath = resolve(this.options.rootPath!, m);
                 if (existsSync(filePath)) {
                     context.emitFile({
                         type: "asset",
@@ -45,7 +59,7 @@ export class BackgroundProcesser {
             dynamicImportScriptRex,
             match => match.replace(/(?<=(files:\[)?)\"[\s\S]*?\"(?=\]?)/gm, fileStr => {
                 const file = parse(fileStr.replace(/\"/g, "").trim());
-                const filePath = resolve(this.options.srcDir!, file.dir, file.base);
+                const filePath = resolve(this.options.rootPath!, file.dir, file.base);
                 if (existsSync(filePath)) {
                     const referenceId = context.emitFile({
                         id: filePath,

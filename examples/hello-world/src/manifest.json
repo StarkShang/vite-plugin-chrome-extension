@@ -3,7 +3,7 @@
     "version": "1.0",
     "manifest_version": 3,
     "background": {
-        "service_worker": "background2.ts"
+        "service_worker": "background.ts"
     },
     "action": {}
 }

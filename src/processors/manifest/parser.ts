@@ -9,28 +9,49 @@ import {
     WebAccessibleResource,
 } from "../../manifest";
 
+export interface ManifestEntries {
+    background?: string;
+    content_scripts?: string[];
+    options_page?: string;
+    options_ui?: string;
+    popup?: string;
+    override?: { bookmarks?:string, history?:string, newtab?:string };
+    devtools?: string;
+    web_accessible_resources?: string[];
+}
+
 /* -------------------------------------------- */
 /*                 DERIVE FILES                 */
 /* -------------------------------------------- */
 
 export class ManifestParser {
-    public entries(manifest: ChromeExtensionManifest, srcPath: string) {
-        const entries: any = {};
+    public entries(manifest: ChromeExtensionManifest, srcPath: string): ManifestEntries {
+        const entries: ManifestEntries = {};
         // background service worker
         const background = this.backgroundEntry(manifest, srcPath);
-        if (background) { entries.background = background; }
+        background && (entries.background = background);
         // content scripts
         const content_scripts = this.contentScriptEntries(manifest, srcPath);
-        if (content_scripts) { entries.content_scripts = content_scripts; }
+        content_scripts && (entries.content_scripts = content_scripts);
         // options page
         const options_page = this.optionsPageEntry(manifest, srcPath)
-        if (options_page) { entries.options_page = options_page; }
+        options_page && (entries.options_page = options_page);
         // options ui
         const options_ui = this.optionsUiEntry(manifest, srcPath);
-        if (options_ui) { entries.options_ui = options_ui; }
+        options_ui && (entries.options_ui = options_ui);
+        // popup
+        const popup = this.popupEntry(manifest, srcPath);
+        popup && (entries.popup = popup);
+        // override
+        const override = this.overrideEntries(manifest, srcPath);
+        override && (entries.override = override);
+        // TODO: standalone
+        // devtools
+        const devtools = this.devtoolsEntry(manifest, srcPath);
+        devtools && (entries.devtools = devtools);
         // web accessible resources
         const web_accessible_resources = this.webAccessibleResourceEntries(manifest, srcPath);
-        if (web_accessible_resources) { entries.web_accessible_resources = web_accessible_resources; }
+        web_accessible_resources && (entries.web_accessible_resources = web_accessible_resources);
         return entries;
     }
 
@@ -51,6 +72,27 @@ export class ManifestParser {
 
     public optionsUiEntry(manifest: ChromeExtensionManifest, srcPath: string) {
         return manifest.options_ui ? path.resolve(srcPath, manifest.options_ui.page) : undefined;
+    }
+
+    public popupEntry(manifest: ChromeExtensionManifest, srcPath: string) {
+        return manifest.action?.default_popup ? path.resolve(srcPath, manifest.action.default_popup) : undefined;
+    }
+
+    public overrideEntries(manifest: ChromeExtensionManifest, srcPath: string) {
+        if (!manifest.chrome_url_overrides) { return undefined; }
+        const override: any = {};
+        manifest.chrome_url_overrides.bookmarks && (override.bookmarks = path.resolve(srcPath, manifest.chrome_url_overrides.bookmarks));
+        manifest.chrome_url_overrides.history && (override.history = path.resolve(srcPath, manifest.chrome_url_overrides.history));
+        manifest.chrome_url_overrides.newtab && (override.history = path.resolve(srcPath, manifest.chrome_url_overrides.newtab));
+        return Object.keys(override).length > 0 ? override : undefined;
+    }
+
+    public standaloneEntry(manifest: ChromeExtensionManifest, srcPath: string) {
+        // TODO: add standalone entry parser
+    }
+
+    public devtoolsEntry(manifest: ChromeExtensionManifest, srcPath: string) {
+        return manifest.devtools_page ? path.resolve(srcPath, manifest.devtools_page) : undefined;
     }
 
     public webAccessibleResourceEntries(manifest: ChromeExtensionManifest, srcPath: string) {

@@ -3,11 +3,12 @@ import chalk from "chalk";
 import memoize from "mem";
 import { relative } from "path";
 import { cosmiconfigSync } from "cosmiconfig";
-import { EmittedAsset, InputOption, InputOptions, OutputBundle, PluginContext, TransformPluginContext } from "rollup";
-import { ChromeExtensionManifest, Background } from "../../manifest";
-import { deriveFiles } from "./parser";
+import { EmittedAsset, OutputBundle, PluginContext, rollup, TransformPluginContext } from "rollup";
+import vite, { resolveConfig, ResolvedConfig } from "vite";
+import { ChromeExtensionManifest } from "../../manifest";
+import { deriveFiles, ManifestParser } from "./parser";
 import { reduceToRecord } from "../../manifest-input/reduceToRecord";
-import { ManifestInputPluginCache, NormalizedChromeExtensionOptions } from "../../plugin-options";
+import { ManifestInputPluginCache } from "../../plugin-options";
 import { cloneObject } from "../../utils/cloneObject";
 import { manifestName } from "../../manifest-input/common/constants";
 import { getAssets, getChunk } from "../../utils/bundle";
@@ -18,6 +19,7 @@ import {
 import { ContentScriptProcessor } from "../content-script/content-script";
 import { PermissionProcessor, PermissionProcessorOptions } from "../permission";
 import { BackgroundProcesser } from "../background/background";
+import { NormalizedChromeExtensionOptions } from "@/configs/options";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -47,6 +49,7 @@ export class ManifestProcessor {
         srcDir: null,
     } as ManifestInputPluginCache;
     public manifest?: ChromeExtensionManifest;
+    public manifestParser = new ManifestParser();
     public contentScriptProcessor: ContentScriptProcessor;
     public permissionProcessor: PermissionProcessor;
     public backgroundProcessor: BackgroundProcesser;
@@ -56,6 +59,10 @@ export class ManifestProcessor {
         this.permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
         this.backgroundProcessor = new BackgroundProcesser(options);
     }
+    // file path of manifest.json
+    private _filePath = "";
+    public get filePath() { return this._filePath; }
+    public set filePath(path: string) { this._filePath = path; }
 
     /**
      * Load content from manifest.json
@@ -65,18 +72,24 @@ export class ManifestProcessor {
         /* --------------- VALIDATE MANIFEST.JSON CONTENT --------------- */
         this.validateChromeExtensionManifest(manifest);
         /* --------------- APPLY USER CUSTOM CONFIG --------------- */
-        manifest = this.applyExternalManifestConfiguration(manifest);
+        const currentManifest = this.applyExternalManifestConfiguration(manifest);
         // if reload manifest.json, then calculate diff and restart sub bundle tasks
         if (this.manifest) {
             // calculate diff between the last and the current manifest
             const changed = true;
             // restart related sub build task
-
         } else {
-            const entries = this.resolveEntries(manifest);
-            console.log(entries);
+            this.manifest = currentManifest;
+            const entries = this.manifestParser.entries(this.manifest, this.options.rootPath!);
+            entries.background && this.backgroundProcessor.load(entries.background);
+            entries.content_scripts && console.log(entries.content_scripts);
+            entries.options_page && console.log(entries.options_page);
+            entries.options_ui && console.log(entries.options_ui);
+            entries.override && console.log(entries.override);
+            entries.popup && console.log(entries.popup);
+            entries.devtools && console.log(entries.devtools);
+            entries.web_accessible_resources && console.log(entries.web_accessible_resources);
         }
-        this.manifest = manifest;
     }
 
     public toString() {
@@ -89,20 +102,20 @@ export class ManifestProcessor {
      * @returns
      */
     public resolveEntries(manifest: ChromeExtensionManifest): { [entryAlias: string]: string } {
-        if (!manifest || !this.options.srcDir) {
+        if (!manifest || !this.options.rootPath) {
             throw new TypeError("manifest and options.srcDir not initialized");
         }
         // Derive all static resources from manifest
         // Dynamic entries will emit in transform hook
         const { js, html, css, img, others } = deriveFiles(
             manifest,
-            this.options.srcDir,
+            this.options.rootPath,
         );
         // Cache derived inputs
         this.cache.input = [...this.cache.inputAry, ...js, ...html];
         this.cache.assets = [...new Set([...css, ...img, ...others])];
         const inputs = this.cache.input.reduce(
-            reduceToRecord(this.options.srcDir),
+            reduceToRecord(this.options.rootPath),
             this.cache.inputObj);
         return inputs;
     }
@@ -136,7 +149,7 @@ export class ManifestProcessor {
                 return {
                     type: "asset" as const,
                     source,
-                    fileName: relative(this.options.srcDir!, srcPath),
+                    fileName: relative(this.options.rootPath!, srcPath),
                 };
             }),
         );

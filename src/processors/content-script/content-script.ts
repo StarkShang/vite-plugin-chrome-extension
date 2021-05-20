@@ -2,7 +2,7 @@ import slash from "slash";
 import { OutputAsset, OutputBundle, OutputChunk, PluginContext, rollup } from "rollup";
 import { removeFileExtension } from "../../common/utils";
 import { ChromeExtensionManifest, WebAccessibleResource } from "../../manifest";
-import { NormalizedChromeExtensionOptions } from "../../plugin-options";
+import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import { findAssetByName, findChunkByName } from "../../utils/helpers";
 import { updateCss } from "../../common/utils/css";
 import { mixinChunksForIIFE } from "../mixin";

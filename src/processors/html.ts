@@ -4,7 +4,8 @@ import flatten from "lodash.flatten";
 import { readFile } from "fs-extra";
 import { flattenRollupInput } from "../common/utils/rollup";
 import { CheerioFile, formatHtml, getCssHrefs, getImgSrcs, getJsAssets, getScriptElems, getScriptSrc, loadHtml } from "../html-inputs/cheerio";
-import { HtmlInputsPluginCache, NormalizedChromeExtensionOptions } from "../plugin-options";
+import { HtmlInputsPluginCache } from "../plugin-options";
+import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import { getOutputFilenameFromChunk, isChunk, not } from "../utils/helpers";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
 
@@ -25,7 +26,7 @@ export class HtmlProcessor {
 
     public resolveInput(input?: InputOption) {
         // srcDir may be initialized by another plugin
-        const { srcDir } = this.options;
+        const { rootPath: srcDir } = this.options;
         if (srcDir) {
             this.cache.srcDir = srcDir;
         } else {
@@ -82,13 +83,13 @@ export class HtmlProcessor {
     }
 
     public generateBundle(context: PluginContext, bundle: OutputBundle) {
-        if (!this.options.srcDir) { throw new TypeError("[html] options.srcDir not initialized"); }
+        if (!this.options.rootPath) { throw new TypeError("[html] options.srcDir not initialized"); }
         const chunks = Object.values(bundle).filter(isChunk);
 
-        this.cache.html$.map($ => this.replaceImportScriptPath($, chunks, this.options.srcDir!, this.options.browserPolyfill))
+        this.cache.html$.map($ => this.replaceImportScriptPath($, chunks, this.options.rootPath!, this.options.browserPolyfill))
             .map($ => {
                 const source = formatHtml($);
-                const fileName = relative(this.options.srcDir!, $.filePath);
+                const fileName = relative(this.options.rootPath!, $.filePath);
                 context.emitFile({
                     type: "asset",
                     source,
@@ -110,7 +111,7 @@ export class HtmlProcessor {
         const emitting = assets.map(async (asset) => {
             // Read these files as Buffers
             const source = await readFile(asset);
-            const fileName = relative(this.options.srcDir!, asset);
+            const fileName = relative(this.options.rootPath!, asset);
             context.emitFile({
                 type: "asset",
                 source, // Buffer

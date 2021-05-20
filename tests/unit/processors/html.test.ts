@@ -54,7 +54,7 @@ describe("HtmlProcessor", () => {
         let input: InputOption;
         beforeEach(() => {
             processor = new HtmlProcessor({
-                srcDir: join(process.cwd(), "__fixtures__/extensions/kitchen-sink")
+                rootPath: join(process.cwd(), "__fixtures__/extensions/kitchen-sink")
             });
             input = [optionsHtml, popupHtml, backgroundJs] as InputOption;
 

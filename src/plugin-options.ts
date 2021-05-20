@@ -33,11 +33,6 @@ export interface ChromeExtensionOptions {
     verbose?: boolean
 }
 
-export interface NormalizedChromeExtensionOptions extends ChromeExtensionOptions {
-    srcDir?: string;
-    manifestPath?: string;
-}
-
 export type ChromeExtensionPlugin = Pick<
     Required<Plugin>,
     | "name"
