@@ -1,4 +1,4 @@
-import { ChromeExtensionManifest } from "@root/src/manifest";
+import { ChromeExtensionManifest } from "@/manifest";
 import { ChromeExtensionManifestEntries, ChromeExtensionManifestEntriesDiff } from "./parser";
 
 export class ChromeExtensionManifestCache {

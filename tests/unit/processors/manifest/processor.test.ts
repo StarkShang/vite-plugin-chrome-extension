@@ -1,4 +1,4 @@
-import { ChromeExtensionConfigurationInfo, ManifestProcessor } from "@root/src/processors/manifest";
+import { ChromeExtensionConfigurationInfo, ManifestProcessor } from "@/processors/manifest";
 import { describe, it } from "mocha";
 import { assert } from "chai";
 

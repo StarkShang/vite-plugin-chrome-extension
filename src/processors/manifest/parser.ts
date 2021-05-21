@@ -7,7 +7,8 @@ import {
     ChromeExtensionManifest,
     ContentScript,
     WebAccessibleResource,
-} from "../../manifest";
+} from "@/manifest";
+import { removeUndefinedProperty } from "../../common/utils/object";
 
 export interface ChromeExtensionManifestEntries {
     background?: string;
@@ -128,7 +129,7 @@ export class ChromeExtensionManifestParser {
     }
 
     public static entriesToDiff(entries: ChromeExtensionManifestEntries): ChromeExtensionManifestEntriesDiff {
-        return {
+        return removeUndefinedProperty<ChromeExtensionManifestEntriesDiff>({
             background: entries.background ? { status: "create", entry: entries.background } : undefined,
             content_scripts: entries.content_scripts ? { create: entries.content_scripts } : undefined,
             options_page: entries.options_page ? { status: "create", entry: entries.options_page } : undefined,
@@ -141,7 +142,7 @@ export class ChromeExtensionManifestParser {
                 newtab: entries.override.newtab ? { status: "create", entry: entries.override.newtab } : undefined,
             } : undefined,
             web_accessible_resources: entries.web_accessible_resources ? { create: entries.web_accessible_resources } : undefined,
-        }
+        }) || {};
     }
 
     private diffSingleEntryComponent(

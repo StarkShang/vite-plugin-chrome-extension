@@ -29,7 +29,7 @@ import { HtmlInputsPluginCache } from "@/plugin-options";
 import htmlInputs from "@/html-inputs/index";
 
 import * as cheerio from "@/html-inputs/cheerio";
-import { HtmlProcessor } from "@root/src/processors/html";
+import { HtmlProcessor } from "@/processors/html";
 import { assert } from "chai";
 
 const srcDir = join(
