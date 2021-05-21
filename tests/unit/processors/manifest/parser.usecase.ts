@@ -76,9 +76,7 @@ const diffEntries: UseCase<{
     description: "Add background",
     input: {
         last: {},
-        current: {
-            background: "background.js",
-        },
+        current: { background: "background.js" },
     },
     output: {
         background: {
@@ -87,17 +85,34 @@ const diffEntries: UseCase<{
         }
     },
 }, {
+    description: "Delete background",
+    input: {
+        last: { background: "background.js" },
+        current: {},
+    },
+    output: {
+        background: { status: "delete" },
+    },
+}, {
+    description: "Update background",
+    input: {
+        last: { background: "background1.js" },
+        current: { background: "background2.js" },
+    },
+    output: {
+        background: {
+            status: "update",
+            entry: "background2.js",
+        }
+    },
+}, {
     description: "Add content_script",
     input: {
         last: {},
-        current: {
-            content_scripts: ["content_scirpt.js"],
-        },
+        current: { content_scripts: ["content_scirpt.js"] },
     },
     output: {
-        content_scripts: {
-            create: ["content_scirpt.js"],
-        },
+        content_scripts: { create: ["content_scirpt.js"] },
     },
 }, {
     description: "Add content_script",
@@ -110,17 +125,40 @@ const diffEntries: UseCase<{
         },
     },
     output: {
-        content_scripts: {
-            create: ["content_scirpt2.js"],
-        },
+        content_scripts: { create: ["content_scirpt2.js"] },
+    },
+}, {
+    description: "Delete content_script",
+    input: {
+        last: { content_scripts: ["content_scirpt.js"] },
+        current: {},
+    },
+    output: {
+        content_scripts: { delete: ["content_scirpt.js"] },
+    },
+}, {
+    description: "Delete content_script",
+    input: {
+        last: { content_scripts: ["content_scirpt.js"] },
+        current: { content_scripts: [] },
+    },
+    output: {
+        content_scripts: { delete: ["content_scirpt.js"] },
+    },
+}, {
+    description: "Delete content_script",
+    input: {
+        last: { content_scripts: ["content_scirpt1.js", "content_scirpt2.js"] },
+        current: { content_scripts: ["content_scirpt1.js"] },
+    },
+    output: {
+        content_scripts: { delete: ["content_scirpt2.js"] },
     },
 }, {
     description: "Add options_page",
     input: {
         last: {},
-        current: {
-            options_page: "options_page.js",
-        },
+        current: { options_page: "options_page.js" },
     },
     output: {
         options_page: {
@@ -129,12 +167,31 @@ const diffEntries: UseCase<{
         },
     },
 }, {
+    description: "Delete options_page",
+    input: {
+        last: { options_page: "options_page.js" },
+        current: {},
+    },
+    output: {
+        options_page: { status: "delete" },
+    },
+}, {
+    description: "Update options_page",
+    input: {
+        last: { options_page: "options_page1.js" },
+        current: { options_page: "options_page2.js" },
+    },
+    output: {
+        options_page: {
+            status: "update",
+            entry: "options_page2.js",
+        },
+    },
+}, {
     description: "Add options_ui",
     input: {
         last: {},
-        current: {
-            options_ui: "options_ui.js",
-        },
+        current: { options_ui: "options_ui.js" },
     },
     output: {
         options_ui: {
@@ -143,12 +200,31 @@ const diffEntries: UseCase<{
         },
     },
 }, {
+    description: "Delete options_ui",
+    input: {
+        last: { options_ui: "options_ui.js" },
+        current: {},
+    },
+    output: {
+        options_ui: { status: "delete" },
+    },
+}, {
+    description: "Update options_ui",
+    input: {
+        last: { options_ui: "options_ui1.js" },
+        current: { options_ui: "options_ui2.js" },
+    },
+    output: {
+        options_ui: {
+            status: "update",
+            entry: "options_ui2.js",
+        },
+    },
+}, {
     description: "Add popup",
     input: {
         last: {},
-        current: {
-            popup: "popup.js",
-        },
+        current: { popup: "popup.js" },
     },
     output: {
         popup: {
@@ -157,12 +233,31 @@ const diffEntries: UseCase<{
         },
     },
 }, {
+    description: "Delete popup",
+    input: {
+        last: { popup: "popup.js" },
+        current: {},
+    },
+    output: {
+        popup: { status: "delete" },
+    },
+}, {
+    description: "Update popup",
+    input: {
+        last: { popup: "popup1.js" },
+        current: { popup: "popup2.js" },
+    },
+    output: {
+        popup: {
+            status: "update",
+            entry: "popup2.js",
+        },
+    },
+}, {
     description: "Add devtools",
     input: {
         last: {},
-        current: {
-            devtools: "devtools.js",
-        },
+        current: { devtools: "devtools.js" },
     },
     output: {
         devtools: {
@@ -171,17 +266,32 @@ const diffEntries: UseCase<{
         },
     },
 }, {
+    description: "Delete devtools",
+    input: {
+        last: { devtools: "devtools.js" },
+        current: {},
+    },
+    output: { devtools: { status: "delete" } },
+}, {
+    description: "Update devtools",
+    input: {
+        last: { devtools: "devtools1.js" },
+        current: { devtools: "devtools2.js" },
+    },
+    output: {
+        devtools: {
+            status: "update",
+            entry: "devtools2.js",
+        },
+    },
+}, {
     description: "Add web_accessible_resources",
     input: {
         last: {},
-        current: {
-            web_accessible_resources: ["web_accessible_resource.js"],
-        },
+        current: { web_accessible_resources: ["web_accessible_resource.js"] },
     },
     output: {
-        web_accessible_resources: {
-            create: ["web_accessible_resource.js"],
-        },
+        web_accessible_resources: { create: ["web_accessible_resource.js"] },
     },
 }, {
     description: "Add web_accessible_resources",
@@ -197,6 +307,37 @@ const diffEntries: UseCase<{
         web_accessible_resources: {
             create: ["web_accessible_resource2.js"],
         },
+    },
+}, {
+    description: "Delete web_accessible_resources",
+    input: {
+        last: { web_accessible_resources: ["web_accessible_resource.js"] },
+        current: {},
+    },
+    output: {
+        web_accessible_resources: { delete: ["web_accessible_resource.js"] },
+    },
+}, {
+    description: "Delete web_accessible_resources",
+    input: {
+        last: { web_accessible_resources: ["web_accessible_resource.js"] },
+        current: { web_accessible_resources: [] },
+    },
+    output: {
+        web_accessible_resources: { delete: ["web_accessible_resource.js"] },
+    },
+}, {
+    description: "Delete web_accessible_resources",
+    input: {
+        last: {
+            web_accessible_resources: ["web_accessible_resource1.js", "web_accessible_resource2.js"],
+        },
+        current: {
+            web_accessible_resources: ["web_accessible_resource1.js"],
+        },
+    },
+    output: {
+        web_accessible_resources: { delete: ["web_accessible_resource2.js"] },
     },
 }];
 
