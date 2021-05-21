@@ -85,25 +85,45 @@ export class ChromeExtensionManifestParser {
     ): ChromeExtensionManifestEntriesDiff {
         const result: ChromeExtensionManifestEntriesDiff = {};
         // background
-        result.background = this.diffSingleEntryComponent(last.background, current.background);
+        const background = this.diffSingleEntryComponent(last.background, current.background);
+        background && (result.background = background);
         // content_scripts
-        result.content_scripts = this.diffArrayEntriesComponent(last.content_scripts, current.content_scripts);
+        const content_scripts = this.diffArrayEntriesComponent(last.content_scripts, current.content_scripts);
+        if (content_scripts) {
+            const content_scripts_diff: any = {};
+            content_scripts.create && content_scripts.create.length > 0 && (content_scripts_diff.create = content_scripts.create);
+            content_scripts.delete && content_scripts.delete.length > 0 && (content_scripts_diff.delete = content_scripts.delete);
+            (Object.keys(content_scripts_diff).length > 0) && (result.content_scripts = content_scripts_diff);
+        }
         // options_page
-        result.options_page = this.diffSingleEntryComponent(last.options_page, current.options_page);
+        const options_page = this.diffSingleEntryComponent(last.options_page, current.options_page);
+        options_page && (result.options_page = options_page);
         // options_ui
-        result.options_ui = this.diffSingleEntryComponent(last.options_ui, current.options_ui);
+        const options_ui = this.diffSingleEntryComponent(last.options_ui, current.options_ui);
+        options_ui && (result.options_ui = options_ui);
         // popup
-        result.popup = this.diffSingleEntryComponent(last.popup, current.popup);
+        const popup = this.diffSingleEntryComponent(last.popup, current.popup);
+        popup && (result.popup = popup);
         // override
-        result.override = {
-            bookmarks: this.diffSingleEntryComponent(last.override?.bookmarks, current.override?.bookmarks),
-            history: this.diffSingleEntryComponent(last.override?.history, current.override?.history),
-            newtab: this.diffSingleEntryComponent(last.override?.newtab, current.override?.newtab),
-        };
+        const bookmarks = this.diffSingleEntryComponent(last.override?.bookmarks, current.override?.bookmarks);
+        const history = this.diffSingleEntryComponent(last.override?.history, current.override?.history);
+        const newtab = this.diffSingleEntryComponent(last.override?.newtab, current.override?.newtab);
+        const override: any = {};
+        bookmarks && (override.bookmarks = bookmarks);
+        history && (override.history = history);
+        newtab && (override.newtab = newtab);
+        (Object.keys(override).length > 0) && (result.override = override);
         // devtools
-        result.devtools = this.diffSingleEntryComponent(last.devtools, current.devtools);
+        const devtools = this.diffSingleEntryComponent(last.devtools, current.devtools);
+        devtools && (result.devtools = devtools);
         // web_accessible_resources
-        result.web_accessible_resources = this.diffArrayEntriesComponent(last.web_accessible_resources, current.web_accessible_resources);
+        const web_accessible_resources = this.diffArrayEntriesComponent(last.web_accessible_resources, current.web_accessible_resources);
+        if (web_accessible_resources) {
+            const web_accessible_resources_diff: any = {};
+            web_accessible_resources.create && web_accessible_resources.create.length > 0 && (web_accessible_resources_diff.create = web_accessible_resources.create);
+            web_accessible_resources.delete && web_accessible_resources.delete.length > 0 && (web_accessible_resources_diff.delete = web_accessible_resources.delete);
+            (Object.keys(web_accessible_resources_diff).length > 0) && (result.web_accessible_resources = web_accessible_resources_diff);
+        }
         return result;
     }
 

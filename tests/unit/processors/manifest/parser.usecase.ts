@@ -1,5 +1,5 @@
 import { ChromeExtensionManifest } from "@root/src/manifest";
-import { ChromeExtensionManifestEntries } from "@root/src/processors/manifest/parser";
+import { ChromeExtensionManifestEntries, ChromeExtensionManifestEntriesDiff } from "@root/src/processors/manifest/parser";
 import { UseCase } from "@root/tests/common/usecase";
 import path from "path";
 
@@ -65,7 +65,7 @@ const entries: UseCase<ChromeExtensionManifest, ChromeExtensionManifestEntries>[
 const diffEntries: UseCase<{
     last: ChromeExtensionManifestEntries,
     current: ChromeExtensionManifestEntries,
-}, Partial<ChromeExtensionManifestEntries>>[] = [{
+}, ChromeExtensionManifestEntriesDiff | undefined>[] = [{
     description: "Empty manifest",
     input: {
         last: {},
@@ -81,7 +81,10 @@ const diffEntries: UseCase<{
         },
     },
     output: {
-        background: "background.js",
+        background: {
+            status: "create",
+            entry: "background.js",
+        }
     },
 }, {
     description: "Add content_script",
@@ -92,7 +95,9 @@ const diffEntries: UseCase<{
         },
     },
     output: {
-        content_scripts: ["content_scirpt.js"],
+        content_scripts: {
+            create: ["content_scirpt.js"],
+        },
     },
 }, {
     description: "Add content_script",
@@ -105,7 +110,9 @@ const diffEntries: UseCase<{
         },
     },
     output: {
-        content_scripts: ["content_scirpt2.js"],
+        content_scripts: {
+            create: ["content_scirpt2.js"],
+        },
     },
 }, {
     description: "Add options_page",
@@ -116,7 +123,10 @@ const diffEntries: UseCase<{
         },
     },
     output: {
-        options_page: "options_page.js",
+        options_page: {
+            status: "create",
+            entry: "options_page.js",
+        },
     },
 }, {
     description: "Add options_ui",
@@ -127,7 +137,10 @@ const diffEntries: UseCase<{
         },
     },
     output: {
-        options_ui: "options_ui.js",
+        options_ui: {
+            status: "create",
+            entry: "options_ui.js",
+        },
     },
 }, {
     description: "Add popup",
@@ -138,7 +151,10 @@ const diffEntries: UseCase<{
         },
     },
     output: {
-        popup: "popup.js",
+        popup: {
+            status: "create",
+            entry: "popup.js",
+        },
     },
 }, {
     description: "Add devtools",
@@ -149,31 +165,38 @@ const diffEntries: UseCase<{
         },
     },
     output: {
-        devtools: "devtools.js",
+        devtools: {
+            status: "create",
+            entry: "devtools.js",
+        },
     },
 }, {
     description: "Add web_accessible_resources",
     input: {
         last: {},
         current: {
-            content_scripts: ["web_accessible_resource.js"],
+            web_accessible_resources: ["web_accessible_resource.js"],
         },
     },
     output: {
-        content_scripts: ["web_accessible_resource.js"],
+        web_accessible_resources: {
+            create: ["web_accessible_resource.js"],
+        },
     },
 }, {
     description: "Add web_accessible_resources",
     input: {
         last: {
-            content_scripts: ["web_accessible_resource1.js"],
+            web_accessible_resources: ["web_accessible_resource1.js"],
         },
         current: {
-            content_scripts: ["web_accessible_resource1.js", "web_accessible_resource2.js"],
+            web_accessible_resources: ["web_accessible_resource1.js", "web_accessible_resource2.js"],
         },
     },
     output: {
-        content_scripts: ["web_accessible_resource2.js"],
+        web_accessible_resources: {
+            create: ["web_accessible_resource2.js"],
+        },
     },
 }];
 
