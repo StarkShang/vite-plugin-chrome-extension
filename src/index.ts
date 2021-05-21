@@ -38,20 +38,22 @@ export const chromeExtension = (
             }
             return options;
         },
-        transform(code, id) {
-            manifestProcessor.load(JSON.parse(code));
+        async transform(code, id) {
+            // main logic here
+            await manifestProcessor.resolve(JSON.parse(code));
             return "console.log('chrome-extension')"; // eliminate warning for empty chunk
         },
         outputOptions(options: OutputOptions): OutputOptions {
             const outputFile = path.resolve(options.dir || path.join(process.cwd(), "dist") , "manifest.json");
             return { file: outputFile, format: "es", exports: "none", sourcemap: false };
         },
-        renderChunk(_code: string, chunk: RenderedChunk, _options: NormalizedOutputOptions) {
+        async renderChunk(_code: string, chunk: RenderedChunk, _options: NormalizedOutputOptions) {
+            await manifestProcessor.generateBundle();
             return chunk.facadeModuleId === manifestProcessor.filePath
-                ? manifestProcessor.toString()
+                ? { code: manifestProcessor.toString() }
                 : null;
-        }
-    }
+        },
+    };
 };
 
 function loadPackageJson() {

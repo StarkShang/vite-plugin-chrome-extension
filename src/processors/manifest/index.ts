@@ -69,35 +69,46 @@ export class ManifestProcessor {
      * Load content from manifest.json
      * @param options: rollup input options
      */
-    public load(manifest: ChromeExtensionManifest): void {
+    public async resolve(manifest: ChromeExtensionManifest): Promise<void> {
         /* --------------- VALIDATE MANIFEST.JSON CONTENT --------------- */
         this.validateChromeExtensionManifest(manifest);
         /* --------------- APPLY USER CUSTOM CONFIG --------------- */
         const currentManifest = this.applyExternalManifestConfiguration(manifest);
+        /* --------------- CACHE MANIFEST & ENTRIES & DIFF --------------- */
+        this.cache.manifest = currentManifest;
         const entries = this.manifestParser.entries(currentManifest, this.options.rootPath!);
         // if reload manifest.json, then calculate diff and restart sub bundle tasks
-        const waitForBuild = this.cache.entries
+        this.cache.entriesDiff = this.cache.entries
             ? this.manifestParser.diffEntries(this.cache.entries, entries) // calculate diff between the last and the current manifest
             : ChromeExtensionManifestParser.entriesToDiff(entries);
-        this.buildComponents(waitForBuild);
-        // record current manifest and entries
-        this.cache.manifest = currentManifest;
+        console.log(chalk`{blue find entries}`, this.cache.entriesDiff);
         this.cache.entries = entries;
     }
 
-    private buildComponents(entries: ChromeExtensionManifestEntriesDiff) {
+    public async generateBundle() {
+        if (!this.cache.entriesDiff) { return; }
+        this.buildComponents(this.cache.entriesDiff);
+    }
+
+    private async buildComponents(diff: ChromeExtensionManifestEntriesDiff): Promise<void> {
         // background
-        // if (entries.background) {
-        //     switch (entries.background.status) {
-        //         case "create":
-        //         case "update":
-        //             entries.background.entry && this.backgroundProcessor.load(entries.background.entry, this.options.watch);
-        //             break;
-        //         case "delete":
-        //             entries.background.entry && this.backgroundProcessor.stop(entries.background.entry);
-        //             break;
-        //     }
-        // }
+        if (diff.background) {
+            switch (diff.background.status) {
+                case "create":
+                case "update":
+                    if (diff.background.entry) {
+                        const output = await this.backgroundProcessor.resolve(diff.background.entry);
+                        this.cache.manifest && (this.cache.manifest.background = { service_worker: output });
+                    }
+                    break;
+                case "delete":
+                    if (diff.background.entry) {
+                        await this.backgroundProcessor.stop();
+                        // TODO: delete output file
+                    }
+                    break;
+            }
+        }
         // content_scripts
         // if (entries.content_scripts) {
         //     if (entries.content_scripts.create) {
@@ -204,27 +215,27 @@ export class ManifestProcessor {
         }
     }
 
-    public async generateBundle(context: PluginContext, bundle: OutputBundle) {
-        if (!this.cache.manifest) { throw new Error("[generate bundle] Manifest cannot be empty"); }
-        /* ----------------- GET CHUNKS -----------------*/
-        const chunks = getChunk(bundle);
-        const assets = getAssets(bundle);
-        /* ----------------- UPDATE PERMISSIONS ----------------- */
-        this.permissionProcessor.derivePermissions(context, chunks, this.cache.manifest);
-        /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
-        await this.contentScriptProcessor.generateBundle(context, bundle, this.cache.manifest);
-        await this.contentScriptProcessor.generateBundleFromDynamicImports(context, bundle, this.cache2.dynamicImportContentScripts);
-        /* ----------------- SETUP BACKGROUND SCRIPTS ----------------- */
-        await this.backgroundProcessor.generateBundle(context, bundle, this.cache.manifest);
-        /* ----------------- SETUP ASSETS IN WEB ACCESSIBLE RESOURCES ----------------- */
+    // public async generateBundle(context: PluginContext, bundle: OutputBundle) {
+    //     if (!this.cache.manifest) { throw new Error("[generate bundle] Manifest cannot be empty"); }
+    //     /* ----------------- GET CHUNKS -----------------*/
+    //     const chunks = getChunk(bundle);
+    //     const assets = getAssets(bundle);
+    //     /* ----------------- UPDATE PERMISSIONS ----------------- */
+    //     this.permissionProcessor.derivePermissions(context, chunks, this.cache.manifest);
+    //     /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
+    //     await this.contentScriptProcessor.generateBundle(context, bundle, this.cache.manifest);
+    //     await this.contentScriptProcessor.generateBundleFromDynamicImports(context, bundle, this.cache2.dynamicImportContentScripts);
+    //     /* ----------------- SETUP BACKGROUND SCRIPTS ----------------- */
+    //     await this.backgroundProcessor.generateBundle(context, bundle, this.cache.manifest);
+    //     /* ----------------- SETUP ASSETS IN WEB ACCESSIBLE RESOURCES ----------------- */
 
-        /* ----------------- STABLE EXTENSION ID ----------------- */
-        /* ----------------- OUTPUT MANIFEST.JSON ----------------- */
-        /* ----------- OUTPUT MANIFEST.JSON ---------- */
-        this.generateManifest(context, this.cache.manifest);
-        // validate manifest
-        this.validateManifest();
-    }
+    //     /* ----------------- STABLE EXTENSION ID ----------------- */
+    //     /* ----------------- OUTPUT MANIFEST.JSON ----------------- */
+    //     /* ----------- OUTPUT MANIFEST.JSON ---------- */
+    //     this.generateManifest(context, this.cache.manifest);
+    //     // validate manifest
+    //     this.validateManifest();
+    // }
 
     private validateChromeExtensionManifest(manifest: ChromeExtensionManifest) {
         const { options_page, options_ui } = manifest;

@@ -91,7 +91,10 @@ const diffEntries: UseCase<{
         current: {},
     },
     output: {
-        background: { status: "delete" },
+        background: {
+            status: "delete",
+            entry: "background.js",
+        },
     },
 }, {
     description: "Update background",
@@ -173,7 +176,10 @@ const diffEntries: UseCase<{
         current: {},
     },
     output: {
-        options_page: { status: "delete" },
+        options_page: {
+            status: "delete",
+            entry: "options_page.js",
+        },
     },
 }, {
     description: "Update options_page",
@@ -206,7 +212,10 @@ const diffEntries: UseCase<{
         current: {},
     },
     output: {
-        options_ui: { status: "delete" },
+        options_ui: {
+            status: "delete",
+            entry: "options_ui.js",
+        },
     },
 }, {
     description: "Update options_ui",
@@ -239,7 +248,10 @@ const diffEntries: UseCase<{
         current: {},
     },
     output: {
-        popup: { status: "delete" },
+        popup: {
+            status: "delete",
+            entry: "popup.js",
+        },
     },
 }, {
     description: "Update popup",
@@ -271,7 +283,10 @@ const diffEntries: UseCase<{
         last: { devtools: "devtools.js" },
         current: {},
     },
-    output: { devtools: { status: "delete" } },
+    output: { devtools: {
+        status: "delete",
+        entry: "devtools.js",
+    } },
 }, {
     description: "Update devtools",
     input: {

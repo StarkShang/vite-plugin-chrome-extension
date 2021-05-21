@@ -1,4 +1,4 @@
-import { OutputBundle, PluginContext, rollup, TransformPluginContext } from "rollup";
+import { OutputBundle, PluginContext, RollupWatcher, TransformPluginContext } from "rollup";
 import { resolve, parse, join } from "path";
 import { existsSync, readFileSync } from "fs";
 import slash from "slash";
@@ -7,7 +7,8 @@ import { removeFileExtension } from "../../common/utils";
 import { findChunkByName } from "../../utils/helpers";
 import { mixinChunksForIIFE } from "../mixin";
 import { NormalizedChromeExtensionOptions } from "@/configs/options";
-import vite, { resolveConfig } from "vite";
+import vite from "vite";
+import { EventEmitter } from "events";
 
 const dynamicImportAssetRex = /(?<=chrome.scripting.insertCSS\()[\s\S]*?(?=\))/gm;
 const dynamicImportScriptRex = /(?<=chrome.scripting.executeScript\()[\s\S]*?(?=\))/gm;
@@ -19,17 +20,47 @@ export interface BackgroundDynamicImport {
 
 export class BackgroundProcesser {
     private entryPath = "";
+    private watcher: RollupWatcher | null = null;
     constructor(private options: NormalizedChromeExtensionOptions) {}
-    public async load(entryPath: string, watch: boolean) {
+    public async resolve(entryPath: string) {
         this.entryPath = entryPath;
-        await vite.build({
-            build: {
-                rollupOptions: {
-                    input: this.entryPath,
+        return await this.build();
+    }
+
+    public async stop() {
+        this.watcher?.close();
+        this.watcher = null;
+    }
+
+    public async build(): Promise<string> {
+        return new Promise(resolve => {
+            // stop previous watcher
+            this.stop();
+            vite.build({
+                build: {
+                    rollupOptions: {
+                        input: this.entryPath,
+                    },
+                    emptyOutDir: false,
+                    watch: this.options.watch
+                        ? { clearScreen: true }
+                        : null,
                 },
-                emptyOutDir: false,
-            },
-            configFile: false, // must set to false, to avoid load config from vite.config.ts
+                plugins: [{
+                    name: "test",
+                    generateBundle(_options, bundle, _isWrite) {
+                        const entry = Object.entries(bundle)
+                            .find(entry => entry[1].type === "chunk" && entry[1].isEntry);
+                        resolve(entry ? entry[0] : "");
+                    },
+                }],
+                configFile: false, // must set to false, to avoid load config from vite.config.ts
+            }).then(output => {
+                if (output instanceof EventEmitter) {
+                    const watcher = output as RollupWatcher;
+                    this.watcher = watcher;
+                }
+            });
         });
     }
 

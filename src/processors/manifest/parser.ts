@@ -151,7 +151,7 @@ export class ChromeExtensionManifestParser {
         if (!last && current) {
             return { status: "create", entry: current };
         } else if (last && !current) {
-            return { status: "delete" };
+            return { status: "delete", entry: last };
         } else if (current !== last) {
             return { status: "update", entry: current };
         }
@@ -169,7 +169,9 @@ export class ChromeExtensionManifestParser {
     }
 
     public backgroundEntry(manifest: ChromeExtensionManifest, srcPath: string) {
-        return manifest.background ? path.resolve(srcPath, manifest.background.service_worker) : undefined;
+        return (manifest.background && manifest.background.service_worker)
+            ? path.resolve(srcPath, manifest.background.service_worker)
+            : undefined;
     }
 
     public contentScriptEntries(manifest: ChromeExtensionManifest, srcPath: string) {
