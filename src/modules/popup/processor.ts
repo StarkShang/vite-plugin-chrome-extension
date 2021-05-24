@@ -1,5 +1,6 @@
 import { WatcherOptions } from "rollup";
 import { IComponentProcessor } from "../common";
+import { Plugin } from "vite";
 
 export interface PopupProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -8,7 +9,7 @@ export interface PopupProcessorOptions {
 
 export interface NormalizedPopupProcessorOptions {
     watch: WatcherOptions | null | undefined;
-    plugins: [],
+    plugins: Plugin[],
 }
 
 const DefaultPopupProcessorOptions: NormalizedPopupProcessorOptions = {
@@ -33,7 +34,7 @@ export class PopupProcessor implements IComponentProcessor {
 
     private normalizeOptions(options: PopupProcessorOptions): NormalizedPopupProcessorOptions {
         const normalizedOptions = { ...options };
-        if (normalizedOptions.watch === false) {
+        if (normalizedOptions.watch === false || normalizedOptions.watch === undefined) {
             normalizedOptions.watch = undefined;
         } else if (normalizedOptions.watch === true) {
             normalizedOptions.watch = {};

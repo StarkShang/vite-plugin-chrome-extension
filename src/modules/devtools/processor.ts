@@ -62,7 +62,7 @@ export class DevtoolsProcessor implements IComponentProcessor {
 
     private normalizeOptions(options: DevtoolsProcessorOptions): NormalizedDevtoolsProcessorOptions {
         const normalizedOptions = { ...options };
-        if (normalizedOptions.watch === false) {
+        if (normalizedOptions.watch === false || normalizedOptions.watch === undefined) {
             normalizedOptions.watch = undefined;
         } else if (normalizedOptions.watch === true) {
             normalizedOptions.watch = {};

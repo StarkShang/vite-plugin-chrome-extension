@@ -2,11 +2,11 @@ import slash from "slash";
 import { OutputAsset, OutputBundle, PluginContext, WatcherOptions } from "rollup";
 import { removeFileExtension } from "../../common/utils";
 import { ChromeExtensionManifest, WebAccessibleResource } from "../../manifest";
-import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import { findAssetByName, findChunkByName } from "../../utils/helpers";
 import { updateCss } from "../../common/utils/css";
 import { mixinChunksForIIFE } from "../mixin";
 import { IComponentProcessor } from "../common";
+import { Plugin } from "vite";
 
 export interface ContentScriptProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -15,7 +15,7 @@ export interface ContentScriptProcessorOptions {
 
 export interface NormalizedContentScriptProcessorOptions {
     watch: WatcherOptions | null | undefined;
-    plugins: [],
+    plugins: Plugin[],
 }
 
 const DefaultContentScriptProcessorOptions: NormalizedContentScriptProcessorOptions = {
@@ -95,7 +95,7 @@ export class ContentScriptProcessor implements IComponentProcessor {
     }
     private normalizeOptions(options: ContentScriptProcessorOptions): NormalizedContentScriptProcessorOptions {
         const normalizedOptions = { ...options };
-        if (normalizedOptions.watch === false) {
+        if (normalizedOptions.watch === false || normalizedOptions.watch === undefined) {
             normalizedOptions.watch = undefined;
         } else if (normalizedOptions.watch === true) {
             normalizedOptions.watch = {};

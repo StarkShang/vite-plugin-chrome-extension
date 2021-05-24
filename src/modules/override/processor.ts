@@ -1,4 +1,5 @@
 import { WatcherOptions } from "rollup";
+import { Plugin } from "vite";
 import { IComponentProcessor } from "../common";
 
 export interface OverrideBookmarksProcessorOptions {
@@ -8,7 +9,7 @@ export interface OverrideBookmarksProcessorOptions {
 
 export interface NormalizedOverrideBookmarksProcessorOptions {
     watch: WatcherOptions | null | undefined;
-    plugins: [],
+    plugins: Plugin[],
 }
 
 const DefaultOverrideBookmarksProcessorOptions: NormalizedOverrideBookmarksProcessorOptions = {
@@ -29,7 +30,7 @@ export class OverrideBookmarksProcessor implements IComponentProcessor {
     }
     private normalizeOptions(options: OverrideBookmarksProcessorOptions): NormalizedOverrideBookmarksProcessorOptions {
         const normalizedOptions = { ...options };
-        if (normalizedOptions.watch === false) {
+        if (normalizedOptions.watch === false || normalizedOptions.watch === undefined) {
             normalizedOptions.watch = undefined;
         } else if (normalizedOptions.watch === true) {
             normalizedOptions.watch = {};
@@ -46,7 +47,7 @@ export interface OverrideHistoryProcessorOptions {
 
 export interface NormalizedOverrideHistoryProcessorOptions {
     watch: WatcherOptions | null | undefined;
-    plugins: [],
+    plugins: Plugin[],
 }
 
 const DefaultOverrideHistoryProcessorOptions: NormalizedOverrideHistoryProcessorOptions = {
@@ -67,7 +68,7 @@ export class OverrideHistoryProcessor implements IComponentProcessor {
     }
     private normalizeOptions(options: OverrideHistoryProcessorOptions): NormalizedOverrideHistoryProcessorOptions {
         const normalizedOptions = { ...options };
-        if (normalizedOptions.watch === false) {
+        if (normalizedOptions.watch === false || normalizedOptions.watch === undefined) {
             normalizedOptions.watch = undefined;
         } else if (normalizedOptions.watch === true) {
             normalizedOptions.watch = {};
@@ -84,7 +85,7 @@ export interface OverrideNewtabProcessorOptions {
 
 export interface NormalizedOverrideNewtabProcessorOptions {
     watch: WatcherOptions | null | undefined;
-    plugins: [],
+    plugins: Plugin[],
 }
 
 const DefaultOverrideNewtabProcessorOptions: NormalizedOverrideNewtabProcessorOptions = {
@@ -105,7 +106,7 @@ export class OverrideNewtabProcessor implements IComponentProcessor {
     }
     private normalizeOptions(options: OverrideNewtabProcessorOptions): NormalizedOverrideNewtabProcessorOptions {
         const normalizedOptions = { ...options };
-        if (normalizedOptions.watch === false) {
+        if (normalizedOptions.watch === false || normalizedOptions.watch === undefined) {
             normalizedOptions.watch = undefined;
         } else if (normalizedOptions.watch === true) {
             normalizedOptions.watch = {};

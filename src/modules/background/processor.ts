@@ -6,7 +6,7 @@ import { ChromeExtensionManifest } from "../../manifest";
 import { removeFileExtension } from "../../common/utils";
 import { findChunkByName } from "../../utils/helpers";
 import { mixinChunksForIIFE } from "../mixin";
-import vite from "vite";
+import vite, { Plugin } from "vite";
 import { EventEmitter } from "events";
 import { IComponentProcessor } from "../common";
 
@@ -27,7 +27,7 @@ export interface BackgroundProcessorOptions {
 export interface NormalizedBackgroundProcessorOptions {
     rootPath: string;
     watch: WatcherOptions | null | undefined;
-    plugins: [],
+    plugins: Plugin[],
 }
 
 const DefaultBackgroundProcessorOptions: NormalizedBackgroundProcessorOptions = {
@@ -153,7 +153,7 @@ export class BackgroundProcesser implements IComponentProcessor {
         if (!existsSync(normalizedOptions.rootPath)) {
             throw new Error("root path does not exist");
         }
-        if (normalizedOptions.watch === false) {
+        if (normalizedOptions.watch === false || normalizedOptions.watch === undefined) {
             normalizedOptions.watch = undefined;
         } else if (normalizedOptions.watch === true) {
             normalizedOptions.watch = {};

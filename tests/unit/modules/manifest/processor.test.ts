@@ -1,6 +1,7 @@
-import { ChromeExtensionConfigurationInfo, ManifestProcessor } from "@root/src/modules/manifest";
+import { ManifestProcessor } from "@/modules/manifest";
 import { describe, it } from "mocha";
 import { assert } from "chai";
+import { ChromeExtensionManifest } from "@root/src/manifest";
 
 describe("ManifestProcessor", () => {
     describe("load", () => {
@@ -48,7 +49,7 @@ describe("ManifestProcessor", () => {
         });
         it("User other custom manifest configuration", () => {
             const processor = new ManifestProcessor();
-            const config = {} as ChromeExtensionConfigurationInfo;
+            const config = {} as ChromeExtensionManifest;
             const manifest = (processor as any).applyExternalManifestConfiguration(config);
             assert.equal(manifest, config);
         });

@@ -22,8 +22,8 @@
         "rootDir": "..",
         "resolveJsonModule": true,
         "paths": {
-            "@root/*": ["./*"],
             "@/*": ["src/*"],
+            "@root/*": ["./*"],
         },
         "forceConsistentCasingInFileNames": true,
         "importHelpers": true,
