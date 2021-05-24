@@ -1,15 +1,22 @@
 import { EventEmitter } from "events";
 import { RollupWatcher, WatcherOptions } from "rollup";
-import vite from "vite";
+import vite, { Plugin } from "vite";
 import { IComponentProcessor } from "../common";
 
-export interface NormalizedDevtoolsProcessorOptions {
-    watch?: WatcherOptions | null;
+export interface DevtoolsProcessorOptions {
+    watch?: boolean | WatcherOptions | null;
+    plugins?: Plugin[];
 }
 
-export interface DevtoolsProcessorOptions {
-    watch?: WatcherOptions | null;
+export interface NormalizedDevtoolsProcessorOptions {
+    watch: WatcherOptions | null | undefined;
+    plugins: Plugin[];
 }
+
+const DefaultDevtoolsProcessorOptions: NormalizedDevtoolsProcessorOptions = {
+    watch: undefined,
+    plugins: [],
+};
 
 export class DevtoolsProcessor implements IComponentProcessor {
     private _options: NormalizedDevtoolsProcessorOptions;
@@ -49,12 +56,18 @@ export class DevtoolsProcessor implements IComponentProcessor {
         this._watcher = null;
     }
 
-    constructor(options: DevtoolsProcessorOptions) {
+    constructor(options: DevtoolsProcessorOptions = {}) {
         this._options = this.normalizeOptions(options);
     }
+
     private normalizeOptions(options: DevtoolsProcessorOptions): NormalizedDevtoolsProcessorOptions {
-        return {
-            watch: {}
+        const normalizedOptions = { ...options };
+        if (normalizedOptions.watch === false) {
+            normalizedOptions.watch = undefined;
+        } else if (normalizedOptions.watch === true) {
+            normalizedOptions.watch = {};
         }
+        if (!normalizedOptions.plugins) { normalizedOptions.plugins = DefaultDevtoolsProcessorOptions.plugins; }
+        return normalizedOptions as NormalizedDevtoolsProcessorOptions;
     }
 }

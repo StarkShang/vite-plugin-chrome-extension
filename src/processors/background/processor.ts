@@ -1,12 +1,11 @@
-import { OutputBundle, PluginContext, RollupWatcher, TransformPluginContext } from "rollup";
-import { resolve, parse, join } from "path";
+import { OutputBundle, PluginContext, RollupWatcher, TransformPluginContext, WatcherOptions } from "rollup";
+import { resolve, parse, join,  } from "path";
 import { existsSync, readFileSync } from "fs";
 import slash from "slash";
 import { ChromeExtensionManifest } from "../../manifest";
 import { removeFileExtension } from "../../common/utils";
 import { findChunkByName } from "../../utils/helpers";
 import { mixinChunksForIIFE } from "../mixin";
-import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import vite from "vite";
 import { EventEmitter } from "events";
 import { IComponentProcessor } from "../common";
@@ -19,19 +18,37 @@ export interface BackgroundDynamicImport {
     imports: string[];
 }
 
+export interface BackgroundProcessorOptions {
+    rootPath: string;
+    watch?: boolean | WatcherOptions | null;
+    plugins?: Plugin[];
+}
+
+export interface NormalizedBackgroundProcessorOptions {
+    rootPath: string;
+    watch: WatcherOptions | null | undefined;
+    plugins: [],
+}
+
+const DefaultBackgroundProcessorOptions: NormalizedBackgroundProcessorOptions = {
+    rootPath: "",
+    watch: undefined,
+    plugins: [],
+};
+
 export class BackgroundProcesser implements IComponentProcessor {
-    private entryPath = "";
-    private watcher: RollupWatcher | null = null;
-    constructor(private options: NormalizedChromeExtensionOptions) {}
+    private _options: NormalizedBackgroundProcessorOptions;
+    private _entryPath = "";
+    private _watcher: RollupWatcher | null = null;
 
     public async resolve(entryPath: string) {
-        this.entryPath = entryPath;
+        this._entryPath = entryPath;
         return await this.build();
     }
 
     public async stop() {
-        this.watcher?.close();
-        this.watcher = null;
+        this._watcher?.close();
+        this._watcher = null;
     }
 
     public async build(): Promise<string> {
@@ -41,10 +58,10 @@ export class BackgroundProcesser implements IComponentProcessor {
             vite.build({
                 build: {
                     rollupOptions: {
-                        input: this.entryPath,
+                        input: this._entryPath,
                     },
                     emptyOutDir: false,
-                    watch: this.options.watch
+                    watch: this._options.watch
                         ? { clearScreen: true }
                         : null,
                 },
@@ -60,14 +77,14 @@ export class BackgroundProcesser implements IComponentProcessor {
             }).then(output => {
                 if (output instanceof EventEmitter) {
                     const watcher = output as RollupWatcher;
-                    this.watcher = watcher;
+                    this._watcher = watcher;
                 }
             });
         });
     }
 
     public resolveDynamicImports(context: TransformPluginContext, code: string): BackgroundDynamicImport {
-        if (!this.options.rootPath) {
+        if (!this._options.rootPath) {
             throw new TypeError("BackgroundProcesser: options.srcDir is not initialized");
         }
         /* ----------------- PROCESS DYNAMICALLY IMPORTED ASSETS -----------------*/
@@ -76,7 +93,7 @@ export class BackgroundProcesser implements IComponentProcessor {
             .reduce((f, m) => f.concat(...(m || [])) || [], [] as string[])
             .map(m => { console.log("resolveDynamicImports", m); return m; })
             .forEach(m => {
-                const filePath = resolve(this.options.rootPath!, m);
+                const filePath = resolve(this._options.rootPath!, m);
                 if (existsSync(filePath)) {
                     context.emitFile({
                         type: "asset",
@@ -92,7 +109,7 @@ export class BackgroundProcesser implements IComponentProcessor {
             dynamicImportScriptRex,
             match => match.replace(/(?<=(files:\[)?)\"[\s\S]*?\"(?=\]?)/gm, fileStr => {
                 const file = parse(fileStr.replace(/\"/g, "").trim());
-                const filePath = resolve(this.options.rootPath!, file.dir, file.base);
+                const filePath = resolve(this._options.rootPath!, file.dir, file.base);
                 if (existsSync(filePath)) {
                     const referenceId = context.emitFile({
                         id: filePath,
@@ -124,5 +141,24 @@ export class BackgroundProcesser implements IComponentProcessor {
                 manifest.background.service_worker = slash(await mixinChunksForIIFE(context, chunk, bundle));
             }
         }
+    }
+
+    constructor(options: BackgroundProcessorOptions) {
+        this._options = this.normalizeOptions(options);
+    }
+
+    private normalizeOptions(options: BackgroundProcessorOptions): NormalizedBackgroundProcessorOptions {
+        const normalizedOptions = { ...options };
+        // check root path
+        if (!existsSync(normalizedOptions.rootPath)) {
+            throw new Error("root path does not exist");
+        }
+        if (normalizedOptions.watch === false) {
+            normalizedOptions.watch = undefined;
+        } else if (normalizedOptions.watch === true) {
+            normalizedOptions.watch = {};
+        }
+        if (!normalizedOptions.plugins) { normalizedOptions.plugins = DefaultBackgroundProcessorOptions.plugins; }
+        return normalizedOptions as NormalizedBackgroundProcessorOptions;
     }
 }

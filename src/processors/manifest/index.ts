@@ -3,26 +3,20 @@ import chalk from "chalk";
 import memoize from "mem";
 import { relative } from "path";
 import { cosmiconfigSync } from "cosmiconfig";
-import { EmittedAsset, OutputBundle, PluginContext, rollup, TransformPluginContext } from "rollup";
-import vite, { resolveConfig, ResolvedConfig } from "vite";
+import { EmittedAsset, PluginContext } from "rollup";
 import { ChromeExtensionManifest } from "../../manifest";
-import { deriveFiles, ChromeExtensionManifestEntries, ChromeExtensionManifestParser, ChromeExtensionManifestEntriesDiff, ChromeExtensionManifestEntryDiff, ChromeExtensionManifestEntryArrayDiff } from "./parser";
+import { deriveFiles, ChromeExtensionManifestParser, ChromeExtensionManifestEntriesDiff, ChromeExtensionManifestEntryDiff, ChromeExtensionManifestEntryArrayDiff } from "./parser";
 import { reduceToRecord } from "../../manifest-input/reduceToRecord";
 import { ManifestInputPluginCache } from "../../plugin-options";
-import { cloneObject } from "../../utils/cloneObject";
 import { manifestName } from "../../manifest-input/common/constants";
-import { getAssets, getChunk } from "../../utils/bundle";
-import {
-    validateManifest,
-    ValidationErrorsArray,
-} from "../../manifest-input/manifest-parser/validate";
-import { ContentScriptProcessor } from "../content-script/content-script";
+import { validateManifest } from "../../manifest-input/manifest-parser/validate";
+import { ContentScriptProcessor } from "../content-script/processor";
 import { PermissionProcessor, PermissionProcessorOptions } from "../permission";
-import { BackgroundProcesser } from "../background/background";
+import { BackgroundProcesser } from "../background/processor";
 import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import { ChromeExtensionManifestCache } from "./cache";
 import { IComponentProcessor } from "../common";
-import { OptionsPageProcessor, OptionsUiProcessor } from "../options/processor";
+import { OptionsProcessor } from "../options/processor";
 import { DevtoolsProcessor } from "../devtools/processor";
 import { OverrideBookmarksProcessor, OverrideHistoryProcessor, OverrideNewtabProcessor } from "../override/processor";
 import { PopupProcessor } from "../popup/processor";
@@ -58,28 +52,36 @@ export class ManifestProcessor {
     public cache = new ChromeExtensionManifestCache();
     public manifestParser = new ChromeExtensionManifestParser();
     public permissionProcessor: PermissionProcessor;
-    public backgroundProcessor: BackgroundProcesser;
-    public contentScriptProcessor: ContentScriptProcessor;
-    public popupProcessor: PopupProcessor;
-    public optionsPageProcessor: OptionsPageProcessor;
-    public optionsUiProcessor: OptionsUiProcessor;
-    public devtoolProcessor: DevtoolsProcessor;
-    public overrideBookmarksProcessor: OverrideBookmarksProcessor;
-    public overrideHistoryProcessor: OverrideHistoryProcessor;
-    public overrideNewTabProcessor: OverrideNewtabProcessor;
+    public backgroundProcessor?: BackgroundProcesser;
+    public contentScriptProcessor?: ContentScriptProcessor;
+    public popupProcessor?: PopupProcessor;
+    public optionsProcessor?: OptionsProcessor;
+    public devtoolProcessor?: DevtoolsProcessor;
+    public overrideBookmarksProcessor?: OverrideBookmarksProcessor;
+    public overrideHistoryProcessor?: OverrideHistoryProcessor;
+    public overrideNewtabProcessor?: OverrideNewtabProcessor;
     public webAccessibleResourceProcessor: WebAccessibleResourceProcessor;
 
     public constructor(private options = {} as NormalizedChromeExtensionOptions) {
-        this.contentScriptProcessor = new ContentScriptProcessor(options);
         this.permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
-        this.backgroundProcessor = new BackgroundProcesser(options);
-        this.popupProcessor = new PopupProcessor();
-        this.optionsPageProcessor = new OptionsPageProcessor();
-        this.optionsUiProcessor = new OptionsUiProcessor();
-        this.devtoolProcessor = new DevtoolsProcessor();
-        this.overrideBookmarksProcessor = new OverrideBookmarksProcessor();
+        options.components?.background && (this.backgroundProcessor = new BackgroundProcesser(options.components.background));
+        options.components?.contentScripts && (this.contentScriptProcessor = new ContentScriptProcessor(options.components.contentScripts === true ? {} : options.components.contentScripts));
+        options.components?.popup && (this.popupProcessor = new PopupProcessor(options.components.popup === true ? {} : options.components.popup));
+        options.components?.options && (this.optionsProcessor = new OptionsProcessor(options.components.options === true ? {} : options.components.options));
+        options.components?.devtools && (this.devtoolProcessor =  new DevtoolsProcessor(options.components.devtools === true ? {} : options.components.devtools));
+        if (options.components?.override) {
+            if (options.components.override === true) {
+                this.overrideBookmarksProcessor = new OverrideBookmarksProcessor();
+                this.overrideHistoryProcessor = new OverrideHistoryProcessor();
+                this.overrideNewtabProcessor = new OverrideNewtabProcessor();
+            } else {
+                options.components.override.bookmarks && (this.overrideBookmarksProcessor = new OverrideBookmarksProcessor(options.components.override.bookmarks === true ? {} : options.components.override.bookmarks));
+                options.components.override.history && (this.overrideHistoryProcessor = new OverrideHistoryProcessor(options.components.override.history === true ? {} : options.components.override.history));
+                options.components.override.newtab && (this.overrideNewtabProcessor = new OverrideNewtabProcessor(options.components.override.newtab === true ? {} : options.components.override.newtab));
+            }
+        }
         this.overrideHistoryProcessor = new OverrideHistoryProcessor();
-        this.overrideNewTabProcessor = new OverrideNewtabProcessor();
+        this.overrideNewtabProcessor = new OverrideNewtabProcessor();
         this.webAccessibleResourceProcessor = new WebAccessibleResourceProcessor();
     }
 
@@ -115,11 +117,11 @@ export class ManifestProcessor {
 
     private async buildComponents(diff: ChromeExtensionManifestEntriesDiff): Promise<void> {
         // background
-        diff.background && this.buildComponent(diff.background, this.backgroundProcessor, output => {
+        this.backgroundProcessor && diff.background && this.buildComponent(diff.background, this.backgroundProcessor, output => {
             this.cache.manifest && (this.cache.manifest.background = { service_worker: output });
         });
         // content_scripts
-        diff.content_scripts && this.buildArrayComponent(diff.content_scripts, this.contentScriptProcessor, (input, output) => {
+        this.contentScriptProcessor && diff.content_scripts && this.buildArrayComponent(diff.content_scripts, this.contentScriptProcessor, (input, output) => {
             this.cache.manifest && this.cache.manifest.content_scripts?.forEach(group => {
                 if (!group.js) { return; }
                 for (let index = 0; index < group.js.length; index++) {
@@ -130,35 +132,35 @@ export class ManifestProcessor {
             });
         });
         // popup
-        diff.popup && this.buildComponent(diff.popup, this.popupProcessor, output => {
+        this.popupProcessor && diff.popup && this.buildComponent(diff.popup, this.popupProcessor, output => {
             this.cache.manifest && this.cache.manifest.action && (this.cache.manifest.action.default_popup = output);
         });
         // options_page
-        diff.options_page && this.buildComponent(diff.options_page, this.optionsPageProcessor, output => {
+        this.optionsProcessor && diff.options_page && this.buildComponent(diff.options_page, this.optionsProcessor, output => {
             this.cache.manifest && (this.cache.manifest.options_page = output);
         });
         // options_ui
-        diff.options_ui && this.buildComponent(diff.options_ui, this.optionsUiProcessor, output => {
+        this.optionsProcessor && diff.options_ui && this.buildComponent(diff.options_ui, this.optionsProcessor, output => {
             this.cache.manifest && this.cache.manifest.options_ui && (this.cache.manifest.options_ui.page = output);
         });
         // devtools
-        diff.devtools && this.buildComponent(diff.devtools, this.devtoolProcessor, output => {
+        this.devtoolProcessor && diff.devtools && this.buildComponent(diff.devtools, this.devtoolProcessor, output => {
             this.cache.manifest && (this.cache.manifest.devtools_page = output);
         });
         // override
-        diff.override?.bookmarks && this.buildComponent(diff.override.bookmarks, this.overrideBookmarksProcessor, output => {
+        this.overrideBookmarksProcessor && diff.override?.bookmarks && this.buildComponent(diff.override.bookmarks, this.overrideBookmarksProcessor, output => {
             this.cache.manifest && (
                 this.cache.manifest.chrome_url_overrides
                     ? this.cache.manifest.chrome_url_overrides.bookmarks = output
                     : this.cache.manifest.chrome_url_overrides = { bookmarks: output });
         });
-        diff.override?.history && this.buildComponent(diff.override.history, this.overrideHistoryProcessor, output => {
+        this.overrideHistoryProcessor && diff.override?.history && this.buildComponent(diff.override.history, this.overrideHistoryProcessor, output => {
             this.cache.manifest && (
                 this.cache.manifest.chrome_url_overrides
                     ? this.cache.manifest.chrome_url_overrides.history = output
                     : this.cache.manifest.chrome_url_overrides = { history: output });
         });
-        diff.override?.newtab && this.buildComponent(diff.override.newtab, this.overrideNewTabProcessor, output => {
+        this.overrideNewtabProcessor && diff.override?.newtab && this.buildComponent(diff.override.newtab, this.overrideNewtabProcessor, output => {
             this.cache.manifest && (
                 this.cache.manifest.chrome_url_overrides
                     ? this.cache.manifest.chrome_url_overrides.newtab = output
@@ -240,11 +242,11 @@ export class ManifestProcessor {
         return inputs;
     }
 
-    public transform(context: TransformPluginContext, code: string, id: string, ssr?: boolean) {
-        const { code:updatedCode, imports } = this.backgroundProcessor.resolveDynamicImports(context, code);
-        this.cache2.dynamicImportContentScripts.push(...imports);
-        return updatedCode;
-    }
+    // public transform(context: TransformPluginContext, code: string, id: string, ssr?: boolean) {
+    //     const { code:updatedCode, imports } = this.backgroundProcessor.resolveDynamicImports(context, code);
+    //     this.cache2.dynamicImportContentScripts.push(...imports);
+    //     return updatedCode;
+    // }
 
     public isDynamicImportedContentScript(referenceId: string) {
         return this.cache2.dynamicImportContentScripts.includes(referenceId);
