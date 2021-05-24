@@ -14,7 +14,7 @@ import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import { PermissionProcessor, PermissionProcessorOptions } from "../permission";
 import { ChromeExtensionManifestCache } from "./cache";
 import { IComponentProcessor } from "../common";
-import { BackgroundProcesser } from "../background";
+import { BackgroundProcessor } from "../background";
 import { ContentScriptProcessor } from "../content-script";
 import { OptionsProcessor } from "../options/processor";
 import { DevtoolsProcessor } from "../devtools";
@@ -44,10 +44,10 @@ export class ManifestProcessor {
         srcDir: null,
     } as ManifestInputPluginCache;
     public cache = new ChromeExtensionManifestCache();
-    public manifestParser = new ChromeExtensionManifestParser();
+    public manifestParser;
     private processors = new Map<string, IComponentProcessor>();
     public permissionProcessor: PermissionProcessor;
-    public backgroundProcessor?: BackgroundProcesser;
+    public backgroundProcessor?: BackgroundProcessor;
     public contentScriptProcessor?: ContentScriptProcessor;
     public popupProcessor?: PopupProcessor;
     public optionsProcessor?: OptionsProcessor;
@@ -58,8 +58,11 @@ export class ManifestProcessor {
     public webAccessibleResourceProcessor?: WebAccessibleResourceProcessor;
 
     public constructor(private options = {} as NormalizedChromeExtensionOptions) {
+        // initial manifest parser
+        this.manifestParser = new ChromeExtensionManifestParser();
+        // initial processors
         this.permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
-        options.components?.background && this.processors.set("background", new BackgroundProcesser(options.components.background));
+        options.components?.background && this.processors.set("background", new BackgroundProcessor(options.components.background));
         options.components?.contentScripts && this.processors.set("content-script", new ContentScriptProcessor(options.components.contentScripts === true ? {} : options.components.contentScripts));
         options.components?.popup && this.processors.set("popup", new PopupProcessor(options.components.popup === true ? {} : options.components.popup));
         options.components?.options && this.processors.set("options", new OptionsProcessor(options.components.options === true ? {} : options.components.options));
@@ -93,6 +96,7 @@ export class ManifestProcessor {
         /* --------------- APPLY USER CUSTOM CONFIG --------------- */
         const currentManifest = this.applyExternalManifestConfiguration(manifest);
         /* --------------- CACHE MANIFEST & ENTRIES & DIFF --------------- */
+        const patch = this.manifestParser.diff(currentManifest, this.cache.manifest);
         this.cache.manifest = currentManifest;
         const entries = this.manifestParser.entries(currentManifest, this.options.rootPath!);
         // if reload manifest.json, then calculate diff and restart sub bundle tasks

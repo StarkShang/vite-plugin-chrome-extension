@@ -1,1 +1,1 @@
-export { BackgroundProcessorOptions, BackgroundProcesser } from "./processor";
+export { BackgroundProcessorOptions, BackgroundProcessor } from "./processor";

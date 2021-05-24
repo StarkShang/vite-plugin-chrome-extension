@@ -1,5 +1,5 @@
 import { NormalizedChromeExtensionOptions } from "@/configs/options";
-import { BackgroundProcesser } from "@/modules/background";
+import { BackgroundProcessor } from "@/modules/background";
 import { ContentScriptProcessor } from "@/modules/content-script";
 import { DevtoolsProcessor } from "@/modules/devtools";
 import { OptionsProcessor } from "@/modules/options";
@@ -49,7 +49,7 @@ const constructor: UseCase<NormalizedChromeExtensionOptions | undefined, any>[] 
         },
     },
     output: [
-        { key: "background", type: BackgroundProcesser.name },
+        { key: "background", type: BackgroundProcessor.name },
     ],
 }, {
     description: "content-script component option: undefined",

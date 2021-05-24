@@ -36,7 +36,7 @@ const DefaultBackgroundProcessorOptions: NormalizedBackgroundProcessorOptions = 
     plugins: [],
 };
 
-export class BackgroundProcesser implements IComponentProcessor {
+export class BackgroundProcessor implements IComponentProcessor {
     private _options: NormalizedBackgroundProcessorOptions;
     private _entryPath = "";
     private _watcher: RollupWatcher | null = null;
@@ -85,7 +85,7 @@ export class BackgroundProcesser implements IComponentProcessor {
 
     public resolveDynamicImports(context: TransformPluginContext, code: string): BackgroundDynamicImport {
         if (!this._options.rootPath) {
-            throw new TypeError("BackgroundProcesser: options.srcDir is not initialized");
+            throw new TypeError("BackgroundProcessor: options.srcDir is not initialized");
         }
         /* ----------------- PROCESS DYNAMICALLY IMPORTED ASSETS -----------------*/
         code.match(dynamicImportAssetRex)

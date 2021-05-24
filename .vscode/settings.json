@@ -16,8 +16,12 @@
     "typescript.tsdk": "node_modules/typescript/lib",
     "cSpell.words": [
         "iife",
+        "nacl",
+        "newtab",
         "omnibox",
         "tsconfigs",
+        "usecase",
+        "usecases",
         "vite"
     ]
 }

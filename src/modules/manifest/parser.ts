@@ -9,6 +9,8 @@ import {
     WebAccessibleResource,
 } from "@/manifest";
 import { removeUndefinedProperty } from "../../common/utils/object";
+import { ChromeExtensionManifestPatch } from "./types";
+import { diffBackground, diffContentScripts, diffDevtools, diffOptions, diffOverride, diffPopup, diffWebAccessibleResources } from "./diff";
 
 export interface ChromeExtensionManifestEntries {
     background?: string;
@@ -45,11 +47,40 @@ export interface ChromeExtensionManifestEntriesDiff {
     web_accessible_resources?: ChromeExtensionManifestEntryArrayDiff;
 }
 
-/* -------------------------------------------- */
-/*                 DERIVE FILES                 */
-/* -------------------------------------------- */
-
 export class ChromeExtensionManifestParser {
+    public diff(
+        current: ChromeExtensionManifest = {} as ChromeExtensionManifest,
+        last: ChromeExtensionManifest = {} as ChromeExtensionManifest,
+    ): Partial<ChromeExtensionManifest> {
+        const patch = {} as ChromeExtensionManifestPatch;
+        // name
+        if (current.name !== last.name) patch.name = { before: last.name, after: current.name };
+        // version
+        if (current.version !== current.version) patch.version = { before: last.version, after: current.version };
+        // action
+        // default_locale
+        // description
+        // icons
+        // author
+        // automation
+        /* --------------- UI ENTRIES --------------- */
+        // background service worker
+        diffBackground(current, last, patch);
+        // content scripts
+        diffContentScripts(current, last, patch);
+        // options
+        diffOptions(current, last, patch);
+        // popup
+        diffPopup(current, last, patch);
+        // override
+        diffOverride(current, last, patch);
+        // TODO: standalone
+        // devtools
+        diffDevtools(current, last, patch);
+        // web accessible resources
+        diffWebAccessibleResources(current, last, patch);
+        return {};
+    }
     public entries(manifest: ChromeExtensionManifest, srcPath: string): ChromeExtensionManifestEntries {
         const entries: ChromeExtensionManifestEntries = {};
         // background service worker
