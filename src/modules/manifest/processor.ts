@@ -45,6 +45,7 @@ export class ManifestProcessor {
     } as ManifestInputPluginCache;
     public cache = new ChromeExtensionManifestCache();
     public manifestParser = new ChromeExtensionManifestParser();
+    private processors = new Map<string, IComponentProcessor>();
     public permissionProcessor: PermissionProcessor;
     public backgroundProcessor?: BackgroundProcesser;
     public contentScriptProcessor?: ContentScriptProcessor;
@@ -54,29 +55,27 @@ export class ManifestProcessor {
     public overrideBookmarksProcessor?: OverrideBookmarksProcessor;
     public overrideHistoryProcessor?: OverrideHistoryProcessor;
     public overrideNewtabProcessor?: OverrideNewtabProcessor;
-    public webAccessibleResourceProcessor: WebAccessibleResourceProcessor;
+    public webAccessibleResourceProcessor?: WebAccessibleResourceProcessor;
 
     public constructor(private options = {} as NormalizedChromeExtensionOptions) {
         this.permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
-        options.components?.background && (this.backgroundProcessor = new BackgroundProcesser(options.components.background));
-        options.components?.contentScripts && (this.contentScriptProcessor = new ContentScriptProcessor(options.components.contentScripts === true ? {} : options.components.contentScripts));
-        options.components?.popup && (this.popupProcessor = new PopupProcessor(options.components.popup === true ? {} : options.components.popup));
-        options.components?.options && (this.optionsProcessor = new OptionsProcessor(options.components.options === true ? {} : options.components.options));
-        options.components?.devtools && (this.devtoolProcessor =  new DevtoolsProcessor(options.components.devtools === true ? {} : options.components.devtools));
+        options.components?.background && this.processors.set("background", new BackgroundProcesser(options.components.background));
+        options.components?.contentScripts && this.processors.set("content-script", new ContentScriptProcessor(options.components.contentScripts === true ? {} : options.components.contentScripts));
+        options.components?.popup && this.processors.set("popup", new PopupProcessor(options.components.popup === true ? {} : options.components.popup));
+        options.components?.options && this.processors.set("options", new OptionsProcessor(options.components.options === true ? {} : options.components.options));
+        options.components?.devtools && this.processors.set("devtools", new DevtoolsProcessor(options.components.devtools === true ? {} : options.components.devtools));
         if (options.components?.override) {
             if (options.components.override === true) {
-                this.overrideBookmarksProcessor = new OverrideBookmarksProcessor();
-                this.overrideHistoryProcessor = new OverrideHistoryProcessor();
-                this.overrideNewtabProcessor = new OverrideNewtabProcessor();
+                this.processors.set("bookmarks", new OverrideBookmarksProcessor());
+                this.processors.set("history", new OverrideHistoryProcessor());
+                this.processors.set("newtab", new OverrideNewtabProcessor());
             } else {
-                options.components.override.bookmarks && (this.overrideBookmarksProcessor = new OverrideBookmarksProcessor(options.components.override.bookmarks === true ? {} : options.components.override.bookmarks));
-                options.components.override.history && (this.overrideHistoryProcessor = new OverrideHistoryProcessor(options.components.override.history === true ? {} : options.components.override.history));
-                options.components.override.newtab && (this.overrideNewtabProcessor = new OverrideNewtabProcessor(options.components.override.newtab === true ? {} : options.components.override.newtab));
+                options.components.override.bookmarks && this.processors.set("bookmarks", new OverrideBookmarksProcessor(options.components.override.bookmarks === true ? {} : options.components.override.bookmarks));
+                options.components.override.history && this.processors.set("history", new OverrideHistoryProcessor(options.components.override.history === true ? {} : options.components.override.history));
+                options.components.override.newtab && this.processors.set("newtab", new OverrideNewtabProcessor(options.components.override.newtab === true ? {} : options.components.override.newtab));
             }
         }
-        this.overrideHistoryProcessor = new OverrideHistoryProcessor();
-        this.overrideNewtabProcessor = new OverrideNewtabProcessor();
-        this.webAccessibleResourceProcessor = new WebAccessibleResourceProcessor();
+        options.components?.webAccessibleResources && this.processors.set("web-accessible-resource", new WebAccessibleResourceProcessor(options.components.webAccessibleResources === true ? {} : options.components.webAccessibleResources));
     }
 
     // file path of manifest.json
@@ -161,7 +160,7 @@ export class ManifestProcessor {
                     : this.cache.manifest.chrome_url_overrides = { newtab: output });
         });
         // web_accessible_resources
-        diff.web_accessible_resources && this.buildArrayComponent(diff.web_accessible_resources, this.webAccessibleResourceProcessor, (input, output) => {
+        this.webAccessibleResourceProcessor && diff.web_accessible_resources && this.buildArrayComponent(diff.web_accessible_resources, this.webAccessibleResourceProcessor, (input, output) => {
             this.cache.manifest && this.cache.manifest.web_accessible_resources?.forEach(group => {
                 if (!group.resources) { return; }
                 for (let index = 0; index < group.resources.length; index++) {

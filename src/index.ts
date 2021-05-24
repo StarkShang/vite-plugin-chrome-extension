@@ -48,10 +48,12 @@ export const chromeExtension = (
             return { file: outputFile, format: "es", exports: "none", sourcemap: false };
         },
         async renderChunk(_code: string, chunk: RenderedChunk, _options: NormalizedOutputOptions) {
-            await manifestProcessor.generateBundle();
-            return chunk.facadeModuleId === manifestProcessor.filePath
-                ? { code: manifestProcessor.toString() }
-                : null;
+            if (chunk.facadeModuleId === manifestProcessor.filePath) {
+                // build components
+                await manifestProcessor.generateBundle();
+                return { code: manifestProcessor.toString() };
+            }
+            return null;
         },
     };
 };

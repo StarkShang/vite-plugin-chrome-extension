@@ -7,6 +7,7 @@ import { OptionsProcessorOptions } from "../modules/options/processor";
 import { DevtoolsProcessorOptions } from "../modules/devtools/processor";
 import { OverrideBookmarksProcessorOptions, OverrideHistoryProcessorOptions, OverrideNewtabProcessorOptions } from "../modules/override/processor";
 import { StandaloneProcessorOptions } from "../modules/standalone/processor";
+import { WebAccessibleResourceProcessorOptions } from "@/modules/web-accessible-resource/processor";
 
 export interface ChromeExtensionComponentOptions {
     plugins?: Plugin[];
@@ -28,6 +29,7 @@ export interface ChromeExtensionOptions {
         },
         devtools?: boolean | DevtoolsProcessorOptions,
         standalone?: boolean | StandaloneProcessorOptions,
+        webAccessibleResources?: boolean | WebAccessibleResourceProcessorOptions,
     };
 }
 
