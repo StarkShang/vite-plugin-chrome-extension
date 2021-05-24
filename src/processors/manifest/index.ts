@@ -6,7 +6,7 @@ import { cosmiconfigSync } from "cosmiconfig";
 import { EmittedAsset, OutputBundle, PluginContext, rollup, TransformPluginContext } from "rollup";
 import vite, { resolveConfig, ResolvedConfig } from "vite";
 import { ChromeExtensionManifest } from "../../manifest";
-import { deriveFiles, ChromeExtensionManifestEntries, ChromeExtensionManifestParser, ChromeExtensionManifestEntriesDiff } from "./parser";
+import { deriveFiles, ChromeExtensionManifestEntries, ChromeExtensionManifestParser, ChromeExtensionManifestEntriesDiff, ChromeExtensionManifestEntryDiff, ChromeExtensionManifestEntryArrayDiff } from "./parser";
 import { reduceToRecord } from "../../manifest-input/reduceToRecord";
 import { ManifestInputPluginCache } from "../../plugin-options";
 import { cloneObject } from "../../utils/cloneObject";
@@ -21,6 +21,12 @@ import { PermissionProcessor, PermissionProcessorOptions } from "../permission";
 import { BackgroundProcesser } from "../background/background";
 import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import { ChromeExtensionManifestCache } from "./cache";
+import { IComponentProcessor } from "../common";
+import { OptionsPageProcessor, OptionsUiProcessor } from "../options/processor";
+import { DevtoolsProcessor } from "../devtools/processor";
+import { OverrideBookmarksProcessor, OverrideHistoryProcessor, OverrideNewtabProcessor } from "../override/processor";
+import { PopupProcessor } from "../popup/processor";
+import { WebAccessibleResourceProcessor } from "../web-accessible-resource/processor";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -51,15 +57,32 @@ export class ManifestProcessor {
     } as ManifestInputPluginCache;
     public cache = new ChromeExtensionManifestCache();
     public manifestParser = new ChromeExtensionManifestParser();
-    public contentScriptProcessor: ContentScriptProcessor;
     public permissionProcessor: PermissionProcessor;
     public backgroundProcessor: BackgroundProcesser;
+    public contentScriptProcessor: ContentScriptProcessor;
+    public popupProcessor: PopupProcessor;
+    public optionsPageProcessor: OptionsPageProcessor;
+    public optionsUiProcessor: OptionsUiProcessor;
+    public devtoolProcessor: DevtoolsProcessor;
+    public overrideBookmarksProcessor: OverrideBookmarksProcessor;
+    public overrideHistoryProcessor: OverrideHistoryProcessor;
+    public overrideNewTabProcessor: OverrideNewtabProcessor;
+    public webAccessibleResourceProcessor: WebAccessibleResourceProcessor;
 
     public constructor(private options = {} as NormalizedChromeExtensionOptions) {
         this.contentScriptProcessor = new ContentScriptProcessor(options);
         this.permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
         this.backgroundProcessor = new BackgroundProcesser(options);
+        this.popupProcessor = new PopupProcessor();
+        this.optionsPageProcessor = new OptionsPageProcessor();
+        this.optionsUiProcessor = new OptionsUiProcessor();
+        this.devtoolProcessor = new DevtoolsProcessor();
+        this.overrideBookmarksProcessor = new OverrideBookmarksProcessor();
+        this.overrideHistoryProcessor = new OverrideHistoryProcessor();
+        this.overrideNewTabProcessor = new OverrideNewtabProcessor();
+        this.webAccessibleResourceProcessor = new WebAccessibleResourceProcessor();
     }
+
     // file path of manifest.json
     private _filePath = "";
     public get filePath() { return this._filePath; }
@@ -92,50 +115,101 @@ export class ManifestProcessor {
 
     private async buildComponents(diff: ChromeExtensionManifestEntriesDiff): Promise<void> {
         // background
-        if (diff.background) {
-            switch (diff.background.status) {
-                case "create":
-                case "update":
-                    if (diff.background.entry) {
-                        const output = await this.backgroundProcessor.resolve(diff.background.entry);
-                        this.cache.manifest && (this.cache.manifest.background = { service_worker: output });
-                    }
-                    break;
-                case "delete":
-                    if (diff.background.entry) {
-                        await this.backgroundProcessor.stop();
-                        // TODO: delete output file
-                    }
-                    break;
-            }
-        }
+        diff.background && this.buildComponent(diff.background, this.backgroundProcessor, output => {
+            this.cache.manifest && (this.cache.manifest.background = { service_worker: output });
+        });
         // content_scripts
-        // if (entries.content_scripts) {
-        //     if (entries.content_scripts.create) {
-        //         entries.content_scripts.create.forEach(script => this.contentScriptProcessor.build(script, this.options.watch));
-        //     }
-        //     if (entries.content_scripts.delete) {
-        //         entries.content_scripts.delete.forEach(script => this.contentScriptProcessor.stop(script, this.options.watch));
-        //     }
-        // }
+        diff.content_scripts && this.buildArrayComponent(diff.content_scripts, this.contentScriptProcessor, (input, output) => {
+            this.cache.manifest && this.cache.manifest.content_scripts?.forEach(group => {
+                if (!group.js) { return; }
+                for (let index = 0; index < group.js.length; index++) {
+                    if (group.js[index] === input) {
+                        group.js[index] = output;
+                    }
+                }
+            });
+        });
+        // popup
+        diff.popup && this.buildComponent(diff.popup, this.popupProcessor, output => {
+            this.cache.manifest && this.cache.manifest.action && (this.cache.manifest.action.default_popup = output);
+        });
         // options_page
-        // if (entries.options_page) {
-        //     switch (entries.options_page.status) {
-        //         case "create":
-        //         case "update":
-        //             entries.options_page.entry && this.optionsProcessor.load(entries.options_page.entry, this.options.watch);
-        //             break;
-        //         case "delete":
-        //             entries.options_page.entry && this.optionsProcessor.stop(entries.options_page.entry);
-        //             break;
-        //     }
-        // }
-        // waitForBuild.options_page && console.log(waitForBuild.options_page);
-        // waitForBuild.options_ui && console.log(waitForBuild.options_ui);
-        // waitForBuild.override && console.log(waitForBuild.override);
-        // waitForBuild.popup && console.log(waitForBuild.popup);
-        // waitForBuild.devtools && console.log(waitForBuild.devtools);
-        // waitForBuild.web_accessible_resources && console.log(waitForBuild.web_accessible_resources);
+        diff.options_page && this.buildComponent(diff.options_page, this.optionsPageProcessor, output => {
+            this.cache.manifest && (this.cache.manifest.options_page = output);
+        });
+        // options_ui
+        diff.options_ui && this.buildComponent(diff.options_ui, this.optionsUiProcessor, output => {
+            this.cache.manifest && this.cache.manifest.options_ui && (this.cache.manifest.options_ui.page = output);
+        });
+        // devtools
+        diff.devtools && this.buildComponent(diff.devtools, this.devtoolProcessor, output => {
+            this.cache.manifest && (this.cache.manifest.devtools_page = output);
+        });
+        // override
+        diff.override?.bookmarks && this.buildComponent(diff.override.bookmarks, this.overrideBookmarksProcessor, output => {
+            this.cache.manifest && (
+                this.cache.manifest.chrome_url_overrides
+                    ? this.cache.manifest.chrome_url_overrides.bookmarks = output
+                    : this.cache.manifest.chrome_url_overrides = { bookmarks: output });
+        });
+        diff.override?.history && this.buildComponent(diff.override.history, this.overrideHistoryProcessor, output => {
+            this.cache.manifest && (
+                this.cache.manifest.chrome_url_overrides
+                    ? this.cache.manifest.chrome_url_overrides.history = output
+                    : this.cache.manifest.chrome_url_overrides = { history: output });
+        });
+        diff.override?.newtab && this.buildComponent(diff.override.newtab, this.overrideNewTabProcessor, output => {
+            this.cache.manifest && (
+                this.cache.manifest.chrome_url_overrides
+                    ? this.cache.manifest.chrome_url_overrides.newtab = output
+                    : this.cache.manifest.chrome_url_overrides = { newtab: output });
+        });
+        // web_accessible_resources
+        diff.web_accessible_resources && this.buildArrayComponent(diff.web_accessible_resources, this.webAccessibleResourceProcessor, (input, output) => {
+            this.cache.manifest && this.cache.manifest.web_accessible_resources?.forEach(group => {
+                if (!group.resources) { return; }
+                for (let index = 0; index < group.resources.length; index++) {
+                    if (group.resources[index] === input) {
+                        group.resources[index] = output;
+                    }
+                }
+            });
+        });
+    }
+
+    private async buildComponent(
+        diff: ChromeExtensionManifestEntryDiff,
+        processor: IComponentProcessor,
+        callback: (path: string) => void,
+    ): Promise<void> {
+        switch (diff.status) {
+            case "create":
+            case "update":
+                if (diff.entry) {
+                    const output = await processor.resolve(diff.entry);
+                    callback(output);
+                }
+                break;
+            case "delete":
+                if (diff.entry) {
+                    await processor.stop();
+                    // TODO: delete output file
+                }
+                break;
+        }
+    }
+
+    private async buildArrayComponent(
+        diff: ChromeExtensionManifestEntryArrayDiff,
+        processor: IComponentProcessor,
+        callback: (input: string, output: string) => void,
+    ): Promise<void> {
+        for (const entry of diff.create || []) {
+            callback(entry, await processor.resolve(entry));
+        }
+        for (const entry of diff.delete || []) {
+            await processor.stop();
+        }
     }
 
     public toString() {

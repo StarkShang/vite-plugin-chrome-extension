@@ -9,6 +9,7 @@ import { mixinChunksForIIFE } from "../mixin";
 import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import vite from "vite";
 import { EventEmitter } from "events";
+import { IComponentProcessor } from "../common";
 
 const dynamicImportAssetRex = /(?<=chrome.scripting.insertCSS\()[\s\S]*?(?=\))/gm;
 const dynamicImportScriptRex = /(?<=chrome.scripting.executeScript\()[\s\S]*?(?=\))/gm;
@@ -18,10 +19,11 @@ export interface BackgroundDynamicImport {
     imports: string[];
 }
 
-export class BackgroundProcesser {
+export class BackgroundProcesser implements IComponentProcessor {
     private entryPath = "";
     private watcher: RollupWatcher | null = null;
     constructor(private options: NormalizedChromeExtensionOptions) {}
+
     public async resolve(entryPath: string) {
         this.entryPath = entryPath;
         return await this.build();

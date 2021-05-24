@@ -6,9 +6,16 @@ import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import { findAssetByName, findChunkByName } from "../../utils/helpers";
 import { updateCss } from "../../common/utils/css";
 import { mixinChunksForIIFE } from "../mixin";
+import { IComponentProcessor } from "../common";
 
-export class ContentScriptProcessor {
+export class ContentScriptProcessor implements IComponentProcessor {
     constructor(private options: NormalizedChromeExtensionOptions) {}
+    public resolve(entry: string): Promise<string> {
+        throw new Error("Method not implemented.");
+    }
+    public stop(): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
     public async generateBundle(
         context: PluginContext,
         bundle: OutputBundle,
