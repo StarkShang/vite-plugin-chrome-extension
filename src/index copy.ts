@@ -11,9 +11,9 @@ import {
     HtmlInputsOptions,
     NormalizedChromeExtensionOptions,
 } from "./plugin-options";
-import { ManifestProcessor } from "./processors/manifest";
+import { ManifestProcessor } from "./modules/manifest";
 import { ChromeExtensionManifest } from "./manifest";
-import { HtmlProcessor } from "./processors/html";
+import { HtmlProcessor } from "./modules/html";
 import slash from "slash";
 
 export { simpleReloader } from "./plugin-reloader-simple";

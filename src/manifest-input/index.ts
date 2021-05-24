@@ -19,7 +19,7 @@ import { generateManifest } from "./generateBundle";
 import { combinePerms } from "./manifest-parser/combine";
 import {
     deriveFiles,
-} from "../processors/manifest/parser";
+} from "../modules/manifest/parser";
 import {
     validateManifest,
     ValidationErrorsArray,

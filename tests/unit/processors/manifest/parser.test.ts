@@ -1,7 +1,7 @@
 import path from "path";
 import { describe, it } from "mocha";
 import { expect } from "chai";
-import { ChromeExtensionManifestParser } from "@/processors/manifest/parser";
+import { ChromeExtensionManifestParser } from "@root/src/modules/manifest/parser";
 import { ChromeExtensionManifest } from "@/manifest";
 import usecases from "./parser.usecase";
 

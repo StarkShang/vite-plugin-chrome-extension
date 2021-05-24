@@ -1,12 +1,12 @@
 import { Plugin } from "vite";
 import { ChromeExtensionManifest } from "../manifest";
-import { BackgroundProcessorOptions } from "../processors/background/processor";
-import { ContentScriptProcessorOptions } from "../processors/content-script/processor";
-import { PopupProcessorOptions } from "../processors/popup/processor";
-import { OptionsProcessorOptions } from "../processors/options/processor";
-import { DevtoolsProcessorOptions } from "../processors/devtools/processor";
-import { OverrideBookmarksProcessorOptions, OverrideHistoryProcessorOptions, OverrideNewtabProcessorOptions } from "../processors/override/processor";
-import { StandaloneProcessorOptions } from "../processors/standalone/processor";
+import { BackgroundProcessorOptions } from "../modules/background/processor";
+import { ContentScriptProcessorOptions } from "../modules/content-script/processor";
+import { PopupProcessorOptions } from "../modules/popup/processor";
+import { OptionsProcessorOptions } from "../modules/options/processor";
+import { DevtoolsProcessorOptions } from "../modules/devtools/processor";
+import { OverrideBookmarksProcessorOptions, OverrideHistoryProcessorOptions, OverrideNewtabProcessorOptions } from "../modules/override/processor";
+import { StandaloneProcessorOptions } from "../modules/standalone/processor";
 
 export interface ChromeExtensionComponentOptions {
     plugins?: Plugin[];

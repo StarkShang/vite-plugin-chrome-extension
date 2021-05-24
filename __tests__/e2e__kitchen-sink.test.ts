@@ -4,7 +4,7 @@ import { OutputAsset, rollup, RollupOptions, RollupOutput } from "rollup";
 import { isAsset, isChunk } from "../src/utils/helpers";
 import { getScriptSrc, loadHtml } from "../src/html-inputs/cheerio";
 import { ChromeExtensionManifest } from "../src/manifest.v2";
-import { deriveFiles } from "../src/processors/manifest/parser";
+import { deriveFiles } from "../src/modules/manifest/parser";
 import { byFileName, getExtPath, getTestName, requireExtFile } from "../__fixtures__/utils";
 
 const testName = getTestName(__filename);

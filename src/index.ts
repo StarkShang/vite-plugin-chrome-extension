@@ -1,10 +1,10 @@
 import path from "path";
 import { readJSONSync } from "fs-extra";
 import { ResolvedConfig } from "vite";
-import { ManifestProcessor } from "./processors/manifest";
+import { ManifestProcessor } from "./modules/manifest";
 import { ChromeExtensionPlugin } from "./plugin-options";
 import { ChromeExtensionOptions, NormalizedChromeExtensionOptions } from "@/configs/options";
-import { NormalizedOutputOptions, OutputBundle, OutputOptions, RenderedChunk } from "rollup";
+import { NormalizedOutputOptions, OutputOptions, RenderedChunk } from "rollup";
 export { simpleReloader } from "./plugin-reloader-simple";
 export const stubChunkName = "stub__empty-chrome-extension-manifest";
 export const chromeExtensionPluginName = "chrome-extension";

@@ -1,5 +1,5 @@
 import { ChromeExtensionManifest } from "@/manifest";
-import { ChromeExtensionManifestEntries, ChromeExtensionManifestEntriesDiff } from "@/processors/manifest/parser";
+import { ChromeExtensionManifestEntries, ChromeExtensionManifestEntriesDiff } from "@root/src/modules/manifest/parser";
 import { UseCase } from "@root/tests/common/usecase";
 import path from "path";
 
