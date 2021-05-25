@@ -39,3 +39,22 @@ function diffArray<T>(current: T[], last: T[]): ChromeExtensionManifestEntryPatc
 
     return [];
 }
+
+export function diffStringArray(
+    current: string[] = [],
+    last: string[] = []
+): ChromeExtensionManifestEntryPatch<string|undefined>[] {
+    const addition = current
+        .filter(item => !last.includes(item))
+        .map(item => ({
+            before: undefined,
+            after: item,
+        }));
+    const deletion = last
+        .filter(item => !current.includes(item))
+        .map(item => ({
+            before: item,
+            after: undefined,
+        }));
+    return [...addition, ...deletion];
+}

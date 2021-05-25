@@ -63,16 +63,52 @@ export class ChromeExtensionManifestParser {
         // icons
         // author
         // automation
+        // chrome_settings_overrides
+        // commands
+        // content_capabilities
+        // content_security_policy
+        // converted_from_user_script
+        // current_locale
+        // declarative_net_request
+        // differential_fingerprint
+        // event_rules
+        // externally_connectable
+        // file_browser_handlers
+        // file_system_provider_capabilities
+        // homepage_url
+        // host_permissions
+        // import
+        // incognito
+        // input_components
+        // key
+        // minimum_chrome_version
+        // nacl_modules
+        // natively_connectable
+        // oauth2
+        // offline_enabled
+        // omnibox
+        // optional_permissions
+        // permissions
+        // platforms
+        // replacement_web_app
+        // requirements
+        // sandbox
+        // short_name
+        // storage
+        // system_indicator
+        // tts_engine
+        // update_url
+        // version_name
         /* --------------- UI ENTRIES --------------- */
         // background service worker
         diffBackground(current, last, patch);
         // content scripts
         diffContentScripts(current, last, patch);
-        // options
+        // options: options_page && options_ui
         diffOptions(current, last, patch);
         // popup
         diffPopup(current, last, patch);
-        // override
+        // chrome_url_overrides
         diffOverride(current, last, patch);
         // TODO: standalone
         // devtools
@@ -81,6 +117,7 @@ export class ChromeExtensionManifestParser {
         diffWebAccessibleResources(current, last, patch);
         return {};
     }
+
     public entries(manifest: ChromeExtensionManifest, srcPath: string): ChromeExtensionManifestEntries {
         const entries: ChromeExtensionManifestEntries = {};
         // background service worker

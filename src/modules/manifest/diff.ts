@@ -1,5 +1,6 @@
-import { ChromeExtensionManifest } from "@/manifest";
-import { ChromeExtensionManifestPatch } from "./types";
+import { diffStringArray } from "@/common/utils/diff";
+import { ChromeExtensionManifest, ContentScript } from "@/manifest";
+import { ChromeExtensionManifestContentScriptPatch, ChromeExtensionManifestPatch } from "./types";
 
 export function diffBackground(
     current: ChromeExtensionManifest,
@@ -15,12 +16,75 @@ export function diffBackground(
         };
 }
 
+function mergeContentScripts(scripts: ContentScript[]) {
+    return scripts.reduce((dict, item) => {
+        const key = item.matches.sort().toString();
+        if (dict.has(key)) {
+            const group = dict.get(key)!;
+            if (item.js) { group.js = group.js ? group.js.concat(item.js) : item.js; }
+            if (item.css) { group.css = group.css ? group.css.concat(item.css) : item.css; }
+        } else {
+            dict.set(key, item);
+        }
+        return dict;
+    }, new Map<string, ContentScript>());
+}
+export function diffContentScript(
+    current?: ContentScript,
+    last?: ContentScript,
+): ChromeExtensionManifestContentScriptPatch | undefined {
+    if (current === undefined) {
+        if (last === undefined) {
+            return undefined;
+        } else {
+            // delete
+            const patch = {} as ChromeExtensionManifestContentScriptPatch;
+            const jsPatch = last.js?.map(js => ({ before: js, after: undefined }));
+            jsPatch && jsPatch.length > 0 && (patch.js = jsPatch);
+            const cssPatch = last.css?.map(css => ({ before: css, after: undefined }));
+            cssPatch && cssPatch.length > 0 && (patch.css = cssPatch);
+            const matchPatch = last.matches.map(match => ({ before: match, after: undefined }));
+            matchPatch && matchPatch.length > 0 && (patch.matches = matchPatch);
+            if (last.match_about_blank !== undefined)
+                patch.match_about_blank = ({ before: last.match_about_blank, after: undefined });
+            return Object.keys(patch).length > 0 ? patch : undefined;
+        }
+    } else {
+        if (last === undefined) {
+            // add
+            const patch = {} as ChromeExtensionManifestContentScriptPatch;
+            const jsPatch = current.js?.map(js => ({ before: undefined, after: js }));
+            jsPatch && jsPatch.length > 0 && (patch.js = jsPatch);
+            const cssPatch = current.css?.map(css => ({ before: undefined, after: css }));
+            cssPatch && cssPatch.length > 0 && (patch.css = cssPatch);
+            const matchPatch = current.matches.map(match => ({ before: undefined, after: match }));
+            matchPatch && matchPatch.length > 0 && (patch.matches = matchPatch);
+            if (current.match_about_blank !== undefined)
+                patch.match_about_blank = ({ before: undefined, after: current.match_about_blank });
+            return Object.keys(patch).length > 0 ? patch : undefined;
+        } else {
+            // update
+            const patch = {} as ChromeExtensionManifestContentScriptPatch;
+            const jsPatch = diffStringArray(current.js, last.js);
+            jsPatch && jsPatch.length > 0 && (patch.js = jsPatch);
+            const cssPatch = diffStringArray(current.css, last.css);
+            cssPatch && cssPatch.length > 0 && (patch.css = cssPatch);
+            const matchPatch = diffStringArray(current.matches, last.matches);
+            matchPatch && matchPatch.length > 0 && (patch.matches = matchPatch);
+            if (current.match_about_blank !== last.match_about_blank)
+                patch.match_about_blank = ({ before: last.match_about_blank, after: current.match_about_blank });
+            return Object.keys(patch).length > 0 ? patch : undefined;
+        }
+    }
+}
+
 export function diffContentScripts(
     current: ChromeExtensionManifest,
     last: ChromeExtensionManifest,
     patch: ChromeExtensionManifestPatch,
 ): void {
-
+    const currentContentScripts = mergeContentScripts(current.content_scripts || []);
+    const lastContentScripts = mergeContentScripts(last.content_scripts || []);
 }
 
 export function diffOptions(current: ChromeExtensionManifest,
