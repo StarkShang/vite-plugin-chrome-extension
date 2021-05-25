@@ -470,6 +470,76 @@ const diffContentScriptUseCases: UseCase<{
         }],
     },
 }, {
+    description: "add matches: [<all_urls>] to [<all_urls>, https://**/*]",
+    input: {
+        current: {
+            matches: ["<all_urls>", "https://**/*"],
+        },
+        last: {
+            matches: ["<all_urls>"],
+        },
+    },
+    output: {
+        matches: [{
+            before: undefined,
+            after: "https://**/*",
+        }],
+    },
+}, {
+    description: "add matches: [<all_urls>] to [<all_urls>, https://**/*, https://*/google.com]",
+    input: {
+        current: {
+            matches: ["<all_urls>", "https://**/*", "https://*/google.com"],
+        },
+        last: {
+            matches: ["<all_urls>"],
+        },
+    },
+    output: {
+        matches: [{
+            before: undefined,
+            after: "https://**/*",
+        }, {
+            before: undefined,
+            after: "https://*/google.com",
+        }],
+    },
+}, {
+    description: "delete matches: [<all_urls>, https://**/*] to [<all_urls>]",
+    input: {
+        current: {
+            matches: ["<all_urls>"],
+        },
+        last: {
+            matches: ["<all_urls>", "https://**/*"],
+        },
+    },
+    output: {
+        matches: [{
+            before: "https://**/*",
+            after: undefined,
+        }],
+    },
+}, {
+    description: "delete matches: [<all_urls>, https://**/*, https://*/google.com] to [<all_urls>]",
+    input: {
+        current: {
+            matches: ["<all_urls>"],
+        },
+        last: {
+            matches: ["<all_urls>", "https://**/*", "https://*/google.com"],
+        },
+    },
+    output: {
+        matches: [{
+            before: "https://**/*",
+            after: undefined,
+        }, {
+            before: "https://*/google.com",
+            after: undefined,
+        }],
+    },
+}, {
     description: "change match_about_blank: undefined to true",
     input: {
         current: {
@@ -579,12 +649,189 @@ const diffContentScriptsUseCases: UseCase<{
     current: ChromeExtensionManifest,
     last: ChromeExtensionManifest,
 }, ChromeExtensionManifestPatch>[] = [{
+    description: "no content scripts",
+    input: {
+        current: generateManifest(),
+        last: generateManifest(),
+    },
+    output: {}
+}, {
     description: "undefined content scripts",
     input: {
         current: generateManifest({ content_scripts: undefined }),
         last: generateManifest({ content_scripts: undefined }),
     },
     output: {}
+}, {
+    description: "empty js, css and undefined match_about_blank",
+    input: {
+        current: generateManifest({
+            content_scripts: [{
+                matches: ["all_urls"],
+                js: [],
+                css: [],
+                match_about_blank: undefined,
+            }],
+        }),
+        last: generateManifest({
+            content_scripts: [{
+                matches: ["all_urls"],
+            }],
+        }),
+    },
+    output: {}
+}, {
+    description: "add: only matches",
+    input: {
+        current: generateManifest({
+            content_scripts: [{
+                matches: ["all_urls"],
+            }],
+        }),
+        last: generateManifest(),
+    },
+    output: {
+        content_scripts: [{
+            matches: [{
+                before: undefined,
+                after: "all_urls",
+            }],
+        }],
+    }
+}, {
+    description: "add: empty js, css and undefined match_about_blank",
+    input: {
+        current: generateManifest({
+            content_scripts: [{
+                matches: ["all_urls"],
+                js: [],
+                css: [],
+                match_about_blank: undefined,
+            }],
+        }),
+        last: generateManifest(),
+    },
+    output: {
+        content_scripts: [{
+            matches: [{
+                before: undefined,
+                after: "all_urls",
+            }],
+        }],
+    }
+}, {
+    description: "add: js, css, match_about_blank",
+    input: {
+        current: generateManifest({
+            content_scripts: [{
+                matches: ["all_urls"],
+                js: ["content_script.js"],
+                css: ["content_script.css"],
+                match_about_blank: true,
+            }],
+        }),
+        last: generateManifest(),
+    },
+    output: {
+        content_scripts: [{
+            matches: [{
+                before: undefined,
+                after: "all_urls",
+            }],
+            js: [{
+                before: undefined,
+                after: "content_script.js",
+            }],
+            css: [{
+                before: undefined,
+                after: "content_script.css",
+            }],
+            match_about_blank: {
+                before: undefined,
+                after: true,
+            },
+        }],
+    },
+}, {
+    description: "append: js, css, change match_about_blank",
+    input: {
+        current: generateManifest({
+            content_scripts: [{
+                matches: ["all_urls", "https://google.com"],
+                js: ["content_script1.js", "content_script2.js"],
+                css: ["content_script1.css", "content_script2.css"],
+                match_about_blank: true,
+            }],
+        }),
+        last: generateManifest({
+            content_scripts: [{
+                matches: ["all_urls"],
+                js: ["content_script1.js"],
+                css: ["content_script1.css"],
+                match_about_blank: false,
+            }],
+        }),
+    },
+    output: {
+        content_scripts: [{
+            matches: [{
+                before: undefined,
+                after: "https://google.com",
+            }],
+            js: [{
+                before: undefined,
+                after: "content_script2.js",
+            }],
+            css: [{
+                before: undefined,
+                after: "content_script2.css",
+            }],
+            match_about_blank: {
+                before: false,
+                after: true,
+            },
+        }],
+    },
+}, {
+    description: "delete: js, css, change match_about_blank",
+    input: {
+        current: generateManifest({
+            content_scripts: [{
+                matches: ["all_urls"],
+                js: ["content_script1.js"],
+                css: ["content_script1.css"],
+                match_about_blank: false,
+            }],
+        }),
+        last: generateManifest({
+            content_scripts: [{
+                matches: ["all_urls", "https://google.com"],
+                js: ["content_script1.js", "content_script2.js"],
+                css: ["content_script1.css", "content_script2.css"],
+                match_about_blank: true,
+            }],
+        }),
+    },
+    output: {
+        content_scripts: [{
+            matches: [{
+                before: "https://google.com",
+                after: undefined,
+            }],
+            js: [{
+                before: "content_script2.js",
+                after: undefined,
+            }],
+            css: [{
+                before: "content_script2.css",
+                after: undefined,
+            }],
+            match_about_blank: {
+                before: true,
+                after: false,
+            },
+        }],
+    },
 }];
 
 const diffPopupUseCases: UseCase<{

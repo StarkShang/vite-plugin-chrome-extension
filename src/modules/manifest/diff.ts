@@ -83,8 +83,16 @@ export function diffContentScripts(
     last: ChromeExtensionManifest,
     patch: ChromeExtensionManifestPatch,
 ): void {
-    const currentContentScripts = mergeContentScripts(current.content_scripts || []);
-    const lastContentScripts = mergeContentScripts(last.content_scripts || []);
+    const currentContentScripts = current.content_scripts || [];
+    const lastContentScripts = last.content_scripts || [];
+    for (let index = 0; index < Math.max(currentContentScripts.length, lastContentScripts.length); index++) {
+        const scriptDiff = diffContentScript(currentContentScripts[index], lastContentScripts[index]);
+        if (scriptDiff) {
+            patch.content_scripts
+                ? patch.content_scripts.push(scriptDiff)
+                : patch.content_scripts = [scriptDiff];
+        }
+    }
 }
 
 export function diffOptions(current: ChromeExtensionManifest,

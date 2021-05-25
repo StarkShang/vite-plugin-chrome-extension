@@ -21,7 +21,7 @@ describe("modules/manifest/diff", () => {
     describe("diffContentScripts", () => {
         usecases.diffContentScripts.forEach(usecase => it(usecase.description, () => {
             const patch = {};
-            diffContentScripts(usecase.input.current, usecase.input.last, {});
+            diffContentScripts(usecase.input.current, usecase.input.last, patch);
             expect(patch).to.deep.equals(usecase.output);
         }));
     });
