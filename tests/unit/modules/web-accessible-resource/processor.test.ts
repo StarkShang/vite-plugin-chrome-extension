@@ -1,5 +1,4 @@
 import { WebAccessibleResourceProcessor } from "@/modules/web-accessible-resource";
-import { describe, it } from "mocha";
 import { expect } from "chai";
 import usecases from "./processor.usecase";
 

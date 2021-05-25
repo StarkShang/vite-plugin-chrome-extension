@@ -1,5 +1,4 @@
 import { BackgroundProcessor } from "@/modules/background";
-import { describe, it } from "mocha";
 import { expect } from "chai";
 import usecases from "./processor.usecase";
 

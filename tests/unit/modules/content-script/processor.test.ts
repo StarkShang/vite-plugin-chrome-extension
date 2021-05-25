@@ -1,5 +1,4 @@
 import { ContentScriptProcessor } from "@/modules/content-script";
-import { describe, it } from "mocha";
 import { expect } from "chai";
 import usecases from "./processor.usecase";
 

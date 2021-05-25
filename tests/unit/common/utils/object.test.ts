@@ -1,6 +1,5 @@
-import { removeUndefinedProperty } from "@/common/utils/object";
-import { it } from "mocha";
 import { expect } from "chai";
+import { removeUndefinedProperty } from "@/common/utils/object";
 import usecases from "./object.usecase";
 
 describe("common/utils/object", () => {

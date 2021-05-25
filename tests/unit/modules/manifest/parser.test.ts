@@ -1,5 +1,4 @@
 import path from "path";
-import { describe, it } from "mocha";
 import { expect } from "chai";
 import { ChromeExtensionManifestParser } from "@/modules/manifest/parser";
 import { ChromeExtensionManifest } from "@/manifest";
@@ -7,7 +6,7 @@ import usecases from "./parser.usecase";
 
 describe("ManifestParser", () => {
     let parser: ChromeExtensionManifestParser;
-    beforeEach("before each", () => {
+    beforeEach(() => {
         parser = new ChromeExtensionManifestParser();
     });
     describe("entries", () => {

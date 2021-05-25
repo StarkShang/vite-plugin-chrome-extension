@@ -1,6 +1,5 @@
 import { ManifestProcessor } from "@/modules/manifest";
 import { IComponentProcessor } from "@/modules/common";
-import { describe, it } from "mocha";
 import { assert, expect } from "chai";
 import { ChromeExtensionManifest } from "@root/src/manifest";
 import usecases from "./processor.usecase";

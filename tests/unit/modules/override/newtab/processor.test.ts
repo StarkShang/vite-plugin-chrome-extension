@@ -1,5 +1,4 @@
 import { OverrideNewtabProcessor } from "@/modules/override";
-import { describe, it } from "mocha";
 import { expect } from "chai";
 import usecases from "./processor.usecase";
 
