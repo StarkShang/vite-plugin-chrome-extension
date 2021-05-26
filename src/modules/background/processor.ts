@@ -9,6 +9,8 @@ import { mixinChunksForIIFE } from "../mixin";
 import vite, { Plugin } from "vite";
 import { EventEmitter } from "events";
 import { ComponentProcessor } from "../common";
+import { BackgroundProcessorCache } from "./cache";
+import { BundleMapping } from "@/common/models";
 
 const dynamicImportAssetRex = /(?<=chrome.scripting.insertCSS\()[\s\S]*?(?=\))/gm;
 const dynamicImportScriptRex = /(?<=chrome.scripting.executeScript\()[\s\S]*?(?=\))/gm;
@@ -38,44 +40,57 @@ const DefaultBackgroundProcessorOptions: NormalizedBackgroundProcessorOptions = 
 
 export class BackgroundProcessor extends ComponentProcessor {
     private _options: NormalizedBackgroundProcessorOptions;
+    private _cache = new BackgroundProcessorCache();
     private _entryPath = "";
     private _watcher: RollupWatcher | null = null;
 
-    public async resolve(entryPath: string) {
-        this._entryPath = entryPath;
-        return await this.build();
+    public resolve(manifest: ChromeExtensionManifest): void {
+        manifest.background
+            && manifest.background.service_worker
+            && (this._cache.entry = manifest.background.service_worker);
     }
 
-    public async build(): Promise<string> {
-        return new Promise(resolve => {
-            // stop previous watcher
-            this.stop();
-            vite.build({
-                build: {
-                    rollupOptions: {
-                        input: this._entryPath,
+    public async build(): Promise<BundleMapping> {
+        if (this._cache.mapping.module === this._cache.entry) {
+            return this._cache.mapping;
+        } else {
+            const entry = this._cache.entry;
+            return new Promise(resolve => {
+                // stop previous watcher
+                this.stop();
+                vite.build({
+                    build: {
+                        rollupOptions: {
+                            input: entry,
+                        },
+                        emptyOutDir: false,
+                        watch: this._options.watch
+                            ? { clearScreen: true }
+                            : null,
                     },
-                    emptyOutDir: false,
-                    watch: this._options.watch
-                        ? { clearScreen: true }
-                        : null,
-                },
-                plugins: [{
-                    name: "test",
-                    generateBundle(_options, bundle, _isWrite) {
-                        const entry = Object.entries(bundle)
-                            .find(entry => entry[1].type === "chunk" && entry[1].isEntry);
-                        resolve(entry ? entry[0] : "");
-                    },
-                }],
-                configFile: false, // must set to false, to avoid load config from vite.config.ts
-            }).then(output => {
-                if (output instanceof EventEmitter) {
-                    const watcher = output as RollupWatcher;
-                    this._watcher = watcher;
-                }
+                    plugins: [{
+                        name: "test",
+                        generateBundle(_options, bundle, _isWrite) {
+                            const chunk = Object.entries(bundle)
+                                .find(([, chunk]) => chunk.type === "chunk" && chunk.isEntry);
+                            resolve(chunk ? ({
+                                module: entry as string,
+                                bundle: chunk[0] as string,
+                            }) : ({
+                                module: entry as string,
+                                bundle: "",
+                            }));
+                        },
+                    }],
+                    configFile: false, // must set to false, to avoid load config from vite.config.ts
+                }).then(output => {
+                    if (output instanceof EventEmitter) {
+                        const watcher = output as RollupWatcher;
+                        this._watcher = watcher;
+                    }
+                });
             });
-        });
+        }
     }
 
     public async stop() {

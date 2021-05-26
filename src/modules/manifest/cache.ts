@@ -1,5 +1,6 @@
 import { ChromeExtensionManifest } from "@/manifest";
 import { ChromeExtensionManifestEntries, ChromeExtensionManifestEntriesDiff } from "./parser";
+
 export type ChromeExtensionManifestEntryMapping = {
     entry: string;
     bundle: string;

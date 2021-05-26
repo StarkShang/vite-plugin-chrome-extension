@@ -1,15 +1,15 @@
 import fs from "fs-extra";
-import chalk from "chalk";
 import memoize from "mem";
 import { relative } from "path";
 import { cosmiconfigSync } from "cosmiconfig";
 import { EmittedAsset, PluginContext } from "rollup";
-import { ChromeExtensionManifest } from "../../manifest";
+import { BundleMapping, ChromeExtensionManifestEntries, ChromeExtensionManifestEntryType } from "@/common/models";
+import { ChromeExtensionManifest } from "@/manifest";
 import { deriveFiles, ChromeExtensionManifestParser, ChromeExtensionManifestEntriesDiff, ChromeExtensionManifestEntryDiff, ChromeExtensionManifestEntryArrayDiff, ChromeExtensionManifestEntry } from "./parser";
-import { reduceToRecord } from "../../manifest-input/reduceToRecord";
-import { ManifestInputPluginCache } from "../../plugin-options";
-import { manifestName } from "../../manifest-input/common/constants";
-import { validateManifest } from "../../manifest-input/manifest-parser/validate";
+import { reduceToRecord } from "@/manifest-input/reduceToRecord";
+import { ManifestInputPluginCache } from "@/plugin-options";
+import { manifestName } from "@/manifest-input/common/constants";
+import { validateManifest } from "@/manifest-input/manifest-parser/validate";
 import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import { PermissionProcessor, PermissionProcessorOptions } from "../permission";
 import { ChromeExtensionManifestCache, ChromeExtensionManifestEntryMapping, ChromeExtensionManifestEntryMappings } from "./cache";
@@ -72,7 +72,7 @@ export class ManifestProcessor {
         const currentManifest = this.applyExternalManifestConfiguration(manifest);
         /* --------------- CACHE MANIFEST & ENTRIES --------------- */
         this.cache.manifest = currentManifest;
-        this.cache.entries = this.manifestParser.entries(currentManifest);
+        this.processors.forEach(processor => processor.resolve(currentManifest));
     }
 
     // if reload manifest.json, then calculate diff and restart sub bundle tasks
@@ -80,30 +80,47 @@ export class ManifestProcessor {
     public async build(): Promise<void> {
         this.cache.mappings.forEach(mapping => mapping.visited = false);
         // start build process
-        await Promise.all(this.cache.entries?.map(async entry => {
-            if (this.cache.mappings.has(entry.key)) {
-                const mapping = this.cache.mappings.get(entry.key) as ChromeExtensionManifestEntryMapping;
-                entry.bundle = mapping.bundle;
-                mapping.visited = true;
-            } else {
-                const processor = this.processors.get(entry.type);
-                const output = await processor?.build(entry.module) || entry.module;
-                this.cache.mappings.set(entry.key, {
-                    entry: entry.module,
-                    bundle: output,
-                    visited: true,
-                });
-            }
-        })||[]);
-        // remove useless mapping
-        this.cache.mappings.forEach((mapping, key) => {
-            if (mapping.visited === false) {
-                this.cache.mappings.delete(key);
-            }
-        });
+        const bundles = (await Promise.all(Array.from(this.processors).map(async ([key, processor]) => {
+            const output = await processor.build();
+            return { output, key: key as ChromeExtensionManifestEntryType };
+        }))).reduce((bundles, bundle) => {
+            bundles[bundle.key] = bundle.output as (BundleMapping &  BundleMapping[]);
+            return bundles;
+        }, {} as ChromeExtensionManifestEntries);
+        this.updateManifest(bundles);
     }
 
-    public async generate(): Promise<void> {}
+    public async updateManifest(bundles: ChromeExtensionManifestEntries): Promise<void> {
+        if (!this.cache.manifest) { return; }
+        const manifest = this.cache.manifest; // for shortening code
+        bundles.background && (manifest.background = { service_worker: bundles.background.bundle });
+        if (bundles["content-script"]) {
+            manifest.content_scripts?.forEach(group => {
+                group.js?.forEach((script, index) => {
+                    const output = bundles["content-script"]?.find(s => s.module === script);
+                    output && group.js?.splice(index, 1, output.bundle);
+                });
+            });
+        }
+        bundles.popup && (manifest.action = { ...manifest.action, default_popup: bundles.popup.bundle });
+        bundles["options"] && (manifest.options_ui
+            ? manifest.options_ui = {...manifest.options_ui, page: bundles.options.bundle}
+            : manifest.options_page
+                ? manifest.options_page = bundles.options.bundle
+                : void(0));
+        bundles.devtools && (manifest.devtools_page = bundles.devtools.bundle);
+        bundles.bookmarks && (manifest.chrome_url_overrides = {...manifest.chrome_url_overrides, bookmarks: bundles.bookmarks.bundle});
+        bundles.history && (manifest.chrome_url_overrides = {...manifest.chrome_url_overrides, history: bundles.history.bundle});
+        bundles.newtab && (manifest.chrome_url_overrides = {...manifest.chrome_url_overrides, newtab: bundles.newtab.bundle});
+        if (bundles["web-accessible-resource"]) {
+            manifest.web_accessible_resources?.forEach(group => {
+                group.resources?.forEach((resource, index) => {
+                    const output = bundles["web-accessible-resource"]?.find(r => r.module === resource);
+                    output && group.resources?.splice(index, 1, output.bundle);
+                });
+            });
+        }
+    }
 
     public toString() {
         return JSON.stringify(this.cache.manifest, null, 4);
@@ -132,12 +149,6 @@ export class ManifestProcessor {
             this.cache2.inputObj);
         return inputs;
     }
-
-    // public transform(context: TransformPluginContext, code: string, id: string, ssr?: boolean) {
-    //     const { code:updatedCode, imports } = this.backgroundProcessor.resolveDynamicImports(context, code);
-    //     this.cache2.dynamicImportContentScripts.push(...imports);
-    //     return updatedCode;
-    // }
 
     public isDynamicImportedContentScript(referenceId: string) {
         return this.cache2.dynamicImportContentScripts.includes(referenceId);
@@ -281,6 +292,6 @@ export class ManifestProcessor {
         }
         options.components?.webAccessibleResources && this.processors.set("web-accessible-resource", new WebAccessibleResourceProcessor(options.components.webAccessibleResources === true ? {} : options.components.webAccessibleResources));
         // register build end event handler
-        this.processors.forEach(processor => processor.on("buildEnd", this.generate));
+        this.processors.forEach(processor => processor.on("buildEnd", this.updateManifest));
     }
 }

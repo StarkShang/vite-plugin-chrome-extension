@@ -1,5 +1,5 @@
 import slash from "slash";
-import { OutputAsset, OutputBundle, PluginContext, WatcherOptions } from "rollup";
+import { OutputAsset, OutputBundle, PluginContext, RollupWatcher, WatcherOptions } from "rollup";
 import { removeFileExtension } from "../../common/utils";
 import { ChromeExtensionManifest, WebAccessibleResource } from "../../manifest";
 import { findAssetByName, findChunkByName } from "../../utils/helpers";
@@ -7,6 +7,9 @@ import { updateCss } from "../../common/utils/css";
 import { mixinChunksForIIFE } from "../mixin";
 import { ComponentProcessor } from "../common";
 import { Plugin } from "vite";
+import { ContentScriptProcessorCache } from "./cache";
+import { ChromeExtensionManifestEntryMapping } from "../manifest/cache";
+import { BundleMapping } from "@/common/models";
 
 export interface ContentScriptProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -25,15 +28,42 @@ const DefaultContentScriptProcessorOptions: NormalizedContentScriptProcessorOpti
 
 export class ContentScriptProcessor extends ComponentProcessor {
     private _options: NormalizedContentScriptProcessorOptions;
+    private _cache = new ContentScriptProcessorCache();
+    private _watches = new Map<string, RollupWatcher>();
 
-    public resolve(entry: string): Promise<string> {
-        throw new Error("Method not implemented.");
+    public resolve(manifest: ChromeExtensionManifest): void {
+        manifest.content_scripts?.map(group => group.js || [])
+            .forEach(scripts => {
+                scripts.forEach(script => this._cache.entries.push(script));
+            });
     }
     public stop(): Promise<void> {
         throw new Error("Method not implemented.");
     }
-    public async build() {
-        return "";
+    public async build(): Promise<BundleMapping[]> {
+        this._cache.mappings.forEach(mapping => mapping.visited = false);
+        await Promise.all(this._cache.entries?.map(async entry => {
+            if (this._cache.mappings.has(entry)) {
+                const mapping = this._cache.mappings.get(entry) as ChromeExtensionManifestEntryMapping;
+                mapping.visited = true;
+            } else {
+                // TODO: add build logic
+            }
+        }));
+        // clear corrupt mappings
+        this._cache.mappings.forEach((mapping, key) => {
+            if (!mapping.visited) {
+                if (this._watches.has(mapping.entry)) {
+                    this._watches.get(mapping.entry)?.close();
+                    this._watches.delete(mapping.entry);
+                }
+                this._cache.mappings.delete(key);
+            }
+        });
+        return Array.from(this._cache.mappings.values()).map(mapping => ({
+            module: mapping.entry,
+            bundle: mapping.bundle,
+        }));
     }
     public async generateBundle(
         context: PluginContext,

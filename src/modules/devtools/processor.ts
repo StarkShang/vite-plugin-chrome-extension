@@ -1,7 +1,10 @@
+import { BundleMapping } from "@/common/models";
+import { ChromeExtensionManifest } from "@/manifest";
 import { EventEmitter } from "events";
 import { RollupWatcher, WatcherOptions } from "rollup";
 import vite, { Plugin } from "vite";
 import { ComponentProcessor } from "../common";
+import { DevtoolsProcessorCache } from "./cache";
 
 export interface DevtoolsProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -20,40 +23,52 @@ const DefaultDevtoolsProcessorOptions: NormalizedDevtoolsProcessorOptions = {
 
 export class DevtoolsProcessor extends ComponentProcessor {
     private _options: NormalizedDevtoolsProcessorOptions;
+    private _cache = new DevtoolsProcessorCache();
     private _watcher: RollupWatcher | null = null;
 
-    public resolve(entry: string): Promise<string> {
-        return new Promise(resolve => {
-            // stop previous watcher
-            this.stop();
-            vite.build({
-                build: {
-                    rollupOptions: {
-                        input: entry,
-                    },
-                    emptyOutDir: false,
-                    watch: this._options.watch,
-                },
-                plugins: [{
-                    name: "test",
-                    generateBundle(_options, bundle, _isWrite) {
-                        const entry = Object.entries(bundle)
-                            .find(entry => entry[1].type === "chunk" && entry[1].isEntry);
-                        resolve(entry ? entry[0] : "");
-                    },
-                }],
-                configFile: false, // must set to false, to avoid load config from vite.config.ts
-            }).then(output => {
-                if (output instanceof EventEmitter) {
-                    const watcher = output as RollupWatcher;
-                    this._watcher = watcher;
-                }
-            });
-        });
+    public resolve(manifest: ChromeExtensionManifest): void {
+        manifest.devtools_page && (this._cache.entry = manifest.devtools_page);
     }
 
-    public async build() {
-        return "";
+    public async build(): Promise<BundleMapping> {
+        if (this._cache.mapping.module === this._cache.entry) {
+            return this._cache.mapping;
+        } else {
+            return new Promise<BundleMapping>(resolve => {
+                const entry = this._cache.entry;
+                // stop previous watcher
+                this.stop();
+                vite.build({
+                    build: {
+                        rollupOptions: {
+                            input: this._cache.entry,
+                        },
+                        emptyOutDir: false,
+                        watch: this._options.watch,
+                    },
+                    plugins: [{
+                        name: "test",
+                        generateBundle(_options, bundle, _isWrite) {
+                            const chunk = Object.entries(bundle)
+                                .find(([, chunk]) => chunk.type === "chunk" && chunk.isEntry);
+                            resolve(chunk ? ({
+                                module: entry as string,
+                                bundle: chunk[0] as string,
+                            }) : ({
+                                module: entry as string,
+                                bundle: "",
+                            }));
+                        },
+                    }],
+                    configFile: false, // must set to false, to avoid load config from vite.config.ts
+                }).then(output => {
+                    if (output instanceof EventEmitter) {
+                        const watcher = output as RollupWatcher;
+                        this._watcher = watcher;
+                    }
+                });
+            });
+        }
     }
 
     public async stop(): Promise<void> {

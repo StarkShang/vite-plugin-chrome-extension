@@ -1,6 +1,9 @@
+import { BundleMapping } from "@/common/models";
+import { ChromeExtensionManifest } from "@/manifest";
 import { WatcherOptions } from "rollup";
 import { Plugin } from "vite";
 import { ComponentProcessor } from "../common";
+import { OverrideBookmarksProcessorCache, OverrideHistoryProcessorCache, OverrideNewtabProcessorCache } from "./cache";
 
 export interface OverrideBookmarksProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -19,12 +22,19 @@ const DefaultOverrideBookmarksProcessorOptions: NormalizedOverrideBookmarksProce
 
 export class OverrideBookmarksProcessor extends ComponentProcessor {
     private _options: NormalizedOverrideBookmarksProcessorOptions;
-    public resolve(entry: string): Promise<string> {
-        throw new Error("Method not implemented.");
+    private _cache = new OverrideBookmarksProcessorCache();
+
+    public resolve(manifest: ChromeExtensionManifest): void {
+        manifest.chrome_url_overrides?.bookmarks
+            && (this._cache.entry = manifest.chrome_url_overrides.bookmarks);
     }
 
-    public async build() {
-        return "";
+    public async build(): Promise<BundleMapping> {
+        if (this._cache.mapping.module === this._cache.entry) {
+            return this._cache.mapping;
+        } else {
+            throw new Error("Method not implemented.");
+        }
     }
 
     public stop(): Promise<void> {
@@ -63,12 +73,19 @@ const DefaultOverrideHistoryProcessorOptions: NormalizedOverrideHistoryProcessor
 
 export class OverrideHistoryProcessor extends ComponentProcessor {
     private _options: NormalizedOverrideHistoryProcessorOptions;
-    public resolve(entry: string): Promise<string> {
-        throw new Error("Method not implemented.");
+    private _cache = new OverrideHistoryProcessorCache();
+
+    public resolve(manifest: ChromeExtensionManifest): void {
+        manifest.chrome_url_overrides?.history
+            && (this._cache.entry = manifest.chrome_url_overrides.history);
     }
 
-    public async build() {
-        return "";
+    public async build(): Promise<BundleMapping> {
+        if (this._cache.mapping.module === this._cache.entry) {
+            return this._cache.mapping;
+        } else {
+            throw new Error("Method not implemented.");
+        }
     }
 
     public stop(): Promise<void> {
@@ -107,12 +124,19 @@ const DefaultOverrideNewtabProcessorOptions: NormalizedOverrideNewtabProcessorOp
 
 export class OverrideNewtabProcessor extends ComponentProcessor {
     private _options: NormalizedOverrideNewtabProcessorOptions;
-    public resolve(entry: string): Promise<string> {
-        throw new Error("Method not implemented.");
+    private _cache = new OverrideNewtabProcessorCache();
+
+    public resolve(manifest: ChromeExtensionManifest): void {
+        manifest.chrome_url_overrides?.newtab
+            && (this._cache.entry = manifest.chrome_url_overrides.newtab);
     }
 
-    public async build() {
-        return "";
+    public async build(): Promise<BundleMapping> {
+        if (this._cache.mapping.module === this._cache.entry) {
+            return this._cache.mapping;
+        } else {
+            throw new Error("Method not implemented.");
+        }
     }
 
     public stop(): Promise<void> {

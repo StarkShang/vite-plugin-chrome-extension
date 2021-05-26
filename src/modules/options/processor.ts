@@ -1,6 +1,9 @@
+import { BundleMapping } from "@/common/models";
+import { ChromeExtensionManifest } from "@/manifest";
 import { WatcherOptions } from "rollup";
 import { Plugin } from "vite";
 import { ComponentProcessor } from "../common";
+import { OptionsProcessorCache } from "./cache";
 
 export interface OptionsProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -19,17 +22,26 @@ const DefaultOptionsProcessorOptions: NormalizedOptionsProcessorOptions = {
 
 export class OptionsProcessor extends ComponentProcessor {
     private _options: NormalizedOptionsProcessorOptions;
+    private _cache = new OptionsProcessorCache();
 
-    public resolve(entry: string): Promise<string> {
-        throw new Error("Method not implemented.");
+    public resolve(manifest: ChromeExtensionManifest): void {
+        if (manifest.options_ui?.page) {
+            this._cache.entry = manifest.options_ui.page;
+        } else if (manifest.options_page) {
+            this._cache.entry = manifest.options_page;
+        }
     }
 
     public stop(): Promise<void> {
         throw new Error("Method not implemented.");
     }
 
-    public async build() {
-        return "";
+    public async build(): Promise<BundleMapping> {
+        if (this._cache.mapping.module === this._cache.entry) {
+            return this._cache.mapping;
+        } else {
+            throw new Error("Method not implemented.");
+        }
     }
 
     public constructor(options: OptionsProcessorOptions = {}) {

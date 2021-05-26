@@ -8,9 +8,4 @@ describe("ManifestParser", () => {
     beforeEach(() => {
         parser = new ChromeExtensionManifestParser();
     });
-    describe("entries", () => {
-        usecases.entries.forEach(usecase => it(usecase.description, () => {
-            expect(parser.entries(usecase.input as ChromeExtensionManifest)).to.be.eqls(usecase.output);
-        }));
-    });
 });
