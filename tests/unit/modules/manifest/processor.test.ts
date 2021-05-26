@@ -12,6 +12,25 @@ describe("ManifestProcessor", () => {
             expect(Array.from(processors).map(entry => ({ key: entry[0], type: entry[1].constructor.name }))).to.have.deep.members(usecase.output);
         }));
     });
+    describe("resolve", () => {
+        usecases.resolve.forEach(usecase => it(usecase.description, async () => {
+            const manifestProcessor = new ManifestProcessor();
+            await manifestProcessor.resolve(usecase.input);
+            expect(manifestProcessor.cache.manifest).to.deep.equals(usecase.output.manifest);
+            expect(manifestProcessor.cache.entries).to.have.deep.members(usecase.output.entries);
+        }))
+    });
+    describe("build", () => {
+        usecases.build.forEach(usecase => it(usecase.description, async () => {
+            const manifestProcessor = new ManifestProcessor();
+            manifestProcessor.cache.entries = usecase.input.entries;
+            manifestProcessor.cache.mappings = usecase.input.mappings;
+            await manifestProcessor.build();
+            expect(manifestProcessor.cache.entries).to.have.deep.members(usecase.output.entries);
+            expect(manifestProcessor.cache.mappings).to.deep.equals(usecase.output.mappings);
+        }));
+    });
+
     describe("load", () => {
         let processor: ManifestProcessor;
         beforeEach(function() {

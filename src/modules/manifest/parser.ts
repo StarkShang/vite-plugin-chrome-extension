@@ -8,20 +8,41 @@ import {
     ContentScript,
     WebAccessibleResource,
 } from "@/manifest";
-import { removeUndefinedProperty } from "../../common/utils/object";
 import { ChromeExtensionManifestPatch } from "./types";
 import { diffBackground, diffContentScripts, diffDevtools, diffOptions, diffOverride, diffPopup, diffWebAccessibleResources } from "./diff";
+import { ChromeExtensionManifestEntryMapping } from "./cache";
 
-export interface ChromeExtensionManifestEntries {
-    background?: string;
-    content_scripts?: string[];
-    options_page?: string;
-    options_ui?: string;
-    popup?: string;
-    override?: { bookmarks?:string, history?:string, newtab?:string };
-    devtools?: string;
-    web_accessible_resources?: string[];
+// export interface ChromeExtensionManifestEntries {
+//     background?: string;
+//     content_scripts?: string[];
+//     options_page?: string;
+//     options_ui?: string;
+//     popup?: string;
+//     override?: { bookmarks?:string, history?:string, newtab?:string };
+//     devtools?: string;
+//     web_accessible_resources?: string[];
+// }
+
+type ChromeExtensionManifestEntryType =
+    | "background"
+    | "content-script"
+    | "options-page"
+    | "options-ui"
+    | "popup"
+    | "bookmarks"
+    | "history"
+    | "newtab"
+    | "devtools"
+    | "web-accessible-resource";
+
+export interface ChromeExtensionManifestEntry {
+    key: string;
+    type: ChromeExtensionManifestEntryType;
+    module: string;
+    bundle?: string;
 }
+
+export type ChromeExtensionManifestEntries = ChromeExtensionManifestEntry[];
 
 export type ChromeExtensionManifestEntryDiffStatus = "create" | "update" | "delete";
 export interface ChromeExtensionManifestEntryDiff {
@@ -118,99 +139,74 @@ export class ChromeExtensionManifestParser {
         return {};
     }
 
-    public entries(manifest: ChromeExtensionManifest, srcPath: string): ChromeExtensionManifestEntries {
-        const entries: ChromeExtensionManifestEntries = {};
+    public entries(manifest: ChromeExtensionManifest): ChromeExtensionManifestEntries {
+        const entries = [] as ChromeExtensionManifestEntry[];
         // background service worker
-        const background = this.backgroundEntry(manifest, srcPath);
-        background && (entries.background = background);
+        manifest.background && manifest.background.service_worker && entries.push({
+            key: `background:${manifest.background.service_worker}`,
+            type: "background",
+            module: manifest.background.service_worker,
+        });
         // content scripts
-        const content_scripts = this.contentScriptEntries(manifest, srcPath);
-        content_scripts && (entries.content_scripts = content_scripts);
+        manifest.content_scripts?.map(group => group.js || [])
+            .forEach(scripts => {
+                scripts.forEach(script => entries.push({
+                    key: `content-script:${script}`,
+                    type: "content-script",
+                    module: script,
+                }));
+            });
         // options page
-        const options_page = this.optionsPageEntry(manifest, srcPath)
-        options_page && (entries.options_page = options_page);
+        manifest.options_page && entries.push({
+            key: `options-page:${manifest.options_page}`,
+            type: "options-page",
+            module: manifest.options_page,
+        });
         // options ui
-        const options_ui = this.optionsUiEntry(manifest, srcPath);
-        options_ui && (entries.options_ui = options_ui);
+        manifest.options_ui?.page && entries.push({
+            key: `options-ui:${manifest.options_ui.page}`,
+            type: "options-ui",
+            module: manifest.options_ui.page,
+        });
         // popup
-        const popup = this.popupEntry(manifest, srcPath);
-        popup && (entries.popup = popup);
+        manifest.action?.default_popup && entries.push({
+            key: `popup:${manifest.action.default_popup}`,
+            type: "popup",
+            module: manifest.action.default_popup,
+        });
         // override
-        const override = this.overrideEntries(manifest, srcPath);
-        override && (entries.override = override);
+        manifest.chrome_url_overrides?.bookmarks && entries.push({
+            key: `bookmarks:${manifest.chrome_url_overrides.bookmarks}`,
+            type: "bookmarks",
+            module: manifest.chrome_url_overrides.bookmarks,
+        });
+        manifest.chrome_url_overrides?.history && entries.push({
+            key: `history:${manifest.chrome_url_overrides.history}`,
+            type: "history",
+            module: manifest.chrome_url_overrides.history,
+        });
+        manifest.chrome_url_overrides?.newtab && entries.push({
+            key: `newtab:${manifest.chrome_url_overrides.newtab}`,
+            type: "newtab",
+            module: manifest.chrome_url_overrides.newtab,
+        });
         // TODO: standalone
         // devtools
-        const devtools = this.devtoolsEntry(manifest, srcPath);
-        devtools && (entries.devtools = devtools);
+        manifest.devtools_page && entries.push({
+            key: `devtools:${manifest.devtools_page}`,
+            type: "devtools",
+            module: manifest.devtools_page,
+        });
         // web accessible resources
-        const web_accessible_resources = this.webAccessibleResourceEntries(manifest, srcPath);
-        web_accessible_resources && (entries.web_accessible_resources = web_accessible_resources);
+        manifest.web_accessible_resources?.map(group => group.resources || [])
+            .forEach(scripts => {
+                scripts.forEach(script => entries.push({
+                    key: `web-accessible-resource:${script}`,
+                    type: "web-accessible-resource",
+                    module: script,
+                }));
+            });
         return entries;
-    }
-
-    public diffEntries(
-        last: ChromeExtensionManifestEntries,
-        current: ChromeExtensionManifestEntries,
-    ): ChromeExtensionManifestEntriesDiff {
-        const result: ChromeExtensionManifestEntriesDiff = {};
-        // background
-        const background = this.diffSingleEntryComponent(last.background, current.background);
-        background && (result.background = background);
-        // content_scripts
-        const content_scripts = this.diffArrayEntriesComponent(last.content_scripts, current.content_scripts);
-        if (content_scripts) {
-            const content_scripts_diff: any = {};
-            content_scripts.create && content_scripts.create.length > 0 && (content_scripts_diff.create = content_scripts.create);
-            content_scripts.delete && content_scripts.delete.length > 0 && (content_scripts_diff.delete = content_scripts.delete);
-            (Object.keys(content_scripts_diff).length > 0) && (result.content_scripts = content_scripts_diff);
-        }
-        // options_page
-        const options_page = this.diffSingleEntryComponent(last.options_page, current.options_page);
-        options_page && (result.options_page = options_page);
-        // options_ui
-        const options_ui = this.diffSingleEntryComponent(last.options_ui, current.options_ui);
-        options_ui && (result.options_ui = options_ui);
-        // popup
-        const popup = this.diffSingleEntryComponent(last.popup, current.popup);
-        popup && (result.popup = popup);
-        // override
-        const bookmarks = this.diffSingleEntryComponent(last.override?.bookmarks, current.override?.bookmarks);
-        const history = this.diffSingleEntryComponent(last.override?.history, current.override?.history);
-        const newtab = this.diffSingleEntryComponent(last.override?.newtab, current.override?.newtab);
-        const override: any = {};
-        bookmarks && (override.bookmarks = bookmarks);
-        history && (override.history = history);
-        newtab && (override.newtab = newtab);
-        (Object.keys(override).length > 0) && (result.override = override);
-        // devtools
-        const devtools = this.diffSingleEntryComponent(last.devtools, current.devtools);
-        devtools && (result.devtools = devtools);
-        // web_accessible_resources
-        const web_accessible_resources = this.diffArrayEntriesComponent(last.web_accessible_resources, current.web_accessible_resources);
-        if (web_accessible_resources) {
-            const web_accessible_resources_diff: any = {};
-            web_accessible_resources.create && web_accessible_resources.create.length > 0 && (web_accessible_resources_diff.create = web_accessible_resources.create);
-            web_accessible_resources.delete && web_accessible_resources.delete.length > 0 && (web_accessible_resources_diff.delete = web_accessible_resources.delete);
-            (Object.keys(web_accessible_resources_diff).length > 0) && (result.web_accessible_resources = web_accessible_resources_diff);
-        }
-        return result;
-    }
-
-    public static entriesToDiff(entries: ChromeExtensionManifestEntries): ChromeExtensionManifestEntriesDiff {
-        return removeUndefinedProperty<ChromeExtensionManifestEntriesDiff>({
-            background: entries.background ? { status: "create", entry: entries.background } : undefined,
-            content_scripts: entries.content_scripts ? { create: entries.content_scripts } : undefined,
-            options_page: entries.options_page ? { status: "create", entry: entries.options_page } : undefined,
-            options_ui: entries.options_ui ? { status: "create", entry: entries.options_ui } : undefined,
-            popup: entries.popup ? { status: "create", entry: entries.popup } : undefined,
-            devtools: entries.devtools ? { status: "create", entry: entries.devtools } : undefined,
-            override: entries.override ? {
-                bookmarks: entries.override.bookmarks ? { status: "create", entry: entries.override.bookmarks } : undefined,
-                history: entries.override.history ? { status: "create", entry: entries.override.history } : undefined,
-                newtab: entries.override.newtab ? { status: "create", entry: entries.override.newtab } : undefined,
-            } : undefined,
-            web_accessible_resources: entries.web_accessible_resources ? { create: entries.web_accessible_resources } : undefined,
-        }) || {};
     }
 
     private diffSingleEntryComponent(
@@ -237,48 +233,9 @@ export class ChromeExtensionManifestParser {
         }
     }
 
-    public backgroundEntry(manifest: ChromeExtensionManifest, srcPath: string) {
-        return (manifest.background && manifest.background.service_worker)
-            ? path.resolve(srcPath, manifest.background.service_worker)
-            : undefined;
-    }
-
-    public contentScriptEntries(manifest: ChromeExtensionManifest, srcPath: string) {
-        const scripts = manifest.content_scripts?.map(script => script.js || [])
-            .reduce((arr, item) => arr.concat(item), [])
-            .map(script => path.resolve(srcPath, script));
-        return scripts && scripts.length <= 0 ? undefined : scripts;
-    }
-
-    public optionsPageEntry(manifest: ChromeExtensionManifest, srcPath: string) {
-        return manifest.options_page ? path.resolve(srcPath, manifest.options_page) : undefined;
-    }
-
-    public optionsUiEntry(manifest: ChromeExtensionManifest, srcPath: string) {
-        return manifest.options_ui ? path.resolve(srcPath, manifest.options_ui.page) : undefined;
-    }
-
-    public popupEntry(manifest: ChromeExtensionManifest, srcPath: string) {
-        return manifest.action?.default_popup ? path.resolve(srcPath, manifest.action.default_popup) : undefined;
-    }
-
-    public overrideEntries(manifest: ChromeExtensionManifest, srcPath: string) {
-        if (!manifest.chrome_url_overrides) { return undefined; }
-        const override: any = {};
-        manifest.chrome_url_overrides.bookmarks && (override.bookmarks = path.resolve(srcPath, manifest.chrome_url_overrides.bookmarks));
-        manifest.chrome_url_overrides.history && (override.history = path.resolve(srcPath, manifest.chrome_url_overrides.history));
-        manifest.chrome_url_overrides.newtab && (override.history = path.resolve(srcPath, manifest.chrome_url_overrides.newtab));
-        return Object.keys(override).length > 0 ? override : undefined;
-    }
-
     public standaloneEntry(manifest: ChromeExtensionManifest, srcPath: string) {
         // TODO: add standalone entry parser
     }
-
-    public devtoolsEntry(manifest: ChromeExtensionManifest, srcPath: string) {
-        return manifest.devtools_page ? path.resolve(srcPath, manifest.devtools_page) : undefined;
-    }
-
     public webAccessibleResourceEntries(manifest: ChromeExtensionManifest, srcPath: string) {
         const resources = manifest.web_accessible_resources?.map(resource => resource.resources)
             .reduce((arr, item) => arr.concat(item), [])

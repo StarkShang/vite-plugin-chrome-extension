@@ -8,7 +8,7 @@ import { findChunkByName } from "../../utils/helpers";
 import { mixinChunksForIIFE } from "../mixin";
 import vite, { Plugin } from "vite";
 import { EventEmitter } from "events";
-import { IComponentProcessor } from "../common";
+import { ComponentProcessor } from "../common";
 
 const dynamicImportAssetRex = /(?<=chrome.scripting.insertCSS\()[\s\S]*?(?=\))/gm;
 const dynamicImportScriptRex = /(?<=chrome.scripting.executeScript\()[\s\S]*?(?=\))/gm;
@@ -36,7 +36,7 @@ const DefaultBackgroundProcessorOptions: NormalizedBackgroundProcessorOptions = 
     plugins: [],
 };
 
-export class BackgroundProcessor implements IComponentProcessor {
+export class BackgroundProcessor extends ComponentProcessor {
     private _options: NormalizedBackgroundProcessorOptions;
     private _entryPath = "";
     private _watcher: RollupWatcher | null = null;
@@ -44,11 +44,6 @@ export class BackgroundProcessor implements IComponentProcessor {
     public async resolve(entryPath: string) {
         this._entryPath = entryPath;
         return await this.build();
-    }
-
-    public async stop() {
-        this._watcher?.close();
-        this._watcher = null;
     }
 
     public async build(): Promise<string> {
@@ -81,6 +76,31 @@ export class BackgroundProcessor implements IComponentProcessor {
                 }
             });
         });
+    }
+
+    public async stop() {
+        this._watcher?.close();
+        this._watcher = null;
+    }
+
+    constructor(options: BackgroundProcessorOptions) {
+        super();
+        this._options = this.normalizeOptions(options);
+    }
+
+    private normalizeOptions(options: BackgroundProcessorOptions): NormalizedBackgroundProcessorOptions {
+        const normalizedOptions = { ...options };
+        // check root path
+        if (!existsSync(normalizedOptions.rootPath)) {
+            throw new Error("root path does not exist");
+        }
+        if (normalizedOptions.watch === false || normalizedOptions.watch === undefined) {
+            normalizedOptions.watch = undefined;
+        } else if (normalizedOptions.watch === true) {
+            normalizedOptions.watch = {};
+        }
+        if (!normalizedOptions.plugins) { normalizedOptions.plugins = DefaultBackgroundProcessorOptions.plugins; }
+        return normalizedOptions as NormalizedBackgroundProcessorOptions;
     }
 
     public resolveDynamicImports(context: TransformPluginContext, code: string): BackgroundDynamicImport {
@@ -141,24 +161,5 @@ export class BackgroundProcessor implements IComponentProcessor {
                 manifest.background.service_worker = slash(await mixinChunksForIIFE(context, chunk, bundle));
             }
         }
-    }
-
-    constructor(options: BackgroundProcessorOptions) {
-        this._options = this.normalizeOptions(options);
-    }
-
-    private normalizeOptions(options: BackgroundProcessorOptions): NormalizedBackgroundProcessorOptions {
-        const normalizedOptions = { ...options };
-        // check root path
-        if (!existsSync(normalizedOptions.rootPath)) {
-            throw new Error("root path does not exist");
-        }
-        if (normalizedOptions.watch === false || normalizedOptions.watch === undefined) {
-            normalizedOptions.watch = undefined;
-        } else if (normalizedOptions.watch === true) {
-            normalizedOptions.watch = {};
-        }
-        if (!normalizedOptions.plugins) { normalizedOptions.plugins = DefaultBackgroundProcessorOptions.plugins; }
-        return normalizedOptions as NormalizedBackgroundProcessorOptions;
     }
 }

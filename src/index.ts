@@ -50,7 +50,7 @@ export const chromeExtension = (
         async renderChunk(_code: string, chunk: RenderedChunk, _options: NormalizedOutputOptions) {
             if (chunk.facadeModuleId === manifestProcessor.filePath) {
                 // build components
-                await manifestProcessor.generateBundle();
+                await manifestProcessor.build();
                 return { code: manifestProcessor.toString() };
             }
             return null;

@@ -5,7 +5,7 @@ import { ChromeExtensionManifest, WebAccessibleResource } from "../../manifest";
 import { findAssetByName, findChunkByName } from "../../utils/helpers";
 import { updateCss } from "../../common/utils/css";
 import { mixinChunksForIIFE } from "../mixin";
-import { IComponentProcessor } from "../common";
+import { ComponentProcessor } from "../common";
 import { Plugin } from "vite";
 
 export interface ContentScriptProcessorOptions {
@@ -23,7 +23,7 @@ const DefaultContentScriptProcessorOptions: NormalizedContentScriptProcessorOpti
     plugins: [],
 };
 
-export class ContentScriptProcessor implements IComponentProcessor {
+export class ContentScriptProcessor extends ComponentProcessor {
     private _options: NormalizedContentScriptProcessorOptions;
 
     public resolve(entry: string): Promise<string> {
@@ -31,6 +31,9 @@ export class ContentScriptProcessor implements IComponentProcessor {
     }
     public stop(): Promise<void> {
         throw new Error("Method not implemented.");
+    }
+    public async build() {
+        return "";
     }
     public async generateBundle(
         context: PluginContext,
@@ -91,6 +94,7 @@ export class ContentScriptProcessor implements IComponentProcessor {
         }
     }
     public constructor(options: ContentScriptProcessorOptions = {}) {
+        super();
         this._options = this.normalizeOptions(options);
     }
     private normalizeOptions(options: ContentScriptProcessorOptions): NormalizedContentScriptProcessorOptions {

@@ -1,6 +1,6 @@
 import { WatcherOptions } from "rollup";
 import { Plugin } from "vite";
-import { IComponentProcessor } from "../common";
+import { ComponentProcessor } from "../common";
 
 export interface WebAccessibleResourceProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -17,17 +17,23 @@ const DefaultWebAccessibleResourceProcessorOptions: NormalizedWebAccessibleResou
     plugins: [],
 };
 
-export class WebAccessibleResourceProcessor implements IComponentProcessor {
+export class WebAccessibleResourceProcessor extends ComponentProcessor {
     private _options: NormalizedWebAccessibleResourceProcessorOptions;
 
     public resolve(entry: string): Promise<string> {
         throw new Error("Method not implemented.");
     }
+
+    public async build() {
+        return "";
+    }
+
     public stop(): Promise<void> {
         throw new Error("Method not implemented.");
     }
 
     public constructor(options: WebAccessibleResourceProcessorOptions = {}) {
+        super();
         this._options = this.normalizeOptions(options);
     }
 

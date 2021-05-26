@@ -1,14 +1,18 @@
 import { NormalizedChromeExtensionOptions } from "@/configs/options";
+import { ChromeExtensionManifest } from "@/manifest";
 import { BackgroundProcessor } from "@/modules/background";
 import { ContentScriptProcessor } from "@/modules/content-script";
 import { DevtoolsProcessor } from "@/modules/devtools";
+import { ChromeExtensionManifestEntryMapping, ChromeExtensionManifestEntryMappings } from "@/modules/manifest/cache";
+import { ChromeExtensionManifestEntries } from "@/modules/manifest/parser";
 import { OptionsProcessor } from "@/modules/options";
 import { OverrideBookmarksProcessor, OverrideHistoryProcessor, OverrideNewtabProcessor } from "@/modules/override";
 import { PopupProcessor } from "@/modules/popup";
 import { WebAccessibleResourceProcessor } from "@/modules/web-accessible-resource";
 import { UseCase } from "@root/tests/common/usecase";
+import { generateManifest } from "@root/tests/__fixtures__/manifests";
 
-const constructor: UseCase<NormalizedChromeExtensionOptions | undefined, any>[] = [{
+const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined, any>[] = [{
     description: "undefined options",
     input: undefined,
     output: [],
@@ -563,6 +567,220 @@ const constructor: UseCase<NormalizedChromeExtensionOptions | undefined, any>[] 
     ],
 }];
 
+const resolveUseCases: UseCase<ChromeExtensionManifest, {
+    manifest: ChromeExtensionManifest,
+    entries: ChromeExtensionManifestEntries
+}>[] = [{
+    description: "empty entries",
+    input: generateManifest(),
+    output: {
+        manifest: generateManifest(),
+        entries: [],
+    },
+}, {
+    description: "background entry",
+    input: generateManifest({
+        background: { service_worker: "background.ts" }
+    }),
+    output: {
+        manifest: generateManifest({
+            background: { service_worker: "background.ts" }
+        }),
+        entries: [{
+            key: "background:background.ts",
+            type: "background",
+            module: "background.ts",
+        }],
+    },
+}, {
+    description: "content-scripts entry",
+    input: generateManifest({
+        content_scripts: [{
+            matches: ["all_urls"],
+            js: ["content_script.ts"]
+        }],
+    }),
+    output: {
+        manifest: generateManifest({
+            content_scripts: [{
+                matches: ["all_urls"],
+                js: ["content_script.ts"]
+            }],
+        }),
+        entries: [{
+            key: "content-script:content_script.ts",
+            type: "content-script",
+            module: "content_script.ts",
+        }],
+    },
+}, {
+    description: "options-page entry",
+    input: generateManifest({
+        options_page: "options_page.ts",
+    }),
+    output: {
+        manifest: generateManifest({
+            options_page: "options_page.ts",
+        }),
+        entries: [{
+            key: "options-page:options_page.ts",
+            type: "options-page",
+            module: "options_page.ts",
+        }],
+    },
+}, {
+    description: "options-ui entry",
+    input: generateManifest({
+        options_ui: {
+            page: "options_ui.ts",
+        },
+    }),
+    output: {
+        manifest: generateManifest({
+            options_ui: {
+                page: "options_ui.ts",
+            },
+        }),
+        entries: [{
+            key: "options-ui:options_ui.ts",
+            type: "options-ui",
+            module: "options_ui.ts",
+        }],
+    },
+}, {
+    description: "popup entry",
+    input: generateManifest({
+        action: {
+            default_popup: "popup.ts",
+        },
+    }),
+    output: {
+        manifest: generateManifest({
+            action: {
+                default_popup: "popup.ts",
+            },
+        }),
+        entries: [{
+            key: "popup:popup.ts",
+            type: "popup",
+            module: "popup.ts",
+        }],
+    },
+}, {
+    description: "bookmarks entry",
+    input: generateManifest({
+        chrome_url_overrides: {
+            bookmarks: "bookmarks.ts",
+        },
+    }),
+    output: {
+        manifest: generateManifest({
+            chrome_url_overrides: {
+                bookmarks: "bookmarks.ts",
+            },
+        }),
+        entries: [{
+            key: "bookmarks:bookmarks.ts",
+            type: "bookmarks",
+            module: "bookmarks.ts",
+        }],
+    },
+}, {
+    description: "history entry",
+    input: generateManifest({
+        chrome_url_overrides: {
+            history: "history.ts",
+        },
+    }),
+    output: {
+        manifest: generateManifest({
+            chrome_url_overrides:{
+                history: "history.ts",
+            },
+        }),
+        entries: [{
+            key: "history:history.ts",
+            type: "history",
+            module: "history.ts",
+        }],
+    },
+}, {
+    description: "newtab entry",
+    input: generateManifest({
+        chrome_url_overrides: {
+            newtab: "newtab.ts",
+        },
+    }),
+    output: {
+        manifest: generateManifest({
+            chrome_url_overrides: {
+                newtab: "newtab.ts",
+            },
+        }),
+        entries: [{
+            key: "newtab:newtab.ts",
+            type: "newtab",
+            module: "newtab.ts",
+        }],
+    },
+}, {
+    description: "devtools entry",
+    input: generateManifest({
+        devtools_page: "devtools.ts",
+    }),
+    output: {
+        manifest: generateManifest({
+            devtools_page: "devtools.ts",
+        }),
+        entries: [{
+            key: "devtools:devtools.ts",
+            type: "devtools",
+            module: "devtools.ts",
+        }],
+    },
+}, {
+    description: "web-accessible-resources entry",
+    input: generateManifest({
+        web_accessible_resources: [{
+            matches: ["all_urls"],
+            resources: ["web_accessible_resource.ts"],
+        }],
+    }),
+    output: {
+        manifest: generateManifest({
+            web_accessible_resources: [{
+                matches: ["all_urls"],
+                resources: ["web_accessible_resource.ts"],
+            }],
+        }),
+        entries: [{
+            key: "web-accessible-resource:web_accessible_resource.ts",
+            type: "web-accessible-resource",
+            module: "web_accessible_resource.ts",
+        }],
+    },
+}];
+
+const buildUseCases: UseCase<{
+    entries: ChromeExtensionManifestEntries,
+    mappings: ChromeExtensionManifestEntryMappings,
+}, {
+    entries: ChromeExtensionManifestEntries,
+    mappings: ChromeExtensionManifestEntryMappings,
+}>[] = [{
+    description: "empty entries",
+    input: {
+        entries: [],
+        mappings: new Map<string, ChromeExtensionManifestEntryMapping>(),
+    },
+    output: {
+        entries: [],
+        mappings: new Map<string, ChromeExtensionManifestEntryMapping>(),
+    },
+}];
+
 export default {
-    constructor,
+    constructor: constructorUseCases,
+    resolve: resolveUseCases,
+    build: buildUseCases,
 }

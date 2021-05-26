@@ -1,6 +1,6 @@
 import { WatcherOptions } from "rollup";
 import { Plugin } from "vite";
-import { IComponentProcessor } from "../common";
+import { ComponentProcessor } from "../common";
 
 export interface OverrideBookmarksProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -17,15 +17,21 @@ const DefaultOverrideBookmarksProcessorOptions: NormalizedOverrideBookmarksProce
     plugins: [],
 };
 
-export class OverrideBookmarksProcessor implements IComponentProcessor {
+export class OverrideBookmarksProcessor extends ComponentProcessor {
     private _options: NormalizedOverrideBookmarksProcessorOptions;
     public resolve(entry: string): Promise<string> {
         throw new Error("Method not implemented.");
     }
+
+    public async build() {
+        return "";
+    }
+
     public stop(): Promise<void> {
         throw new Error("Method not implemented.");
     }
     public constructor(options: OverrideBookmarksProcessorOptions = {}) {
+        super();
         this._options = this.normalizeOptions(options);
     }
     private normalizeOptions(options: OverrideBookmarksProcessorOptions): NormalizedOverrideBookmarksProcessorOptions {
@@ -55,15 +61,21 @@ const DefaultOverrideHistoryProcessorOptions: NormalizedOverrideHistoryProcessor
     plugins: [],
 };
 
-export class OverrideHistoryProcessor implements IComponentProcessor {
+export class OverrideHistoryProcessor extends ComponentProcessor {
     private _options: NormalizedOverrideHistoryProcessorOptions;
     public resolve(entry: string): Promise<string> {
         throw new Error("Method not implemented.");
     }
+
+    public async build() {
+        return "";
+    }
+
     public stop(): Promise<void> {
         throw new Error("Method not implemented.");
     }
     public constructor(options: OverrideHistoryProcessorOptions = {}) {
+        super();
         this._options = this.normalizeOptions(options);
     }
     private normalizeOptions(options: OverrideHistoryProcessorOptions): NormalizedOverrideHistoryProcessorOptions {
@@ -93,15 +105,21 @@ const DefaultOverrideNewtabProcessorOptions: NormalizedOverrideNewtabProcessorOp
     plugins: [],
 };
 
-export class OverrideNewtabProcessor implements IComponentProcessor {
+export class OverrideNewtabProcessor extends ComponentProcessor {
     private _options: NormalizedOverrideNewtabProcessorOptions;
     public resolve(entry: string): Promise<string> {
         throw new Error("Method not implemented.");
     }
+
+    public async build() {
+        return "";
+    }
+
     public stop(): Promise<void> {
         throw new Error("Method not implemented.");
     }
     public constructor(options: OverrideNewtabProcessorOptions = {}) {
+        super();
         this._options = this.normalizeOptions(options);
     }
     private normalizeOptions(options: OverrideNewtabProcessorOptions): NormalizedOverrideNewtabProcessorOptions {

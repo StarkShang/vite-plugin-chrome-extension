@@ -1,7 +1,7 @@
 import { EventEmitter } from "events";
 import { RollupWatcher, WatcherOptions } from "rollup";
 import vite, { Plugin } from "vite";
-import { IComponentProcessor } from "../common";
+import { ComponentProcessor } from "../common";
 
 export interface DevtoolsProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -18,7 +18,7 @@ const DefaultDevtoolsProcessorOptions: NormalizedDevtoolsProcessorOptions = {
     plugins: [],
 };
 
-export class DevtoolsProcessor implements IComponentProcessor {
+export class DevtoolsProcessor extends ComponentProcessor {
     private _options: NormalizedDevtoolsProcessorOptions;
     private _watcher: RollupWatcher | null = null;
 
@@ -51,12 +51,18 @@ export class DevtoolsProcessor implements IComponentProcessor {
             });
         });
     }
+
+    public async build() {
+        return "";
+    }
+
     public async stop(): Promise<void> {
         this._watcher?.close();
         this._watcher = null;
     }
 
     constructor(options: DevtoolsProcessorOptions = {}) {
+        super();
         this._options = this.normalizeOptions(options);
     }
 

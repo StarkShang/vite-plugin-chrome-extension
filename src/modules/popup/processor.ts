@@ -1,5 +1,5 @@
 import { WatcherOptions } from "rollup";
-import { IComponentProcessor } from "../common";
+import { ComponentProcessor } from "../common";
 import { Plugin } from "vite";
 
 export interface PopupProcessorOptions {
@@ -17,7 +17,7 @@ const DefaultPopupProcessorOptions: NormalizedPopupProcessorOptions = {
     plugins: [],
 };
 
-export class PopupProcessor implements IComponentProcessor {
+export class PopupProcessor extends ComponentProcessor {
     private _options: NormalizedPopupProcessorOptions;
 
     public resolve(entry: string): Promise<string> {
@@ -28,7 +28,12 @@ export class PopupProcessor implements IComponentProcessor {
         throw new Error("Method not implemented.");
     }
 
+    public async build() {
+        return "";
+    }
+
     public constructor(options: PopupProcessorOptions = {}) {
+        super();
         this._options = this.normalizeOptions(options);
     }
 
