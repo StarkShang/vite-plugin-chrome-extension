@@ -36,6 +36,10 @@ export class ChromeExtensionModule {
     public entry = "";
     public bundle = "";
     public dependencies: string[] = [];
+
+    public static get Empty() {
+        return new ChromeExtensionModule();
+    }
 }
 
 export interface MarkableChromeExtensionModule extends ChromeExtensionModule {

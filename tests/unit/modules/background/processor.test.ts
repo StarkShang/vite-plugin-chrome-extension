@@ -17,4 +17,14 @@ describe("BackgroundProcessor", () => {
             expect((processor as any)._cache.entry).to.be.equals(usecase.output);
         }));
     });
+    describe("build", () => {
+        usecases.build.forEach(usecase => it(usecase.description, async () => {
+            const processor = new BackgroundProcessor({ rootPath: __dirname });
+            (processor as any)._cache.entry = usecase.input.entry;
+            (processor as any)._cache.module = usecase.input.module;
+            const module = await processor.build();
+            expect((processor as any)._cache.module).to.be.deep.equals(usecase.output);
+            expect(module).to.be.deep.equals(usecase.output);
+        }));
+    });
 });

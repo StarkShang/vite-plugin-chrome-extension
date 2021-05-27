@@ -1,4 +1,4 @@
-import { OutputBundle, OutputChunk, PluginContext, RollupOutput, RollupWatcher, TransformPluginContext, WatcherOptions } from "rollup";
+import { OutputBundle, PluginContext, RollupOutput, RollupWatcher, TransformPluginContext, WatcherOptions } from "rollup";
 import { resolve, parse, join,  } from "path";
 import { existsSync, readFileSync } from "fs";
 import slash from "slash";
@@ -7,9 +7,9 @@ import { removeFileExtension } from "../../common/utils";
 import { findChunkByName } from "../../utils/helpers";
 import { mixinChunksForIIFE } from "../mixin";
 import vite, { Plugin } from "vite";
-import { ComponentProcessor } from "../common";
+import { IComponentProcessor } from "../common";
 import { BackgroundProcessorCache } from "./cache";
-import { BundleMapping, ChromeExtensionModule } from "@/common/models";
+import { ChromeExtensionModule } from "@/common/models";
 
 const dynamicImportAssetRex = /(?<=chrome.scripting.insertCSS\()[\s\S]*?(?=\))/gm;
 const dynamicImportScriptRex = /(?<=chrome.scripting.executeScript\()[\s\S]*?(?=\))/gm;
@@ -37,7 +37,7 @@ const DefaultBackgroundProcessorOptions: NormalizedBackgroundProcessorOptions = 
     plugins: [],
 };
 
-export class BackgroundProcessor extends ComponentProcessor {
+export class BackgroundProcessor implements IComponentProcessor {
     private _options: NormalizedBackgroundProcessorOptions;
     private _cache = new BackgroundProcessorCache();
     private _watcher: RollupWatcher | null = null;
@@ -49,18 +49,22 @@ export class BackgroundProcessor extends ComponentProcessor {
     }
 
     public async build(): Promise<ChromeExtensionModule> {
-        if (this._cache.entry && this._cache.module?.entry !== this._cache.entry) {
-            const entry = this._cache.entry;
-            const build = await vite.build({
-                build: {
-                    rollupOptions: { input: entry },
-                    emptyOutDir: false,
-                },
-                configFile: false, // must set to false, to avoid load config from vite.config.ts
-            }) as RollupOutput;
-            this._cache.module.entry = this._cache.entry;
-            this._cache.module.bundle = build.output[0].fileName;
-            this._cache.module.dependencies = build.output[0].referencedFiles;
+        if (!this._cache.entry) {
+            this._cache.module = ChromeExtensionModule.Empty;
+        } else {
+            if (this._cache.module?.entry !== this._cache.entry) {
+                const entry = this._cache.entry;
+                const build = await vite.build({
+                    build: {
+                        rollupOptions: { input: entry },
+                        emptyOutDir: false,
+                    },
+                    configFile: false, // must set to false, to avoid load config from vite.config.ts
+                }) as RollupOutput;
+                this._cache.module.entry = this._cache.entry;
+                this._cache.module.bundle = build.output[0].fileName;
+                this._cache.module.dependencies = build.output[0].referencedFiles;
+            }
         }
         return this._cache.module;
     }
@@ -71,7 +75,6 @@ export class BackgroundProcessor extends ComponentProcessor {
     }
 
     constructor(options: BackgroundProcessorOptions) {
-        super();
         this._options = this.normalizeOptions(options);
     }
 

@@ -1,3 +1,4 @@
+import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { BackgroundProcessorOptions, NormalizedBackgroundProcessorOptions } from "@/modules/background/processor";
 import { UseCase } from "@root/tests/common/usecase";
@@ -134,7 +135,50 @@ const resolveUseCases: UseCase<ChromeExtensionManifest, string | undefined>[] = 
     output: "background.ts",
 }];
 
+const buildUseCases: UseCase<{
+    entry?: string,
+    module: ChromeExtensionModule,
+}, ChromeExtensionModule>[] = [{
+    description: "undefined entry return empty ChromeExtensionModule",
+    input: {
+        entry: undefined,
+        module: {
+            entry: "entry.ts",
+            bundle: "entry.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: ChromeExtensionModule.Empty,
+}, {
+    description: "empty entry return empty ChromeExtensionModule",
+    input: {
+        entry: "",
+        module: {
+            entry: "entry.ts",
+            bundle: "entry.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: ChromeExtensionModule.Empty,
+}, {
+    description: "exist entry return cached module",
+    input: {
+        entry: "entry.ts",
+        module: {
+            entry: "entry.ts",
+            bundle: "entry.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: {
+        entry: "entry.ts",
+        bundle: "entry.js",
+        dependencies: ["dependency.ts"],
+    },
+}];
+
 export default {
     normalizeOptions: normalizeOptionsUseCases,
     resolve: resolveUseCases,
+    build: buildUseCases,
 };
