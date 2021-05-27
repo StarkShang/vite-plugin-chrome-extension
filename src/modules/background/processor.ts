@@ -52,7 +52,7 @@ export class BackgroundProcessor implements IComponentProcessor {
         if (!this._cache.entry) {
             this._cache.module = ChromeExtensionModule.Empty;
         } else {
-            if (this._cache.module?.entry !== this._cache.entry) {
+            if (this._cache.module.entry !== this._cache.entry) {
                 const entry = this._cache.entry;
                 const build = await vite.build({
                     build: {
@@ -67,11 +67,6 @@ export class BackgroundProcessor implements IComponentProcessor {
             }
         }
         return this._cache.module;
-    }
-
-    public async stop() {
-        this._watcher?.close();
-        this._watcher = null;
     }
 
     constructor(options: BackgroundProcessorOptions) {

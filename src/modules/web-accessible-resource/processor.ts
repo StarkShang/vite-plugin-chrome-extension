@@ -2,7 +2,7 @@ import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { RollupWatcher, WatcherOptions } from "rollup";
 import { Plugin } from "vite";
-import { ComponentProcessor } from "../common";
+import { IComponentProcessor } from "../common";
 import { WebAccessibleResourceProcessorCache } from "./cache";
 
 export interface WebAccessibleResourceProcessorOptions {
@@ -20,7 +20,7 @@ const DefaultWebAccessibleResourceProcessorOptions: NormalizedWebAccessibleResou
     plugins: [],
 };
 
-export class WebAccessibleResourceProcessor extends ComponentProcessor {
+export class WebAccessibleResourceProcessor implements IComponentProcessor {
     private _options: NormalizedWebAccessibleResourceProcessorOptions;
     private _cache = new WebAccessibleResourceProcessorCache();
     private _watches = new Map<string, RollupWatcher>();
@@ -40,6 +40,7 @@ export class WebAccessibleResourceProcessor extends ComponentProcessor {
                 module && (module.visited = true);
             } else {
                 // TODO: add build logic
+                throw new Error("Method not implemented.");
             }
         }));
         // clear corrupt modules
@@ -51,12 +52,7 @@ export class WebAccessibleResourceProcessor extends ComponentProcessor {
         return Array.from(this._cache.modules.values());
     }
 
-    public stop(): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
-
     public constructor(options: WebAccessibleResourceProcessorOptions = {}) {
-        super();
         this._options = this.normalizeOptions(options);
     }
 

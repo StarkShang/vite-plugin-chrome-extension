@@ -1,3 +1,4 @@
+import { MarkableChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { WebAccessibleResourceProcessorOptions, NormalizedWebAccessibleResourceProcessorOptions } from "@/modules/web-accessible-resource/processor";
 import { UseCase } from "@root/tests/common/usecase";
@@ -140,7 +141,68 @@ const resolveUseCases: UseCase<ChromeExtensionManifest, string[]>[] = [{
     output: ["web_accessible_resources2.ts", "web_accessible_resources1.ts"],
 }];
 
+const buildUseCases: UseCase<{
+    entries: string[],
+    modules: Map<string, MarkableChromeExtensionModule>,
+}, MarkableChromeExtensionModule[]>[] = [{
+    description: "empty entries return empty ChromeExtensionModule",
+    input: {
+        entries: [],
+        modules: new Map<string, MarkableChromeExtensionModule>([[
+            "web-accessible-resource.ts", {
+                entry: "web-accessible-resource.ts",
+                bundle: "web-accessible-resource.js",
+                dependencies: [],
+                visited: true,
+            }]]),
+    },
+    output: [],
+}, {
+    description: "exist entry return cached module",
+    input: {
+        entries: ["web-accessible-resource.ts"],
+        modules: new Map<string, MarkableChromeExtensionModule>([[
+            "web-accessible-resource.ts", {
+                entry: "web-accessible-resource.ts",
+                bundle: "web-accessible-resource.js",
+                dependencies: [],
+                visited: true,
+            }]]),
+    },
+    output: [{
+        entry: "web-accessible-resource.ts",
+        bundle: "web-accessible-resource.js",
+        dependencies: [],
+        visited: true,
+    }],
+}, {
+    description: "exist entries return cached modules",
+    input: {
+        entries: ["content-script1.ts"],
+        modules: new Map<string, MarkableChromeExtensionModule>([[
+            "content-script1.ts", {
+                entry: "content-script1.ts",
+                bundle: "content-script1.js",
+                dependencies: [],
+                visited: true,
+            }], [
+            "content-script2.ts", {
+                entry: "content-script2.ts",
+                bundle: "content-script2.js",
+                dependencies: [],
+                visited: true,
+            }]]),
+    },
+    output: [{
+        entry: "content-script1.ts",
+        bundle: "content-script1.js",
+        dependencies: [],
+        visited: true,
+    }],
+}];
+
 export default {
     normalizeOptions: normalizeOptionsUseCases,
     resolve: resolveUseCases,
+    build: buildUseCases,
 };

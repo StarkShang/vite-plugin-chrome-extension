@@ -1,3 +1,4 @@
+import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { PopupProcessorOptions, NormalizedPopupProcessorOptions } from "@/modules/popup/processor";
 import { UseCase } from "@root/tests/common/usecase";
@@ -114,7 +115,50 @@ const resolveUseCases: UseCase<ChromeExtensionManifest, string|undefined>[] = [{
     output: "popup.ts",
 }];
 
+const buildUseCases: UseCase<{
+    entry?: string,
+    module: ChromeExtensionModule,
+}, ChromeExtensionModule>[] = [{
+    description: "undefined entry return empty ChromeExtensionModule",
+    input: {
+        entry: undefined,
+        module: {
+            entry: "popup.ts",
+            bundle: "popup.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: ChromeExtensionModule.Empty,
+}, {
+    description: "empty entry return empty ChromeExtensionModule",
+    input: {
+        entry: "",
+        module: {
+            entry: "popup.ts",
+            bundle: "popup.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: ChromeExtensionModule.Empty,
+}, {
+    description: "exist entry return cached module",
+    input: {
+        entry: "popup.ts",
+        module: {
+            entry: "popup.ts",
+            bundle: "popup.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: {
+        entry: "popup.ts",
+        bundle: "popup.js",
+        dependencies: ["dependency.ts"],
+    },
+}];
+
 export default {
     normalizeOptions: normalizeOptionsUseCases,
     resolve: resolveUseCases,
+    build: buildUseCases,
 };

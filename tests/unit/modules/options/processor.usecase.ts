@@ -1,3 +1,4 @@
+import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { OptionsProcessorOptions, NormalizedOptionsProcessorOptions } from "@/modules/options/processor";
 import { UseCase } from "@root/tests/common/usecase";
@@ -118,7 +119,50 @@ const resolveUseCases: UseCase<ChromeExtensionManifest, string | undefined>[] = 
     output: "options_ui.ts",
 }];
 
+const buildUseCases: UseCase<{
+    entry?: string,
+    module: ChromeExtensionModule,
+}, ChromeExtensionModule>[] = [{
+    description: "undefined entry return empty ChromeExtensionModule",
+    input: {
+        entry: undefined,
+        module: {
+            entry: "options.ts",
+            bundle: "options.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: ChromeExtensionModule.Empty,
+}, {
+    description: "empty entry return empty ChromeExtensionModule",
+    input: {
+        entry: "",
+        module: {
+            entry: "options.ts",
+            bundle: "options.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: ChromeExtensionModule.Empty,
+}, {
+    description: "exist entry return cached module",
+    input: {
+        entry: "options.ts",
+        module: {
+            entry: "options.ts",
+            bundle: "options.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: {
+        entry: "options.ts",
+        bundle: "options.js",
+        dependencies: ["dependency.ts"],
+    },
+}];
+
 export default {
     normalizeOptions: normalizeOptionsUseCases,
     resolve: resolveUseCases,
+    build: buildUseCases,
 };

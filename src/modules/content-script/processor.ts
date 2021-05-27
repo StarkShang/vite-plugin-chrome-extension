@@ -5,11 +5,10 @@ import { ChromeExtensionManifest, WebAccessibleResource } from "../../manifest";
 import { findAssetByName, findChunkByName } from "../../utils/helpers";
 import { updateCss } from "../../common/utils/css";
 import { mixinChunksForIIFE } from "../mixin";
-import { ComponentProcessor } from "../common";
+import { IComponentProcessor } from "../common";
 import { Plugin } from "vite";
 import { ContentScriptProcessorCache } from "./cache";
-import { ChromeExtensionManifestEntryMapping } from "../manifest/cache";
-import { BundleMapping, ChromeExtensionModule } from "@/common/models";
+import { ChromeExtensionModule } from "@/common/models";
 
 export interface ContentScriptProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -26,7 +25,7 @@ const DefaultContentScriptProcessorOptions: NormalizedContentScriptProcessorOpti
     plugins: [],
 };
 
-export class ContentScriptProcessor extends ComponentProcessor {
+export class ContentScriptProcessor implements IComponentProcessor {
     private _options: NormalizedContentScriptProcessorOptions;
     private _cache = new ContentScriptProcessorCache();
     private _watches = new Map<string, RollupWatcher>();
@@ -37,9 +36,7 @@ export class ContentScriptProcessor extends ComponentProcessor {
                 scripts.forEach(script => this._cache.entries.push(script));
             });
     }
-    public stop(): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
+
     public async build(): Promise<ChromeExtensionModule[]> {
         this._cache.modules.forEach(module => module.visited = false);
         await Promise.all(this._cache.entries?.map(async entry => {
@@ -117,7 +114,6 @@ export class ContentScriptProcessor extends ComponentProcessor {
         }
     }
     public constructor(options: ContentScriptProcessorOptions = {}) {
-        super();
         this._options = this.normalizeOptions(options);
     }
     private normalizeOptions(options: ContentScriptProcessorOptions): NormalizedContentScriptProcessorOptions {

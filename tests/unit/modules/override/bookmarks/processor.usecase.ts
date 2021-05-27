@@ -1,3 +1,4 @@
+import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { OverrideNewtabProcessorOptions, NormalizedOverrideBookmarksProcessorOptions } from "@/modules/override/processor";
 import { UseCase } from "@root/tests/common/usecase";
@@ -114,7 +115,50 @@ const resolveUseCases: UseCase<ChromeExtensionManifest, string|undefined>[] = [{
     output: "bookmarks.ts",
 }];
 
+const buildUseCases: UseCase<{
+    entry?: string,
+    module: ChromeExtensionModule,
+}, ChromeExtensionModule>[] = [{
+    description: "undefined entry return empty ChromeExtensionModule",
+    input: {
+        entry: undefined,
+        module: {
+            entry: "bookmarks.ts",
+            bundle: "bookmarks.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: ChromeExtensionModule.Empty,
+}, {
+    description: "empty entry return empty ChromeExtensionModule",
+    input: {
+        entry: "",
+        module: {
+            entry: "bookmarks.ts",
+            bundle: "bookmarks.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: ChromeExtensionModule.Empty,
+}, {
+    description: "exist entry return cached module",
+    input: {
+        entry: "bookmarks.ts",
+        module: {
+            entry: "bookmarks.ts",
+            bundle: "bookmarks.js",
+            dependencies: ["dependency.ts"],
+        },
+    },
+    output: {
+        entry: "bookmarks.ts",
+        bundle: "bookmarks.js",
+        dependencies: ["dependency.ts"],
+    },
+}];
+
 export default {
     normalizeOptions: normalizeOptionsUseCases,
     resolve: resolveUseCases,
+    build: buildUseCases,
 };

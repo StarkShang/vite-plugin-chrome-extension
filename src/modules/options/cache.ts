@@ -2,5 +2,5 @@ import { ChromeExtensionModule } from "@/common/models";
 
 export class OptionsProcessorCache {
     public entry?: string;
-    public module = new ChromeExtensionModule();
+    public module = ChromeExtensionModule.Empty;
 }

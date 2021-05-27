@@ -2,7 +2,7 @@ import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { WatcherOptions } from "rollup";
 import { Plugin } from "vite";
-import { ComponentProcessor } from "../common";
+import { IComponentProcessor } from "../common";
 import { OverrideBookmarksProcessorCache, OverrideHistoryProcessorCache, OverrideNewtabProcessorCache } from "./cache";
 
 export interface OverrideBookmarksProcessorOptions {
@@ -20,7 +20,7 @@ const DefaultOverrideBookmarksProcessorOptions: NormalizedOverrideBookmarksProce
     plugins: [],
 };
 
-export class OverrideBookmarksProcessor extends ComponentProcessor {
+export class OverrideBookmarksProcessor implements IComponentProcessor {
     private _options: NormalizedOverrideBookmarksProcessorOptions;
     private _cache = new OverrideBookmarksProcessorCache();
 
@@ -30,17 +30,17 @@ export class OverrideBookmarksProcessor extends ComponentProcessor {
     }
 
     public async build(): Promise<ChromeExtensionModule> {
-        if (this._cache.module.entry === this._cache.entry) {
-            throw new Error("Method not implemented.");
+        if (!this._cache.entry) {
+            this._cache.module = ChromeExtensionModule.Empty;
+        } else {
+            if (this._cache.module.entry !== this._cache.entry) {
+                throw new Error("Method not implemented.");
+            }
         }
         return this._cache.module;
     }
 
-    public stop(): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
     public constructor(options: OverrideBookmarksProcessorOptions = {}) {
-        super();
         this._options = this.normalizeOptions(options);
     }
     private normalizeOptions(options: OverrideBookmarksProcessorOptions): NormalizedOverrideBookmarksProcessorOptions {
@@ -70,7 +70,7 @@ const DefaultOverrideHistoryProcessorOptions: NormalizedOverrideHistoryProcessor
     plugins: [],
 };
 
-export class OverrideHistoryProcessor extends ComponentProcessor {
+export class OverrideHistoryProcessor implements IComponentProcessor {
     private _options: NormalizedOverrideHistoryProcessorOptions;
     private _cache = new OverrideHistoryProcessorCache();
 
@@ -80,17 +80,17 @@ export class OverrideHistoryProcessor extends ComponentProcessor {
     }
 
     public async build(): Promise<ChromeExtensionModule> {
-        if (this._cache.module.entry === this._cache.entry) {
-            throw new Error("Method not implemented.");
+        if (!this._cache.entry) {
+            this._cache.module = ChromeExtensionModule.Empty;
+        } else {
+            if (this._cache.module.entry !== this._cache.entry) {
+                throw new Error("Method not implemented.");
+            }
         }
         return this._cache.module;
     }
 
-    public stop(): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
     public constructor(options: OverrideHistoryProcessorOptions = {}) {
-        super();
         this._options = this.normalizeOptions(options);
     }
     private normalizeOptions(options: OverrideHistoryProcessorOptions): NormalizedOverrideHistoryProcessorOptions {
@@ -120,7 +120,7 @@ const DefaultOverrideNewtabProcessorOptions: NormalizedOverrideNewtabProcessorOp
     plugins: [],
 };
 
-export class OverrideNewtabProcessor extends ComponentProcessor {
+export class OverrideNewtabProcessor implements IComponentProcessor {
     private _options: NormalizedOverrideNewtabProcessorOptions;
     private _cache = new OverrideNewtabProcessorCache();
 
@@ -130,17 +130,17 @@ export class OverrideNewtabProcessor extends ComponentProcessor {
     }
 
     public async build(): Promise<ChromeExtensionModule> {
-        if (this._cache.module.entry === this._cache.entry) {
-            throw new Error("Method not implemented.");
+        if (!this._cache.entry) {
+            this._cache.module = ChromeExtensionModule.Empty;
+        } else {
+            if (this._cache.module.entry !== this._cache.entry) {
+                throw new Error("Method not implemented.");
+            }
         }
         return this._cache.module;
     }
 
-    public stop(): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
     public constructor(options: OverrideNewtabProcessorOptions = {}) {
-        super();
         this._options = this.normalizeOptions(options);
     }
     private normalizeOptions(options: OverrideNewtabProcessorOptions): NormalizedOverrideNewtabProcessorOptions {

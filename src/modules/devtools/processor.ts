@@ -1,9 +1,8 @@
-import { BundleMapping, ChromeExtensionModule } from "@/common/models";
+import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
-import { EventEmitter } from "events";
-import { RollupOptions, RollupOutput, RollupWatcher, WatcherOptions } from "rollup";
+import { RollupOutput, RollupWatcher, WatcherOptions } from "rollup";
 import vite, { Plugin } from "vite";
-import { ComponentProcessor } from "../common";
+import { IComponentProcessor } from "../common";
 import { DevtoolsProcessorCache } from "./cache";
 
 export interface DevtoolsProcessorOptions {
@@ -21,7 +20,7 @@ const DefaultDevtoolsProcessorOptions: NormalizedDevtoolsProcessorOptions = {
     plugins: [],
 };
 
-export class DevtoolsProcessor extends ComponentProcessor {
+export class DevtoolsProcessor implements IComponentProcessor {
     private _options: NormalizedDevtoolsProcessorOptions;
     private _cache = new DevtoolsProcessorCache();
     private _watcher: RollupWatcher | null = null;
@@ -31,7 +30,10 @@ export class DevtoolsProcessor extends ComponentProcessor {
     }
 
     public async build(): Promise<ChromeExtensionModule> {
-        if (this._cache.entry && this._cache.module.entry === this._cache.entry) {
+        if (!this._cache.entry) {
+            this._cache.module = ChromeExtensionModule.Empty;
+        } else {
+            if (this._cache.module.entry !== this._cache.entry) {
                 const entry = this._cache.entry;
                 const build = await vite.build({
                     build: {
@@ -44,6 +46,7 @@ export class DevtoolsProcessor extends ComponentProcessor {
                 this._cache.module.entry = this._cache.entry;
                 this._cache.module.bundle = build.output[0].fileName;
                 this._cache.module.dependencies = build.output[0].referencedFiles;
+            }
         }
         return this._cache.module;
     }
@@ -54,7 +57,6 @@ export class DevtoolsProcessor extends ComponentProcessor {
     }
 
     constructor(options: DevtoolsProcessorOptions = {}) {
-        super();
         this._options = this.normalizeOptions(options);
     }
 

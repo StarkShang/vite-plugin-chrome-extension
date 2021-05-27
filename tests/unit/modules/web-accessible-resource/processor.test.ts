@@ -17,4 +17,14 @@ describe("WebAccessibleResourceProcessor", () => {
             expect((processor as any)._cache.entries).to.have.members(usecase.output);
         }));
     });
+    describe("build", () => {
+        usecases.build.forEach(usecase => it(usecase.description, async () => {
+            const processor = new WebAccessibleResourceProcessor();
+            (processor as any)._cache.entries = usecase.input.entries;
+            (processor as any)._cache.modules = usecase.input.modules;
+            const modules = await processor.build();
+            expect(Array.from((processor as any)._cache.modules.values())).to.have.deep.members(usecase.output);
+            expect(modules).to.have.deep.members(usecase.output);
+        }));
+    });
 });

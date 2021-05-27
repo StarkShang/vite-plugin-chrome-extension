@@ -2,7 +2,7 @@ import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { WatcherOptions } from "rollup";
 import { Plugin } from "vite";
-import { ComponentProcessor } from "../common";
+import { IComponentProcessor } from "../common";
 import { OptionsProcessorCache } from "./cache";
 
 export interface OptionsProcessorOptions {
@@ -20,7 +20,7 @@ const DefaultOptionsProcessorOptions: NormalizedOptionsProcessorOptions = {
     plugins: [],
 };
 
-export class OptionsProcessor extends ComponentProcessor {
+export class OptionsProcessor implements IComponentProcessor {
     private _options: NormalizedOptionsProcessorOptions;
     private _cache = new OptionsProcessorCache();
 
@@ -32,19 +32,18 @@ export class OptionsProcessor extends ComponentProcessor {
         }
     }
 
-    public stop(): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
-
     public async build(): Promise<ChromeExtensionModule> {
-        if (this._cache.entry && this._cache.module.entry !== this._cache.entry) {
-            throw new Error("Method not implemented.");
+        if (!this._cache.entry) {
+            this._cache.module = ChromeExtensionModule.Empty;
+        } else {
+            if (this._cache.module.entry !== this._cache.entry) {
+                throw new Error("Method not implemented.");
+            }
         }
         return this._cache.module;
     }
 
     public constructor(options: OptionsProcessorOptions = {}) {
-        super();
         this._options = this.normalizeOptions(options);
     }
 

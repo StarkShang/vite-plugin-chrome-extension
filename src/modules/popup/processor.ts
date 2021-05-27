@@ -1,5 +1,5 @@
 import { WatcherOptions } from "rollup";
-import { ComponentProcessor } from "../common";
+import { IComponentProcessor } from "../common";
 import { Plugin } from "vite";
 import { PopupProcessorCache } from "./cache";
 import { ChromeExtensionManifest } from "@/manifest";
@@ -20,7 +20,7 @@ const DefaultPopupProcessorOptions: NormalizedPopupProcessorOptions = {
     plugins: [],
 };
 
-export class PopupProcessor extends ComponentProcessor {
+export class PopupProcessor implements IComponentProcessor {
     private _options: NormalizedPopupProcessorOptions;
     private _cache = new PopupProcessorCache();
 
@@ -28,19 +28,18 @@ export class PopupProcessor extends ComponentProcessor {
         manifest.action?.default_popup && (this._cache.entry = manifest.action.default_popup);
     }
 
-    public stop(): Promise<void> {
-        throw new Error("Method not implemented.");
-    }
-
     public async build(): Promise<ChromeExtensionModule> {
-        if (this._cache.module.entry === this._cache.entry) {
-            throw new Error("Method not implemented.");
+        if (!this._cache.entry) {
+            this._cache.module = ChromeExtensionModule.Empty;
+        } else {
+            if (this._cache.module.entry !== this._cache.entry) {
+                throw new Error("Method not implemented.");
+            }
         }
         return this._cache.module;
     }
 
     public constructor(options: PopupProcessorOptions = {}) {
-        super();
         this._options = this.normalizeOptions(options);
     }
 
