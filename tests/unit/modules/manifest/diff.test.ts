@@ -26,37 +26,37 @@ describe("modules/manifest/diff", () => {
         }));
     });
     describe("diffOptions", () => {
-        usecases.diffContentScripts.forEach(usecase => it(usecase.description, () => {
+        usecases.diffOptions.forEach(usecase => it(usecase.description, () => {
             const patch = {};
-            diffOptions(usecase.input.current, usecase.input.last, {});
+            diffOptions(usecase.input.current, usecase.input.last, patch);
             expect(patch).to.deep.equals(usecase.output);
         }));
     });
     describe("diffPopup", () => {
         usecases.diffPopup.forEach(usecase => it(usecase.description, () => {
             const patch = {};
-            diffPopup(usecase.input.current, usecase.input.last, {});
+            diffPopup(usecase.input.current, usecase.input.last, patch);
             expect(patch).to.deep.equals(usecase.output);
         }));
     });
     describe("diffOverride", () => {
         usecases.diffOverride.forEach(usecase => it(usecase.description, () => {
             const patch = {};
-            diffOverride(usecase.input.current, usecase.input.last, {});
+            diffOverride(usecase.input.current, usecase.input.last, patch);
             expect(patch).to.deep.equals(usecase.output);
         }));
     });
     describe("diffDevtools", () => {
         usecases.diffDevtools.forEach(usecase => it(usecase.description, () => {
             const patch = {};
-            diffDevtools(usecase.input.current, usecase.input.last, {});
+            diffDevtools(usecase.input.current, usecase.input.last, patch);
             expect(patch).to.deep.equals(usecase.output);
         }));
     });
     describe("diffWebAccessibleResources", () => {
         usecases.diffWebAccessibleResources.forEach(usecase => it(usecase.description, () => {
             const patch = {};
-            diffWebAccessibleResources(usecase.input.current, usecase.input.last, {});
+            diffWebAccessibleResources(usecase.input.current, usecase.input.last, patch);
             expect(patch).to.deep.equals(usecase.output);
         }));
     });

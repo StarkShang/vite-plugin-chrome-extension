@@ -95,7 +95,8 @@ export function diffContentScripts(
     }
 }
 
-export function diffOptions(current: ChromeExtensionManifest,
+export function diffOptions(
+    current: ChromeExtensionManifest,
     last: ChromeExtensionManifest,
     patch: ChromeExtensionManifestPatch,
 ): void {

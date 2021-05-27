@@ -654,14 +654,14 @@ const diffContentScriptsUseCases: UseCase<{
         current: generateManifest(),
         last: generateManifest(),
     },
-    output: {}
+    output: {},
 }, {
     description: "undefined content scripts",
     input: {
         current: generateManifest({ content_scripts: undefined }),
         last: generateManifest({ content_scripts: undefined }),
     },
-    output: {}
+    output: {},
 }, {
     description: "empty js, css and undefined match_about_blank",
     input: {
@@ -679,7 +679,7 @@ const diffContentScriptsUseCases: UseCase<{
             }],
         }),
     },
-    output: {}
+    output: {},
 }, {
     description: "add: only matches",
     input: {
@@ -697,7 +697,7 @@ const diffContentScriptsUseCases: UseCase<{
                 after: "all_urls",
             }],
         }],
-    }
+    },
 }, {
     description: "add: empty js, css and undefined match_about_blank",
     input: {
@@ -718,7 +718,7 @@ const diffContentScriptsUseCases: UseCase<{
                 after: "all_urls",
             }],
         }],
-    }
+    },
 }, {
     description: "add: js, css, match_about_blank",
     input: {
@@ -834,6 +834,117 @@ const diffContentScriptsUseCases: UseCase<{
     },
 }];
 
+const diffOptionsUseCases: UseCase<{
+    current: ChromeExtensionManifest,
+    last: ChromeExtensionManifest,
+}, ChromeExtensionManifestPatch>[] = [{
+    description: "no options",
+    input: {
+        current: generateManifest(),
+        last: generateManifest(),
+    },
+    output: {},
+}, {
+    description: "undefined options page",
+    input: {
+        current: generateManifest({ options_page: undefined }),
+        last: generateManifest({ options_page: undefined }),
+    },
+    output: {},
+}, {
+    description: "add options page",
+    input: {
+        current: generateManifest({ options_page: "options_page.ts" }),
+        last: generateManifest({ options_page: undefined }),
+    },
+    output: {
+        options_page: {
+            before: undefined,
+            after: "options_page.ts",
+        }
+    },
+}, {
+    description: "delete options page",
+    input: {
+        current: generateManifest({ options_page: undefined }),
+        last: generateManifest({ options_page: "options_page.ts" }),
+    },
+    output: {
+        options_page: {
+            before: "options_page.ts",
+            after: undefined,
+        }
+    },
+}, {
+    description: "update options page",
+    input: {
+        current: generateManifest({ options_page: "options_page2.ts" }),
+        last: generateManifest({ options_page: "options_page1.ts" }),
+    },
+    output: {
+        options_page: {
+            before: "options_page1.ts",
+            after: "options_page2.ts",
+        }
+    },
+}, {
+    description: "undefined options ui",
+    input: {
+        current: generateManifest({ options_ui: undefined }),
+        last: generateManifest({ options_ui: undefined }),
+    },
+    output: {},
+}, {
+    description: "undefined options ui page",
+    input: {
+        current: generateManifest({ options_ui: { page: undefined! } }),
+        last: generateManifest({ options_ui: undefined }),
+    },
+    output: {},
+}, {
+    description: "add options ui",
+    input: {
+        current: generateManifest({ options_ui: { page: "options_ui.ts" } }),
+        last: generateManifest(),
+    },
+    output: {
+        options_ui: {
+            page: {
+                before: undefined,
+                after: "options_ui.ts",
+            },
+        },
+    },
+}, {
+    description: "delete options ui",
+    input: {
+        current: generateManifest(),
+        last: generateManifest({ options_ui: { page: "options_ui.ts" } }),
+    },
+    output: {
+        options_ui: {
+            page: {
+                before: "options_ui.ts",
+                after: undefined,
+            },
+        },
+    },
+}, {
+    description: "update options ui",
+    input: {
+        current: generateManifest({ options_ui: { page: "options_ui2.ts" } }),
+        last: generateManifest({ options_ui: { page: "options_ui1.ts" } }),
+    },
+    output: {
+        options_ui: {
+            page: {
+                before: "options_ui1.ts",
+                after: "options_ui2.ts",
+            },
+        },
+    },
+}];
+
 const diffPopupUseCases: UseCase<{
     current: ChromeExtensionManifest,
     last: ChromeExtensionManifest,
@@ -890,6 +1001,7 @@ export default {
     },
     diffContentScripts: diffContentScriptsUseCases,
     diffPopup: diffPopupUseCases,
+    diffOptions: diffOptionsUseCases,
     diffOverride: diffOverrideUseCases,
     diffDevtools: diffDevtoolsUseCases,
     diffWebAccessibleResources: diffWebAccessibleResourcesUseCases
