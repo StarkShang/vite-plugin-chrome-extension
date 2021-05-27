@@ -1,11 +1,12 @@
 /* eslint-env node */
 
 // import typescript from "@rollup/plugin-typescript"
-import sucrase from "@rollup/plugin-sucrase"
-import bundleImports from "rollup-plugin-bundle-imports"
-import json from "@rollup/plugin-json"
+import sucrase from "@rollup/plugin-sucrase";
+import bundleImports from "rollup-plugin-bundle-imports";
+import json from "@rollup/plugin-json";
+import { typescriptPaths } from "rollup-plugin-typescript-paths";
 
-const { dependencies } = require("./package.json")
+const { dependencies } = require("./package.json");
 
 const external = Object.keys(dependencies).concat(
     "firebase/app",
@@ -21,6 +22,7 @@ const external = Object.keys(dependencies).concat(
 // } = require("./tsconfigs/tsconfig-base.json")
 
 const plugins = [
+    typescriptPaths(),
     json(),
     sucrase({
         transforms: ["typescript"],

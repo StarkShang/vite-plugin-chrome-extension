@@ -3,7 +3,7 @@ import memoize from "mem";
 import { relative } from "path";
 import { cosmiconfigSync } from "cosmiconfig";
 import { EmittedAsset, PluginContext } from "rollup";
-import { BundleMapping, ChromeExtensionManifestEntries, ChromeExtensionManifestEntryType, ChromeExtensionModule } from "@/common/models";
+import { ChromeExtensionManifestEntries, ChromeExtensionManifestEntryType, ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { deriveFiles, ChromeExtensionManifestParser } from "./parser";
 import { reduceToRecord } from "@/manifest-input/reduceToRecord";
