@@ -1,7 +1,9 @@
+import { ChromeExtensionManifest } from "@/manifest";
 import { OptionsProcessorOptions, NormalizedOptionsProcessorOptions } from "@/modules/options/processor";
 import { UseCase } from "@root/tests/common/usecase";
+import { generateManifest } from "@root/tests/__fixtures__/manifests";
 
-const normalizeOptionsTestUseCases: UseCase<OptionsProcessorOptions, NormalizedOptionsProcessorOptions>[] = [{
+const normalizeOptionsUseCases: UseCase<OptionsProcessorOptions, NormalizedOptionsProcessorOptions>[] = [{
     description: "undefined watch option",
     input: {
     },
@@ -102,6 +104,21 @@ const normalizeOptionsTestUseCases: UseCase<OptionsProcessorOptions, NormalizedO
     }
 }];
 
+const resolveUseCases: UseCase<ChromeExtensionManifest, string | undefined>[] = [{
+    description: "empty entry",
+    input: generateManifest(),
+    output: undefined,
+}, {
+    description: "with options_page entry",
+    input: generateManifest({options_page: "options_page.ts"}),
+    output: "options_page.ts",
+}, {
+    description: "with options_ui entry",
+    input: generateManifest({options_ui:{page:"options_ui.ts"}}),
+    output: "options_ui.ts",
+}];
+
 export default {
-    normalizeOptions: normalizeOptionsTestUseCases,
+    normalizeOptions: normalizeOptionsUseCases,
+    resolve: resolveUseCases,
 };

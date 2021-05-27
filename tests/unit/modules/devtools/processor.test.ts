@@ -10,4 +10,11 @@ describe("DevtoolsProcessor", () => {
             expect(normalizedOptions).to.deep.equals(usecase.output);
         }));
     });
+    describe("resolve", () => {
+        usecases.resolve.forEach(usecase => it(usecase.description, () => {
+            const processor = new DevtoolsProcessor();
+            processor.resolve(usecase.input);
+            expect((processor as any)._cache.entry).to.be.equals(usecase.output);
+        }));
+    });
 });

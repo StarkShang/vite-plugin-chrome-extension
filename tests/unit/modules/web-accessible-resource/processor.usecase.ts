@@ -1,7 +1,9 @@
+import { ChromeExtensionManifest } from "@/manifest";
 import { WebAccessibleResourceProcessorOptions, NormalizedWebAccessibleResourceProcessorOptions } from "@/modules/web-accessible-resource/processor";
 import { UseCase } from "@root/tests/common/usecase";
+import { generateManifest } from "@root/tests/__fixtures__/manifests";
 
-const normalizeOptionsTestUseCases: UseCase<WebAccessibleResourceProcessorOptions, NormalizedWebAccessibleResourceProcessorOptions>[] = [{
+const normalizeOptionsUseCases: UseCase<WebAccessibleResourceProcessorOptions, NormalizedWebAccessibleResourceProcessorOptions>[] = [{
     description: "undefined watch option",
     input: {
     },
@@ -102,6 +104,43 @@ const normalizeOptionsTestUseCases: UseCase<WebAccessibleResourceProcessorOption
     }
 }];
 
+const resolveUseCases: UseCase<ChromeExtensionManifest, string[]>[] = [{
+    description: "empty entries",
+    input: generateManifest(),
+    output: [],
+}, {
+    description: "with entry",
+    input: generateManifest({
+        web_accessible_resources: [{
+            matches: ["all_urls"],
+            resources: ["web_accessible_resources.ts"]
+        }]
+    }),
+    output: ["web_accessible_resources.ts"],
+}, {
+    description: "with entries",
+    input: generateManifest({
+        web_accessible_resources: [{
+            matches: ["all_urls"],
+            resources: ["web_accessible_resources1.ts", "web_accessible_resources2.ts"]
+        }]
+    }),
+    output: ["web_accessible_resources2.ts", "web_accessible_resources1.ts"],
+}, {
+    description: "with entry groups",
+    input: generateManifest({
+        web_accessible_resources: [{
+            matches: ["all_urls"],
+            resources: ["web_accessible_resources1.ts"]
+        }, {
+            matches: ["all_urls"],
+            resources: ["web_accessible_resources2.ts"]
+        }]
+    }),
+    output: ["web_accessible_resources2.ts", "web_accessible_resources1.ts"],
+}];
+
 export default {
-    normalizeOptions: normalizeOptionsTestUseCases,
+    normalizeOptions: normalizeOptionsUseCases,
+    resolve: resolveUseCases,
 };

@@ -1,7 +1,9 @@
+import { ChromeExtensionManifest } from "@/manifest";
 import { PopupProcessorOptions, NormalizedPopupProcessorOptions } from "@/modules/popup/processor";
 import { UseCase } from "@root/tests/common/usecase";
+import { generateManifest } from "@root/tests/__fixtures__/manifests";
 
-const normalizeOptionsTestUseCases: UseCase<PopupProcessorOptions, NormalizedPopupProcessorOptions>[] = [{
+const normalizeOptionsUseCases: UseCase<PopupProcessorOptions, NormalizedPopupProcessorOptions>[] = [{
     description: "undefined watch option",
     input: {
     },
@@ -102,6 +104,17 @@ const normalizeOptionsTestUseCases: UseCase<PopupProcessorOptions, NormalizedPop
     }
 }];
 
+const resolveUseCases: UseCase<ChromeExtensionManifest, string|undefined>[] = [{
+    description: "empty entry",
+    input: generateManifest(),
+    output: undefined,
+}, {
+    description: "with entry",
+    input: generateManifest({action:{default_popup: "popup.ts"}}),
+    output: "popup.ts",
+}];
+
 export default {
-    normalizeOptions: normalizeOptionsTestUseCases,
+    normalizeOptions: normalizeOptionsUseCases,
+    resolve: resolveUseCases,
 };

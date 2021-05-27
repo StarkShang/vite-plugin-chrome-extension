@@ -1,7 +1,9 @@
+import { ChromeExtensionManifest } from "@/manifest";
 import { OverrideNewtabProcessorOptions, NormalizedOverrideBookmarksProcessorOptions } from "@/modules/override/processor";
 import { UseCase } from "@root/tests/common/usecase";
+import { generateManifest } from "@root/tests/__fixtures__/manifests";
 
-const normalizeOptionsTestUseCases: UseCase<OverrideNewtabProcessorOptions, NormalizedOverrideBookmarksProcessorOptions>[] = [{
+const normalizeOptionsUseCases: UseCase<OverrideNewtabProcessorOptions, NormalizedOverrideBookmarksProcessorOptions>[] = [{
     description: "undefined watch option",
     input: {
     },
@@ -102,6 +104,17 @@ const normalizeOptionsTestUseCases: UseCase<OverrideNewtabProcessorOptions, Norm
     }
 }];
 
+const resolveUseCases: UseCase<ChromeExtensionManifest, string|undefined>[] = [{
+    description: "empty entry",
+    input: generateManifest(),
+    output: undefined,
+}, {
+    description: "with entry",
+    input: generateManifest({ chrome_url_overrides: { bookmarks: "bookmarks.ts" } }),
+    output: "bookmarks.ts",
+}];
+
 export default {
-    normalizeOptions: normalizeOptionsTestUseCases,
+    normalizeOptions: normalizeOptionsUseCases,
+    resolve: resolveUseCases,
 };

@@ -41,7 +41,6 @@ const DefaultBackgroundProcessorOptions: NormalizedBackgroundProcessorOptions = 
 export class BackgroundProcessor extends ComponentProcessor {
     private _options: NormalizedBackgroundProcessorOptions;
     private _cache = new BackgroundProcessorCache();
-    private _entryPath = "";
     private _watcher: RollupWatcher | null = null;
 
     public resolve(manifest: ChromeExtensionManifest): void {

@@ -1,7 +1,9 @@
+import { ChromeExtensionManifest } from "@/manifest";
 import { DevtoolsProcessorOptions, NormalizedDevtoolsProcessorOptions } from "@/modules/devtools/processor";
 import { UseCase } from "@root/tests/common/usecase";
+import { generateManifest } from "@root/tests/__fixtures__/manifests";
 
-const normalizeOptionsTestUseCases: UseCase<DevtoolsProcessorOptions, NormalizedDevtoolsProcessorOptions>[] = [{
+const normalizeOptionsUseCases: UseCase<DevtoolsProcessorOptions, NormalizedDevtoolsProcessorOptions>[] = [{
     description: "undefined watch option",
     input: {
     },
@@ -102,6 +104,17 @@ const normalizeOptionsTestUseCases: UseCase<DevtoolsProcessorOptions, Normalized
     }
 }];
 
+const resolveUseCases: UseCase<ChromeExtensionManifest, string|undefined>[] = [{
+    description: "empty entry",
+    input: generateManifest(),
+    output: undefined,
+}, {
+    description: "with entry",
+    input: generateManifest({ devtools_page: "devtools.ts" }),
+    output: "devtools.ts",
+}];
+
 export default {
-    normalizeOptions: normalizeOptionsTestUseCases,
+    normalizeOptions: normalizeOptionsUseCases,
+    resolve: resolveUseCases,
 };

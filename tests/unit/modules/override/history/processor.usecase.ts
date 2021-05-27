@@ -1,7 +1,9 @@
+import { ChromeExtensionManifest } from "@/manifest";
 import { OverrideHistoryProcessorOptions, NormalizedOverrideHistoryProcessorOptions } from "@/modules/override/processor";
 import { UseCase } from "@root/tests/common/usecase";
+import { generateManifest } from "@root/tests/__fixtures__/manifests";
 
-const normalizeOptionsTestUseCases: UseCase<OverrideHistoryProcessorOptions, NormalizedOverrideHistoryProcessorOptions>[] = [{
+const normalizeOptionsUseCases: UseCase<OverrideHistoryProcessorOptions, NormalizedOverrideHistoryProcessorOptions>[] = [{
     description: "undefined watch option",
     input: {
     },
@@ -102,6 +104,17 @@ const normalizeOptionsTestUseCases: UseCase<OverrideHistoryProcessorOptions, Nor
     }
 }];
 
+const resolveUseCases: UseCase<ChromeExtensionManifest, string|undefined>[] = [{
+    description: "empty entry",
+    input: generateManifest(),
+    output: undefined,
+}, {
+    description: "with entry",
+    input: generateManifest({ chrome_url_overrides: { history: "history.ts" } }),
+    output: "history.ts",
+}];
+
 export default {
-    normalizeOptions: normalizeOptionsTestUseCases,
+    normalizeOptions: normalizeOptionsUseCases,
+    resolve: resolveUseCases,
 };

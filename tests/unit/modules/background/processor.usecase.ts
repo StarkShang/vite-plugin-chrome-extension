@@ -1,7 +1,9 @@
+import { ChromeExtensionManifest } from "@/manifest";
 import { BackgroundProcessorOptions, NormalizedBackgroundProcessorOptions } from "@/modules/background/processor";
 import { UseCase } from "@root/tests/common/usecase";
+import { generateManifest } from "@root/tests/__fixtures__/manifests";
 
-const normalizeOptionsTestUseCases: UseCase<BackgroundProcessorOptions, NormalizedBackgroundProcessorOptions>[] = [{
+const normalizeOptionsUseCases: UseCase<BackgroundProcessorOptions, NormalizedBackgroundProcessorOptions>[] = [{
     description: "undefined watch option",
     input: {
         rootPath: __dirname,
@@ -122,6 +124,17 @@ const normalizeOptionsTestUseCases: UseCase<BackgroundProcessorOptions, Normaliz
     }
 }];
 
+const resolveUseCases: UseCase<ChromeExtensionManifest, string | undefined>[] = [{
+    description: "empty entry",
+    input: generateManifest(),
+    output: undefined,
+}, {
+    description: "with entry",
+    input: generateManifest({ background: { service_worker: "background.ts" } }),
+    output: "background.ts",
+}];
+
 export default {
-    normalizeOptions: normalizeOptionsTestUseCases,
+    normalizeOptions: normalizeOptionsUseCases,
+    resolve: resolveUseCases,
 };

@@ -65,7 +65,7 @@ export class ManifestProcessor {
      * Load content from manifest.json
      * @param options: rollup input options
      */
-    public async resolve(manifest: ChromeExtensionManifest): Promise<void> {
+    public resolve(manifest: ChromeExtensionManifest): void {
         /* --------------- VALIDATE MANIFEST.JSON CONTENT --------------- */
         this.validateChromeExtensionManifest(manifest);
         /* --------------- APPLY USER CUSTOM CONFIG --------------- */

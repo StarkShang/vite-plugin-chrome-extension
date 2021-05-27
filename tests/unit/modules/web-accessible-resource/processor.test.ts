@@ -10,4 +10,11 @@ describe("WebAccessibleResourceProcessor", () => {
             expect(normalizedOptions).to.deep.equals(usecase.output);
         }));
     });
+    describe("resolve", () => {
+        usecases.resolve.forEach(usecase => it(usecase.description, () => {
+            const processor = new WebAccessibleResourceProcessor();
+            processor.resolve(usecase.input);
+            expect((processor as any)._cache.entries).to.have.members(usecase.output);
+        }));
+    });
 });

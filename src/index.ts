@@ -38,9 +38,9 @@ export const chromeExtension = (
             }
             return options;
         },
-        async transform(code, id) {
+        transform(code, id) {
             // main logic here
-            await manifestProcessor.resolve(JSON.parse(code));
+            manifestProcessor.resolve(JSON.parse(code));
             return "console.log('chrome-extension')"; // eliminate warning for empty chunk
         },
         outputOptions(options: OutputOptions): OutputOptions {

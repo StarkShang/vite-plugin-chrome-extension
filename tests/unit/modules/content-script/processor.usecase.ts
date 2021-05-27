@@ -1,7 +1,9 @@
+import { ChromeExtensionManifest } from "@/manifest";
 import { ContentScriptProcessorOptions, NormalizedContentScriptProcessorOptions } from "@/modules/content-script/processor";
 import { UseCase } from "@root/tests/common/usecase";
+import { generateManifest } from "@root/tests/__fixtures__/manifests";
 
-const normalizeOptionsTestUseCases: UseCase<ContentScriptProcessorOptions, NormalizedContentScriptProcessorOptions>[] = [{
+const normalizeOptionsUseCases: UseCase<ContentScriptProcessorOptions, NormalizedContentScriptProcessorOptions>[] = [{
     description: "undefined watch option",
     input: { },
     output: {
@@ -101,6 +103,43 @@ const normalizeOptionsTestUseCases: UseCase<ContentScriptProcessorOptions, Norma
     }
 }];
 
+const resolveUseCases: UseCase<ChromeExtensionManifest, string[]>[] = [{
+    description: "empty entries",
+    input: generateManifest(),
+    output: [],
+}, {
+    description: "with entry",
+    input: generateManifest({
+        content_scripts: [{
+            matches: ["all_urls"],
+            js: ["content_script.ts"]
+        }]
+    }),
+    output: ["content_script.ts"],
+}, {
+    description: "with entries",
+    input: generateManifest({
+        content_scripts: [{
+            matches: ["all_urls"],
+            js: ["content_script1.ts", "content_script2.ts"]
+        }]
+    }),
+    output: ["content_script2.ts", "content_script1.ts"],
+}, {
+    description: "with entry groups",
+    input: generateManifest({
+        content_scripts: [{
+            matches: ["all_urls"],
+            js: ["content_script1.ts"]
+        }, {
+            matches: ["all_urls"],
+            js: ["content_script2.ts"]
+        }]
+    }),
+    output: ["content_script2.ts", "content_script1.ts"],
+}];
+
 export default {
-    normalizeOptions: normalizeOptionsTestUseCases,
+    normalizeOptions: normalizeOptionsUseCases,
+    resolve: resolveUseCases,
 };

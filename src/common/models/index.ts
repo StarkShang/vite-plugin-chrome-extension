@@ -1,4 +1,3 @@
-import { type } from "node:os";
 import { OutputAsset, OutputChunk } from "rollup";
 
 export interface OutputChunkBundle {

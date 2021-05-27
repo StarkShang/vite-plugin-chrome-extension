@@ -11,6 +11,5 @@ export type ChromeExtensionManifestEntryMappings = Map<string, ChromeExtensionMa
 export class ChromeExtensionManifestCache {
     public manifest?: ChromeExtensionManifest;
     public mappings: ChromeExtensionManifestEntryMappings = new Map<string, ChromeExtensionManifestEntryMapping>(); // mappings between module and bundle
-    public entries: ChromeExtensionManifestEntries = [];
     public entriesDiff?: ChromeExtensionManifestEntriesDiff;
 }
