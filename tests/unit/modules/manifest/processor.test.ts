@@ -16,7 +16,7 @@ describe("ManifestProcessor", () => {
         usecases.resolve.forEach(usecase => it(usecase.description, async () => {
             const manifestProcessor = new ManifestProcessor();
             await manifestProcessor.resolve(usecase.input);
-            expect(manifestProcessor.cache.manifest).to.deep.equals(usecase.output.manifest);
+            expect(manifestProcessor.cache.manifest).to.deep.equals(usecase.output);
         }));
     });
     describe("build", () => {
@@ -25,6 +25,14 @@ describe("ManifestProcessor", () => {
             manifestProcessor.cache.mappings = usecase.input.mappings;
             await manifestProcessor.build();
             expect(manifestProcessor.cache.mappings).to.deep.equals(usecase.output.mappings);
+        }));
+    });
+    describe("updateManifest", () => {
+        usecases.updateManifest.forEach(usecase => it(usecase.description, async () => {
+            const manifestProcessor = new ManifestProcessor();
+            manifestProcessor.cache.manifest = usecase.input.manifest;
+            await manifestProcessor.updateManifest(usecase.input.bundles);
+            expect(manifestProcessor.cache.manifest).to.deep.equals(usecase.output);
         }));
     });
 
