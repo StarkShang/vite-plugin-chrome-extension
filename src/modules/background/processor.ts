@@ -1,4 +1,4 @@
-import { OutputBundle, PluginContext, RollupWatcher, TransformPluginContext, WatcherOptions } from "rollup";
+import { OutputBundle, OutputChunk, PluginContext, RollupOutput, RollupWatcher, TransformPluginContext, WatcherOptions } from "rollup";
 import { resolve, parse, join,  } from "path";
 import { existsSync, readFileSync } from "fs";
 import slash from "slash";
@@ -7,10 +7,9 @@ import { removeFileExtension } from "../../common/utils";
 import { findChunkByName } from "../../utils/helpers";
 import { mixinChunksForIIFE } from "../mixin";
 import vite, { Plugin } from "vite";
-import { EventEmitter } from "events";
 import { ComponentProcessor } from "../common";
 import { BackgroundProcessorCache } from "./cache";
-import { BundleMapping } from "@/common/models";
+import { BundleMapping, ChromeExtensionModule } from "@/common/models";
 
 const dynamicImportAssetRex = /(?<=chrome.scripting.insertCSS\()[\s\S]*?(?=\))/gm;
 const dynamicImportScriptRex = /(?<=chrome.scripting.executeScript\()[\s\S]*?(?=\))/gm;
@@ -49,47 +48,21 @@ export class BackgroundProcessor extends ComponentProcessor {
             && (this._cache.entry = manifest.background.service_worker);
     }
 
-    public async build(): Promise<BundleMapping> {
-        if (this._cache.mapping.module === this._cache.entry) {
-            return this._cache.mapping;
-        } else {
+    public async build(): Promise<ChromeExtensionModule> {
+        if (this._cache.entry && this._cache.module?.entry !== this._cache.entry) {
             const entry = this._cache.entry;
-            return new Promise(resolve => {
-                // stop previous watcher
-                this.stop();
-                vite.build({
-                    build: {
-                        rollupOptions: {
-                            input: entry,
-                        },
-                        emptyOutDir: false,
-                        watch: this._options.watch
-                            ? { clearScreen: true }
-                            : null,
-                    },
-                    plugins: [{
-                        name: "test",
-                        generateBundle(_options, bundle, _isWrite) {
-                            const chunk = Object.entries(bundle)
-                                .find(([, chunk]) => chunk.type === "chunk" && chunk.isEntry);
-                            resolve(chunk ? ({
-                                module: entry as string,
-                                bundle: chunk[0] as string,
-                            }) : ({
-                                module: entry as string,
-                                bundle: "",
-                            }));
-                        },
-                    }],
-                    configFile: false, // must set to false, to avoid load config from vite.config.ts
-                }).then(output => {
-                    if (output instanceof EventEmitter) {
-                        const watcher = output as RollupWatcher;
-                        this._watcher = watcher;
-                    }
-                });
-            });
+            const build = await vite.build({
+                build: {
+                    rollupOptions: { input: entry },
+                    emptyOutDir: false,
+                },
+                configFile: false, // must set to false, to avoid load config from vite.config.ts
+            }) as RollupOutput;
+            this._cache.module.entry = this._cache.entry;
+            this._cache.module.bundle = build.output[0].fileName;
+            this._cache.module.dependencies = build.output[0].referencedFiles;
         }
+        return this._cache.module;
     }
 
     public async stop() {

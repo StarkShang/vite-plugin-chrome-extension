@@ -3,7 +3,7 @@ import { ComponentProcessor } from "../common";
 import { Plugin } from "vite";
 import { PopupProcessorCache } from "./cache";
 import { ChromeExtensionManifest } from "@/manifest";
-import { BundleMapping } from "@/common/models";
+import { ChromeExtensionModule } from "@/common/models";
 
 export interface PopupProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -32,12 +32,11 @@ export class PopupProcessor extends ComponentProcessor {
         throw new Error("Method not implemented.");
     }
 
-    public async build(): Promise<BundleMapping> {
-        if (this._cache.mapping.module === this._cache.entry) {
-            return this._cache.mapping;
-        } else {
+    public async build(): Promise<ChromeExtensionModule> {
+        if (this._cache.module.entry === this._cache.entry) {
             throw new Error("Method not implemented.");
         }
+        return this._cache.module;
     }
 
     public constructor(options: PopupProcessorOptions = {}) {

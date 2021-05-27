@@ -597,8 +597,9 @@ const updateManifestUseCases: UseCase<{
         manifest: undefined,
         bundles: {
             background: {
-                module: "background.ts",
+                entry: "background.ts",
                 bundle: "background.js",
+                dependencies: [],
             },
         },
     },
@@ -620,8 +621,9 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             background: {
-                module: "background.ts",
+                entry: "background.ts",
                 bundle: "background.js",
+                dependencies: [],
             },
         },
     },
@@ -641,8 +643,9 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             "content-script": [{
-                module: "content_script.ts",
+                entry: "content_script.ts",
                 bundle: "content_script.js",
+                dependencies: [],
             }],
         },
     },
@@ -663,11 +666,13 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             "content-script": [{
-                module: "content_script2.ts",
+                entry: "content_script2.ts",
                 bundle: "content_script2.js",
+                dependencies: [],
             }, {
-                module: "content_script1.ts",
+                entry: "content_script1.ts",
                 bundle: "content_script1.js",
+                dependencies: [],
             }],
         },
     },
@@ -691,11 +696,13 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             "content-script": [{
-                module: "content_script2.ts",
+                entry: "content_script2.ts",
                 bundle: "content_script2.js",
+                dependencies: [],
             }, {
-                module: "content_script1.ts",
+                entry: "content_script1.ts",
                 bundle: "content_script1.js",
+                dependencies: [],
             }],
         },
     },
@@ -718,8 +725,9 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             popup: {
-                module: "popup.ts",
+                entry: "popup.ts",
                 bundle: "popup.js",
+                dependencies: [],
             },
         },
     },
@@ -736,8 +744,9 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             options: {
-                module: "options_page.ts",
+                entry: "options_page.ts",
                 bundle: "options_page.js",
+                dependencies: [],
             },
         },
     },
@@ -754,8 +763,9 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             options: {
-                module: "options_ui.ts",
+                entry: "options_ui.ts",
                 bundle: "options_ui.js",
+                dependencies: [],
             },
         },
     },
@@ -772,8 +782,9 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             devtools: {
-                module: "devtools.ts",
+                entry: "devtools.ts",
                 bundle: "devtools.js",
+                dependencies: [],
             },
         },
     },
@@ -790,8 +801,9 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             bookmarks: {
-                module: "bookmarks.ts",
+                entry: "bookmarks.ts",
                 bundle: "bookmarks.js",
+                dependencies: [],
             },
         },
     },
@@ -810,8 +822,9 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             history: {
-                module: "history.ts",
+                entry: "history.ts",
                 bundle: "history.js",
+                dependencies: [],
             },
         },
     },
@@ -830,8 +843,9 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             newtab: {
-                module: "newtab.ts",
+                entry: "newtab.ts",
                 bundle: "newtab.js",
+                dependencies: [],
             },
         },
     },
@@ -851,8 +865,9 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             "web-accessible-resource": [{
-                module: "web_accessible_resources.ts",
+                entry: "web_accessible_resources.ts",
                 bundle: "web_accessible_resources.js",
+                dependencies: [],
             }],
         },
     },
@@ -873,11 +888,13 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             "web-accessible-resource": [{
-                module: "web_accessible_resources2.ts",
+                entry: "web_accessible_resources2.ts",
                 bundle: "web_accessible_resources2.js",
+                dependencies: [],
             }, {
-                module: "web_accessible_resources1.ts",
+                entry: "web_accessible_resources1.ts",
                 bundle: "web_accessible_resources1.js",
+                dependencies: [],
             }],
         },
     },
@@ -901,11 +918,13 @@ const updateManifestUseCases: UseCase<{
         }),
         bundles: {
             "web-accessible-resource": [{
-                module: "web_accessible_resources2.ts",
+                entry: "web_accessible_resources2.ts",
                 bundle: "web_accessible_resources2.js",
+                dependencies: [],
             }, {
-                module: "web_accessible_resources1.ts",
+                entry: "web_accessible_resources1.ts",
                 bundle: "web_accessible_resources1.js",
+                dependencies: [],
             }],
         },
     },

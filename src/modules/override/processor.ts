@@ -1,4 +1,4 @@
-import { BundleMapping } from "@/common/models";
+import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { WatcherOptions } from "rollup";
 import { Plugin } from "vite";
@@ -29,12 +29,11 @@ export class OverrideBookmarksProcessor extends ComponentProcessor {
             && (this._cache.entry = manifest.chrome_url_overrides.bookmarks);
     }
 
-    public async build(): Promise<BundleMapping> {
-        if (this._cache.mapping.module === this._cache.entry) {
-            return this._cache.mapping;
-        } else {
+    public async build(): Promise<ChromeExtensionModule> {
+        if (this._cache.module.entry === this._cache.entry) {
             throw new Error("Method not implemented.");
         }
+        return this._cache.module;
     }
 
     public stop(): Promise<void> {
@@ -80,12 +79,11 @@ export class OverrideHistoryProcessor extends ComponentProcessor {
             && (this._cache.entry = manifest.chrome_url_overrides.history);
     }
 
-    public async build(): Promise<BundleMapping> {
-        if (this._cache.mapping.module === this._cache.entry) {
-            return this._cache.mapping;
-        } else {
+    public async build(): Promise<ChromeExtensionModule> {
+        if (this._cache.module.entry === this._cache.entry) {
             throw new Error("Method not implemented.");
         }
+        return this._cache.module;
     }
 
     public stop(): Promise<void> {
@@ -131,12 +129,11 @@ export class OverrideNewtabProcessor extends ComponentProcessor {
             && (this._cache.entry = manifest.chrome_url_overrides.newtab);
     }
 
-    public async build(): Promise<BundleMapping> {
-        if (this._cache.mapping.module === this._cache.entry) {
-            return this._cache.mapping;
-        } else {
+    public async build(): Promise<ChromeExtensionModule> {
+        if (this._cache.module.entry === this._cache.entry) {
             throw new Error("Method not implemented.");
         }
+        return this._cache.module;
     }
 
     public stop(): Promise<void> {

@@ -1,6 +1,6 @@
-import { ChromeExtensionManifestEntryMapping, ChromeExtensionManifestEntryMappings } from "../manifest/cache";
+import { MarkableChromeExtensionModule } from "@/common/models";
 
 export class WebAccessibleResourceProcessorCache {
     public entries: string[] = [];
-    public mappings: ChromeExtensionManifestEntryMappings = new Map<string, ChromeExtensionManifestEntryMapping>();
+    public modules = new Map<string, MarkableChromeExtensionModule>();
 }

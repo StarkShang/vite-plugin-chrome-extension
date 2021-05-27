@@ -1,11 +1,11 @@
 import { EventEmitter } from "events";
 import { ChromeExtensionManifest } from "@/manifest";
-import { BundleMapping } from "@/common/models";
+import { ChromeExtensionModule } from "@/common/models";
 
 export interface IComponentProcessor {
     resolve(entry: ChromeExtensionManifest): void;
     stop(): Promise<void>;
-    build(): Promise<BundleMapping | BundleMapping[]>;
+    build(): Promise<ChromeExtensionModule | ChromeExtensionModule[]>;
     on(eventName: string, callback: (...args: any[]) => void): void;
 }
 
@@ -26,5 +26,5 @@ export abstract class ComponentProcessor implements IComponentProcessor {
 
     public abstract resolve(entry: ChromeExtensionManifest): void;
     public abstract stop(): Promise<void>;
-    public abstract build(): Promise<BundleMapping | BundleMapping[]>;
+    public abstract build(): Promise<ChromeExtensionModule | ChromeExtensionModule[]>;
 }

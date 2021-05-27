@@ -3,7 +3,7 @@ import memoize from "mem";
 import { relative } from "path";
 import { cosmiconfigSync } from "cosmiconfig";
 import { EmittedAsset, PluginContext } from "rollup";
-import { BundleMapping, ChromeExtensionManifestEntries, ChromeExtensionManifestEntryType } from "@/common/models";
+import { BundleMapping, ChromeExtensionManifestEntries, ChromeExtensionManifestEntryType, ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { deriveFiles, ChromeExtensionManifestParser } from "./parser";
 import { reduceToRecord } from "@/manifest-input/reduceToRecord";
@@ -77,17 +77,24 @@ export class ManifestProcessor {
 
     // if reload manifest.json, then calculate diff and restart sub bundle tasks
     // this method will update cache.manifest and cache.mappings
-    public async build(): Promise<void> {
-        this.cache.mappings.forEach(mapping => mapping.visited = false);
+    public async build(): Promise<ChromeExtensionModule[]> {
         // start build process
-        const bundles = (await Promise.all(Array.from(this.processors).map(async ([key, processor]) => {
-            const output = await processor.build();
-            return { output, key: key as ChromeExtensionManifestEntryType };
-        }))).reduce((bundles, bundle) => {
-            bundles[bundle.key] = bundle.output as (BundleMapping &  BundleMapping[]);
-            return bundles;
-        }, {} as ChromeExtensionManifestEntries);
-        this.updateManifest(bundles);
+        const bundles = [] as ChromeExtensionModule[];
+        const output = (await Promise.all(
+            Array.from(this.processors).map(async ([key, processor]) => ({
+                output: await processor.build(),
+                key: key as ChromeExtensionManifestEntryType
+            })))).reduce((entries, bundle) => {
+                entries[bundle.key] = bundle.output as (ChromeExtensionModule &  ChromeExtensionModule[]);
+                if (Array.isArray(bundle.output)) {
+                    bundles.push(...bundle.output);
+                } else {
+                    bundles.push(bundle.output);
+                }
+                return entries;
+            }, {} as ChromeExtensionManifestEntries);
+        this.updateManifest(output);
+        return bundles;
     }
 
     public async updateManifest(bundles: ChromeExtensionManifestEntries): Promise<void> {
@@ -97,7 +104,7 @@ export class ManifestProcessor {
         if (bundles["content-script"]) {
             manifest.content_scripts?.forEach(group => {
                 group.js?.forEach((script, index) => {
-                    const output = bundles["content-script"]?.find(s => s.module === script);
+                    const output = bundles["content-script"]?.find(s => s.entry === script);
                     output && group.js?.splice(index, 1, output.bundle);
                 });
             });
@@ -115,7 +122,7 @@ export class ManifestProcessor {
         if (bundles["web-accessible-resource"]) {
             manifest.web_accessible_resources?.forEach(group => {
                 group.resources?.forEach((resource, index) => {
-                    const output = bundles["web-accessible-resource"]?.find(r => r.module === resource);
+                    const output = bundles["web-accessible-resource"]?.find(r => r.entry === resource);
                     output && group.resources?.splice(index, 1, output.bundle);
                 });
             });
@@ -291,7 +298,5 @@ export class ManifestProcessor {
             }
         }
         options.components?.webAccessibleResources && this.processors.set("web-accessible-resource", new WebAccessibleResourceProcessor(options.components.webAccessibleResources === true ? {} : options.components.webAccessibleResources));
-        // register build end event handler
-        this.processors.forEach(processor => processor.on("buildEnd", this.updateManifest));
     }
 }

@@ -1,6 +1,6 @@
-import { BundleMapping } from "@/common/models";
+import { BundleMapping, ChromeExtensionModule } from "@/common/models";
 
 export class BackgroundProcessorCache {
     public entry?: string;
-    public mapping = BundleMapping.Empty;
+    public module: ChromeExtensionModule = new ChromeExtensionModule();
 }

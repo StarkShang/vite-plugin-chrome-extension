@@ -1,7 +1,7 @@
-import { BundleMapping } from "@/common/models";
+import { BundleMapping, ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { EventEmitter } from "events";
-import { RollupWatcher, WatcherOptions } from "rollup";
+import { RollupOptions, RollupOutput, RollupWatcher, WatcherOptions } from "rollup";
 import vite, { Plugin } from "vite";
 import { ComponentProcessor } from "../common";
 import { DevtoolsProcessorCache } from "./cache";
@@ -30,45 +30,22 @@ export class DevtoolsProcessor extends ComponentProcessor {
         manifest.devtools_page && (this._cache.entry = manifest.devtools_page);
     }
 
-    public async build(): Promise<BundleMapping> {
-        if (this._cache.mapping.module === this._cache.entry) {
-            return this._cache.mapping;
-        } else {
-            return new Promise<BundleMapping>(resolve => {
+    public async build(): Promise<ChromeExtensionModule> {
+        if (this._cache.entry && this._cache.module.entry === this._cache.entry) {
                 const entry = this._cache.entry;
-                // stop previous watcher
-                this.stop();
-                vite.build({
+                const build = await vite.build({
                     build: {
-                        rollupOptions: {
-                            input: this._cache.entry,
-                        },
+                        rollupOptions: { input: entry },
                         emptyOutDir: false,
                         watch: this._options.watch,
                     },
-                    plugins: [{
-                        name: "test",
-                        generateBundle(_options, bundle, _isWrite) {
-                            const chunk = Object.entries(bundle)
-                                .find(([, chunk]) => chunk.type === "chunk" && chunk.isEntry);
-                            resolve(chunk ? ({
-                                module: entry as string,
-                                bundle: chunk[0] as string,
-                            }) : ({
-                                module: entry as string,
-                                bundle: "",
-                            }));
-                        },
-                    }],
                     configFile: false, // must set to false, to avoid load config from vite.config.ts
-                }).then(output => {
-                    if (output instanceof EventEmitter) {
-                        const watcher = output as RollupWatcher;
-                        this._watcher = watcher;
-                    }
-                });
-            });
+                }) as RollupOutput;
+                this._cache.module.entry = this._cache.entry;
+                this._cache.module.bundle = build.output[0].fileName;
+                this._cache.module.dependencies = build.output[0].referencedFiles;
         }
+        return this._cache.module;
     }
 
     public async stop(): Promise<void> {

@@ -9,7 +9,7 @@ import { ComponentProcessor } from "../common";
 import { Plugin } from "vite";
 import { ContentScriptProcessorCache } from "./cache";
 import { ChromeExtensionManifestEntryMapping } from "../manifest/cache";
-import { BundleMapping } from "@/common/models";
+import { BundleMapping, ChromeExtensionModule } from "@/common/models";
 
 export interface ContentScriptProcessorOptions {
     watch?: boolean | WatcherOptions | null;
@@ -40,30 +40,23 @@ export class ContentScriptProcessor extends ComponentProcessor {
     public stop(): Promise<void> {
         throw new Error("Method not implemented.");
     }
-    public async build(): Promise<BundleMapping[]> {
-        this._cache.mappings.forEach(mapping => mapping.visited = false);
+    public async build(): Promise<ChromeExtensionModule[]> {
+        this._cache.modules.forEach(module => module.visited = false);
         await Promise.all(this._cache.entries?.map(async entry => {
-            if (this._cache.mappings.has(entry)) {
-                const mapping = this._cache.mappings.get(entry) as ChromeExtensionManifestEntryMapping;
-                mapping.visited = true;
+            if (this._cache.modules.has(entry)) {
+                const module = this._cache.modules.get(entry);
+                module && (module.visited = true);
             } else {
                 // TODO: add build logic
             }
         }));
-        // clear corrupt mappings
-        this._cache.mappings.forEach((mapping, key) => {
-            if (!mapping.visited) {
-                if (this._watches.has(mapping.entry)) {
-                    this._watches.get(mapping.entry)?.close();
-                    this._watches.delete(mapping.entry);
-                }
-                this._cache.mappings.delete(key);
+        // clear corrupt modules
+        this._cache.modules.forEach((module, key) => {
+            if (!module.visited) {
+                this._cache.modules.delete(key);
             }
         });
-        return Array.from(this._cache.mappings.values()).map(mapping => ({
-            module: mapping.entry,
-            bundle: mapping.bundle,
-        }));
+        return Array.from(this._cache.modules.values());
     }
     public async generateBundle(
         context: PluginContext,

@@ -8,9 +8,9 @@ export interface OutputAssetBundle {
 }
 
 export class BundleMapping {
-    public module = "";
+    public entry = "";
     public bundle = "";
-
+    public modules: string[] = [];
     public static get Empty() { return new BundleMapping(); }
 }
 
@@ -26,8 +26,18 @@ export type ChromeExtensionManifestEntryType =
     | "web-accessible-resource";
 
 export type ChromeExtensionManifestEntries = {
-    [type in Exclude<ChromeExtensionManifestEntryType, "content-script" | "web-accessible-resource">]?: BundleMapping;
+    [type in Exclude<ChromeExtensionManifestEntryType, "content-script" | "web-accessible-resource">]?: ChromeExtensionModule;
 } & {
-    "content-script"?: BundleMapping[];
-    "web-accessible-resource"?: BundleMapping[];
+    "content-script"?: ChromeExtensionModule[];
+    "web-accessible-resource"?: ChromeExtensionModule[];
+}
+
+export class ChromeExtensionModule {
+    public entry = "";
+    public bundle = "";
+    public dependencies: string[] = [];
+}
+
+export interface MarkableChromeExtensionModule extends ChromeExtensionModule {
+    visited: boolean;
 }

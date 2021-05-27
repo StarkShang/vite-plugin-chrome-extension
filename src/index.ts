@@ -39,7 +39,7 @@ export const chromeExtension = (
             return options;
         },
         transform(code, id) {
-            // main logic here
+            // main logic for resolve entries here
             manifestProcessor.resolve(JSON.parse(code));
             return "console.log('chrome-extension')"; // eliminate warning for empty chunk
         },
@@ -49,8 +49,14 @@ export const chromeExtension = (
         },
         async renderChunk(_code: string, chunk: RenderedChunk, _options: NormalizedOutputOptions) {
             if (chunk.facadeModuleId === manifestProcessor.filePath) {
-                // build components
-                await manifestProcessor.build();
+                // main logic for build components here
+                const builds = await manifestProcessor.build();
+                // add files need to be watched
+                // need not remove unused file because rollup will automatically remove them
+                builds.forEach(build => {
+                    this.addWatchFile(build.entry);
+                    build.dependencies.forEach(dependency => this.addWatchFile(dependency));
+                });
                 return { code: manifestProcessor.toString() };
             }
             return null;

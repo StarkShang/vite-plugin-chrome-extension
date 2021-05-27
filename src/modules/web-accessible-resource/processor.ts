@@ -1,9 +1,8 @@
-import { BundleMapping } from "@/common/models";
+import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { RollupWatcher, WatcherOptions } from "rollup";
 import { Plugin } from "vite";
 import { ComponentProcessor } from "../common";
-import { ChromeExtensionManifestEntryMapping } from "../manifest/cache";
 import { WebAccessibleResourceProcessorCache } from "./cache";
 
 export interface WebAccessibleResourceProcessorOptions {
@@ -33,30 +32,23 @@ export class WebAccessibleResourceProcessor extends ComponentProcessor {
             });
     }
 
-    public async build(): Promise<BundleMapping[]> {
-        this._cache.mappings.forEach(mapping => mapping.visited = false);
+    public async build(): Promise<ChromeExtensionModule[]> {
+        this._cache.modules.forEach(module => module.visited = false);
         await Promise.all(this._cache.entries?.map(async entry => {
-            if (this._cache.mappings.has(entry)) {
-                const mapping = this._cache.mappings.get(entry) as ChromeExtensionManifestEntryMapping;
-                mapping.visited = true;
+            if (this._cache.modules.has(entry)) {
+                const module = this._cache.modules.get(entry);
+                module && (module.visited = true);
             } else {
                 // TODO: add build logic
             }
         }));
-        // clear corrupt mappings
-        this._cache.mappings.forEach((mapping, key) => {
-            if (!mapping.visited) {
-                if (this._watches.has(mapping.entry)) {
-                    this._watches.get(mapping.entry)?.close();
-                    this._watches.delete(mapping.entry);
-                }
-                this._cache.mappings.delete(key);
+        // clear corrupt modules
+        this._cache.modules.forEach((module, key) => {
+            if (!module.visited) {
+                this._cache.modules.delete(key);
             }
         });
-        return Array.from(this._cache.mappings.values()).map(mapping => ({
-            module: mapping.entry,
-            bundle: mapping.bundle,
-        }));
+        return Array.from(this._cache.modules.values());
     }
 
     public stop(): Promise<void> {

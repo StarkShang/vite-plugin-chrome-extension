@@ -1,6 +1,6 @@
-import { BundleMapping } from "@/common/models";
+import { ChromeExtensionModule } from "@/common/models";
 
 export class PopupProcessorCache {
     public entry?: string;
-    public mapping = BundleMapping.Empty;
+    public module = new ChromeExtensionModule();
 }

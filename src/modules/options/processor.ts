@@ -1,4 +1,4 @@
-import { BundleMapping } from "@/common/models";
+import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { WatcherOptions } from "rollup";
 import { Plugin } from "vite";
@@ -36,12 +36,11 @@ export class OptionsProcessor extends ComponentProcessor {
         throw new Error("Method not implemented.");
     }
 
-    public async build(): Promise<BundleMapping> {
-        if (this._cache.mapping.module === this._cache.entry) {
-            return this._cache.mapping;
-        } else {
+    public async build(): Promise<ChromeExtensionModule> {
+        if (this._cache.entry && this._cache.module.entry !== this._cache.entry) {
             throw new Error("Method not implemented.");
         }
+        return this._cache.module;
     }
 
     public constructor(options: OptionsProcessorOptions = {}) {
