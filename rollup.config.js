@@ -4,7 +4,8 @@
 import sucrase from "@rollup/plugin-sucrase";
 import bundleImports from "rollup-plugin-bundle-imports";
 import json from "@rollup/plugin-json";
-import { typescriptPaths } from "rollup-plugin-typescript-paths";
+import alias from "@rollup/plugin-alias";
+import resolve from "@rollup/plugin-node-resolve";
 
 const { dependencies } = require("./package.json");
 
@@ -22,9 +23,29 @@ const external = Object.keys(dependencies).concat(
 // } = require("./tsconfigs/tsconfig-base.json")
 
 const plugins = [
-    typescriptPaths(),
+    alias({
+        entries: {
+            "@": "src",
+        },
+    }), {
+        name: "beforeResolve",
+        resolveId(source, importer, options) {
+            console.log("beforeResolve: ", {source, importer, options});
+            return null;
+        },
+    },
+    resolve({
+        extensions: [".js", ".ts"],
+    }), {
+        name: "afterResolve",
+        resolveId(source, importer, options) {
+            console.log("afterResolve: ",  {source, importer, options});
+            return null;
+        },
+    },
     json(),
     sucrase({
+        exclude: ["node_modules/**"],
         transforms: ["typescript"],
     }),
     bundleImports({
@@ -33,24 +54,22 @@ const plugins = [
             external: ["%PATH%"],
         },
     }),
-]
+];
 
-export default [
-    {
-        input: "src/index.ts",
-        output: [
-            {
-                file: "lib/index-esm.js",
-                format: "esm",
-                sourcemap: "inline",
-            },
-            {
-                file: "lib/index-cjs.js",
-                format: "cjs",
-                sourcemap: "inline",
-            },
-        ],
-        external,
-        plugins,
-    },
-]
+export default [{
+    input: "src/index.ts",
+    output: [
+        {
+            file: "lib/index-esm.js",
+            format: "esm",
+            sourcemap: "inline",
+        },
+        {
+            file: "lib/index-cjs.js",
+            format: "cjs",
+            sourcemap: "inline",
+        },
+    ],
+    external,
+    plugins,
+}]

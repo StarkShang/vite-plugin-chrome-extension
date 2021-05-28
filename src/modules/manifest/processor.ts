@@ -21,6 +21,7 @@ import { DevtoolsProcessor } from "../devtools";
 import { PopupProcessor } from "../popup";
 import { OverrideBookmarksProcessor, OverrideHistoryProcessor, OverrideNewtabProcessor } from "../override/processor";
 import { WebAccessibleResourceProcessor } from "../web-accessible-resource/processor";
+import { DefaultManifestProcessorOptions, ManifestProcessorOptions } from "./option";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -48,9 +49,11 @@ export class ManifestProcessor {
     private processors = new Map<string, IComponentProcessor>();
     public permissionProcessor: PermissionProcessor;
 
-    public constructor(private options = {} as NormalizedChromeExtensionOptions) {
+    public constructor(private options = {} as ManifestProcessorOptions) {
         // initial manifest parser
         this.manifestParser = new ChromeExtensionManifestParser();
+        // initial options
+        this.normalizeOptions(options);
         // initial processors
         this.permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
         this.initialProcessors(options);
@@ -62,8 +65,8 @@ export class ManifestProcessor {
     public set filePath(path: string) { this._filePath = path; }
 
     /**
-     * Load content from manifest.json
-     * @param options: rollup input options
+     * Resolve entries from manifest.json
+     * @param manifest: chrome extension manifest
      */
     public resolve(manifest: ChromeExtensionManifest): void {
         /* --------------- VALIDATE MANIFEST.JSON CONTENT --------------- */
@@ -279,9 +282,26 @@ export class ManifestProcessor {
         });
     }
 
-    private initialProcessors(options: NormalizedChromeExtensionOptions) {
+    private normalizeOptions(options: ManifestProcessorOptions) {
+        const defaultOptions = DefaultManifestProcessorOptions;
+        return {
+            components: {
+                background: options.components?.background || DefaultManifestProcessorOptions.components?.background,
+                contentScripts: options.components?.contentScripts || DefaultManifestProcessorOptions.components?.contentScripts,
+                popup: options.components?.popup || DefaultManifestProcessorOptions.components?.popup,
+                options: options.components?.options || DefaultManifestProcessorOptions.components?.options,
+                override: options.components?.override || DefaultManifestProcessorOptions.components?.override,
+                devtools: options.components?.devtools || DefaultManifestProcessorOptions.components?.devtools,
+                standalone: options.components?.standalone || DefaultManifestProcessorOptions.components?.standalone,
+                webAccessibleResources: options.components?.webAccessibleResources || DefaultManifestProcessorOptions.components?.webAccessibleResources,
+            },
+            extendManifest: options.extendManifest,
+        } as ManifestProcessorOptions;
+    }
+
+    private initialProcessors(options: ManifestProcessorOptions) {
         // create processors
-        options.components?.background && this.processors.set("background", new BackgroundProcessor(options.components.background));
+        options.components?.background && this.processors.set("background", new BackgroundProcessor(options.components.background === true ? {} : options.components.background));
         options.components?.contentScripts && this.processors.set("content-script", new ContentScriptProcessor(options.components.contentScripts === true ? {} : options.components.contentScripts));
         options.components?.popup && this.processors.set("popup", new PopupProcessor(options.components.popup === true ? {} : options.components.popup));
         options.components?.options && this.processors.set("options", new OptionsProcessor(options.components.options === true ? {} : options.components.options));

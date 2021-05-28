@@ -5,7 +5,6 @@ import { ManifestProcessor } from "./modules/manifest";
 import { ChromeExtensionPlugin } from "./plugin-options";
 import { ChromeExtensionOptions, NormalizedChromeExtensionOptions } from "@/configs/options";
 import { NormalizedOutputOptions, OutputOptions, RenderedChunk } from "rollup";
-export { simpleReloader } from "./plugin-reloader-simple";
 export const stubChunkName = "stub__empty-chrome-extension-manifest";
 export const chromeExtensionPluginName = "chrome-extension";
 
@@ -51,6 +50,7 @@ export const chromeExtension = (
             if (chunk.facadeModuleId === manifestProcessor.filePath) {
                 // main logic for build components here
                 const builds = await manifestProcessor.build();
+                console.log("renderChunk", builds);
                 // add files need to be watched
                 // need not remove unused file because rollup will automatically remove them
                 builds.forEach(build => {

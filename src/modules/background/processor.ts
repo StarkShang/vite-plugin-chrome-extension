@@ -43,12 +43,14 @@ export class BackgroundProcessor implements IComponentProcessor {
     private _watcher: RollupWatcher | null = null;
 
     public resolve(manifest: ChromeExtensionManifest): void {
+        console.log("background:resolve", manifest);
         manifest.background
             && manifest.background.service_worker
             && (this._cache.entry = manifest.background.service_worker);
     }
 
     public async build(): Promise<ChromeExtensionModule> {
+        console.log("background:build", this._cache.entry);
         if (!this._cache.entry) {
             this._cache.module = ChromeExtensionModule.Empty;
         } else {
