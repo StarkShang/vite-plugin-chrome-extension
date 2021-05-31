@@ -23,6 +23,7 @@ export interface BackgroundDynamicImport {
 export interface BackgroundProcessorOptions {
     root?: string;
     outDir?: string;
+    alias?: AliasOptions;
     plugins?: Plugin[];
 }
 
@@ -45,7 +46,7 @@ export class BackgroundProcessor implements IComponentProcessor {
     private _cache = new BackgroundProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
-        if (manifest.background && manifest.background.service_worker) {
+        if (manifest.background?.service_worker) {
             const entry = manifest.background.service_worker;
             if (!this._cache.module || entry !== this._cache.entry) {
                 console.log(chalk`{blue rebuilding background}`);
@@ -101,6 +102,9 @@ export class BackgroundProcessor implements IComponentProcessor {
         }
         if (!normalizedOptions.outDir) {
             normalizedOptions.outDir = DefaultBackgroundProcessorOptions.outDir;
+        }
+        if (!normalizedOptions.alias) {
+            normalizedOptions.alias = DefaultBackgroundProcessorOptions.alias;
         }
         if (!normalizedOptions.plugins) { normalizedOptions.plugins = DefaultBackgroundProcessorOptions.plugins; }
         return normalizedOptions as NormalizedBackgroundProcessorOptions;

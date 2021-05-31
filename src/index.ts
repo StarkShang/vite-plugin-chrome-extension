@@ -56,6 +56,7 @@ export const chromeExtension = (
         async transform(code, id) {
             // main logic for resolve entries here
             const modules = await manifestProcessor.resolve(JSON.parse(code));
+            console.log("transform", modules);
             // add files need to be watched
             // need not remove unused file because rollup will automatically remove them
             if (viteConfig.build.watch) {

@@ -213,6 +213,7 @@ export class ManifestProcessor {
         if (options.components?.background) {
             const backgroundOptions = options.components.background === true ? {} : options.components.background;
             backgroundOptions.root = this._options.root;
+            backgroundOptions.outDir = this._options.outDir;
             this._processors.set("background", new BackgroundProcessor(backgroundOptions));
         }
         // content script processor
@@ -221,7 +222,12 @@ export class ManifestProcessor {
             this._processors.set("content-script", new ContentScriptProcessor(contentScriptOptions));
         }
         // popup processor
-        options.components?.popup && this._processors.set("popup", new PopupProcessor(options.components.popup === true ? {} : options.components.popup));
+        if (options.components?.popup) {
+            const popupOptions = options.components.popup === true ? {} : options.components.popup;
+            popupOptions.root = this._options.root;
+            popupOptions.outDir = this._options.outDir;
+            this._processors.set("popup", new PopupProcessor(popupOptions));
+        }
         options.components?.options && this._processors.set("options", new OptionsProcessor(options.components.options === true ? {} : options.components.options));
         options.components?.devtools && this._processors.set("devtools", new DevtoolsProcessor(options.components.devtools === true ? {} : options.components.devtools));
         if (options.components?.override) {
