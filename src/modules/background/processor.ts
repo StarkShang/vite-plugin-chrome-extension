@@ -1,15 +1,16 @@
 import { OutputBundle, PluginContext, RollupOutput, RollupWatcher, TransformPluginContext, WatcherOptions } from "rollup";
-import { resolve, parse, join,  } from "path";
-import { existsSync, readFileSync } from "fs";
+import { resolve, parse, join, dirname } from "path";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import slash from "slash";
 import { ChromeExtensionManifest } from "../../manifest";
 import { removeFileExtension } from "../../common/utils";
 import { findChunkByName } from "../../utils/helpers";
 import { mixinChunksForIIFE } from "../mixin";
-import vite, { Plugin } from "vite";
+import vite, { AliasOptions, Plugin } from "vite";
 import { IComponentProcessor } from "../common";
 import { BackgroundProcessorCache } from "./cache";
 import { ChromeExtensionModule } from "@/common/models";
+import chalk from "chalk";
 
 const dynamicImportAssetRex = /(?<=chrome.scripting.insertCSS\()[\s\S]*?(?=\))/gm;
 const dynamicImportScriptRex = /(?<=chrome.scripting.executeScript\()[\s\S]*?(?=\))/gm;
@@ -20,55 +21,72 @@ export interface BackgroundDynamicImport {
 }
 
 export interface BackgroundProcessorOptions {
-    rootPath: string;
-    watch?: boolean | WatcherOptions | null;
+    root?: string;
+    outDir?: string;
     plugins?: Plugin[];
 }
 
 export interface NormalizedBackgroundProcessorOptions {
-    rootPath: string;
-    watch: WatcherOptions | null | undefined;
+    root: string;
+    outDir: string;
+    alias: AliasOptions;
     plugins: Plugin[],
 }
 
 const DefaultBackgroundProcessorOptions: NormalizedBackgroundProcessorOptions = {
-    rootPath: "",
-    watch: undefined,
+    root: process.cwd(),
+    outDir: join(process.cwd(), "dist"),
+    alias: [],
     plugins: [],
 };
 
 export class BackgroundProcessor implements IComponentProcessor {
     private _options: NormalizedBackgroundProcessorOptions;
     private _cache = new BackgroundProcessorCache();
-    private _watcher: RollupWatcher | null = null;
 
-    public resolve(manifest: ChromeExtensionManifest): void {
-        console.log("background:resolve", manifest);
-        manifest.background
-            && manifest.background.service_worker
-            && (this._cache.entry = manifest.background.service_worker);
+    public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
+        if (manifest.background && manifest.background.service_worker) {
+            const entry = manifest.background.service_worker;
+            if (!this._cache.module || entry !== this._cache.entry) {
+                console.log(chalk`{blue rebuilding background}`);
+                this._cache.module = (await this.run(entry)).output;
+                this._cache.entry = entry;
+            }
+            return this._cache.module.map(chunk => {
+                const modules = [];
+                modules.push(chunk.fileName);
+                if (chunk.type === "chunk") {
+                    modules.push(...chunk.imports);
+                }
+                return modules;
+            }).reduce((result, modules) => result.concat(modules), []);
+        } else {
+            return [];
+        }
     }
 
-    public async build(): Promise<ChromeExtensionModule> {
-        console.log("background:build", this._cache.entry);
-        if (!this._cache.entry) {
-            this._cache.module = ChromeExtensionModule.Empty;
-        } else {
-            if (this._cache.module.entry !== this._cache.entry) {
-                const entry = this._cache.entry;
-                const build = await vite.build({
-                    build: {
-                        rollupOptions: { input: entry },
-                        emptyOutDir: false,
-                    },
-                    configFile: false, // must set to false, to avoid load config from vite.config.ts
-                }) as RollupOutput;
-                this._cache.module.entry = this._cache.entry;
-                this._cache.module.bundle = build.output[0].fileName;
-                this._cache.module.dependencies = build.output[0].referencedFiles;
-            }
+    public async build(): Promise<ChromeExtensionModule | undefined> {
+        if (!this._cache.entry || !this._cache.module) {
+            return undefined;
         }
-        return this._cache.module;
+
+        if (existsSync(this._options.outDir)) {
+            this._cache.module.forEach(chunk => {
+                const outputFilePath = resolve(this._options.outDir, chunk.fileName);
+                const dirName = dirname(outputFilePath);
+                if (!existsSync(dirName)) { mkdirSync(dirName); }
+                if (chunk.type === "chunk") {
+                    writeFileSync(outputFilePath, chunk.code);
+                } else {
+                    writeFileSync(outputFilePath, chunk.source);
+                }
+            });
+        }
+
+        return {
+            entry: this._cache.entry,
+            bundle: this._cache.module[0].fileName,
+        };
     }
 
     constructor(options: BackgroundProcessorOptions) {
@@ -78,20 +96,18 @@ export class BackgroundProcessor implements IComponentProcessor {
     private normalizeOptions(options: BackgroundProcessorOptions): NormalizedBackgroundProcessorOptions {
         const normalizedOptions = { ...options };
         // check root path
-        if (!existsSync(normalizedOptions.rootPath)) {
+        if (!normalizedOptions.root || !existsSync(normalizedOptions.root)) {
             throw new Error("root path does not exist");
         }
-        if (normalizedOptions.watch === false || normalizedOptions.watch === undefined) {
-            normalizedOptions.watch = undefined;
-        } else if (normalizedOptions.watch === true) {
-            normalizedOptions.watch = {};
+        if (!normalizedOptions.outDir) {
+            normalizedOptions.outDir = DefaultBackgroundProcessorOptions.outDir;
         }
         if (!normalizedOptions.plugins) { normalizedOptions.plugins = DefaultBackgroundProcessorOptions.plugins; }
         return normalizedOptions as NormalizedBackgroundProcessorOptions;
     }
 
     public resolveDynamicImports(context: TransformPluginContext, code: string): BackgroundDynamicImport {
-        if (!this._options.rootPath) {
+        if (!this._options.root) {
             throw new TypeError("BackgroundProcessor: options.srcDir is not initialized");
         }
         /* ----------------- PROCESS DYNAMICALLY IMPORTED ASSETS -----------------*/
@@ -100,13 +116,13 @@ export class BackgroundProcessor implements IComponentProcessor {
             .reduce((f, m) => f.concat(...(m || [])) || [], [] as string[])
             .map(m => { console.log("resolveDynamicImports", m); return m; })
             .forEach(m => {
-                const filePath = resolve(this._options.rootPath!, m);
+                const filePath = resolve(this._options.root, m);
                 if (existsSync(filePath)) {
                     context.emitFile({
                         type: "asset",
                         fileName: m,
                         source: readFileSync(filePath),
-                    })
+                    });
                 }
             });
         /* ----------------- PROCESS DYNAMICALLY IMPORTED SCRIPTS -----------------*/
@@ -116,7 +132,7 @@ export class BackgroundProcessor implements IComponentProcessor {
             dynamicImportScriptRex,
             match => match.replace(/(?<=(files:\[)?)\"[\s\S]*?\"(?=\]?)/gm, fileStr => {
                 const file = parse(fileStr.replace(/\"/g, "").trim());
-                const filePath = resolve(this._options.rootPath!, file.dir, file.base);
+                const filePath = resolve(this._options.root, file.dir, file.base);
                 if (existsSync(filePath)) {
                     const referenceId = context.emitFile({
                         id: filePath,
@@ -148,5 +164,21 @@ export class BackgroundProcessor implements IComponentProcessor {
                 manifest.background.service_worker = slash(await mixinChunksForIIFE(context, chunk, bundle));
             }
         }
+    }
+
+    public async run(entry: string): Promise<RollupOutput> {
+        return await vite.build({
+            root: this._options.root,
+            resolve: {
+                alias: this._options.alias,
+            },
+            plugins: this._options.plugins,
+            build: {
+                rollupOptions: { input: resolve(this._options.root, entry) },
+                emptyOutDir: false,
+                write: false,
+            },
+            configFile: false, // must set to false, to avoid load config from vite.config.ts
+        }) as RollupOutput;
     }
 }

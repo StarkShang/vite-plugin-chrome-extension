@@ -24,21 +24,20 @@ export class OptionsProcessor implements IComponentProcessor {
     private _options: NormalizedOptionsProcessorOptions;
     private _cache = new OptionsProcessorCache();
 
-    public resolve(manifest: ChromeExtensionManifest): void {
+    public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
         if (manifest.options_ui?.page) {
             this._cache.entry = manifest.options_ui.page;
         } else if (manifest.options_page) {
             this._cache.entry = manifest.options_page;
         }
+        return [];
     }
 
-    public async build(): Promise<ChromeExtensionModule> {
+    public async build(): Promise<ChromeExtensionModule | undefined> {
         if (!this._cache.entry) {
-            this._cache.module = ChromeExtensionModule.Empty;
-        } else {
-            if (this._cache.module.entry !== this._cache.entry) {
-                throw new Error("Method not implemented.");
-            }
+            this._cache.module = undefined;
+        } else if (!this._cache.module || this._cache.module.entry !== this._cache.entry) {
+            throw new Error("Method not implemented.");
         }
         return this._cache.module;
     }

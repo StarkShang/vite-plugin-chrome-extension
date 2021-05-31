@@ -1,6 +1,6 @@
-import { BundleMapping, ChromeExtensionModule } from "@/common/models";
+import { OutputAsset, OutputChunk } from "rollup";
 
 export class BackgroundProcessorCache {
     public entry?: string;
-    public module = ChromeExtensionModule.Empty;
+    public module?: (OutputChunk | OutputAsset)[];
 }

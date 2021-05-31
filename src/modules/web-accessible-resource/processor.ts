@@ -25,14 +25,15 @@ export class WebAccessibleResourceProcessor implements IComponentProcessor {
     private _cache = new WebAccessibleResourceProcessorCache();
     private _watches = new Map<string, RollupWatcher>();
 
-    public resolve(manifest: ChromeExtensionManifest): void {
+    public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
         manifest.web_accessible_resources?.map(group => group.resources || [])
             .forEach(scripts => {
                 scripts.forEach(script => this._cache.entries.push(script));
             });
+        return [];
     }
 
-    public async build(): Promise<ChromeExtensionModule[]> {
+    public async build(): Promise<ChromeExtensionModule[] | undefined> {
         this._cache.modules.forEach(module => module.visited = false);
         await Promise.all(this._cache.entries?.map(async entry => {
             if (this._cache.modules.has(entry)) {
@@ -49,7 +50,7 @@ export class WebAccessibleResourceProcessor implements IComponentProcessor {
                 this._cache.modules.delete(key);
             }
         });
-        return Array.from(this._cache.modules.values());
+        return this._cache.modules.size > 0 ? Array.from(this._cache.modules.values()) : undefined;
     }
 
     public constructor(options: WebAccessibleResourceProcessorOptions = {}) {

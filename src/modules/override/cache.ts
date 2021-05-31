@@ -2,15 +2,15 @@ import { BundleMapping, ChromeExtensionModule } from "@/common/models";
 
 export class OverrideBookmarksProcessorCache {
     public entry?: string;
-    public module = ChromeExtensionModule.Empty;
+    public module?: ChromeExtensionModule;
 }
 
 export class OverrideHistoryProcessorCache {
     public entry?: string;
-    public module = ChromeExtensionModule.Empty;
+    public module?: ChromeExtensionModule;
 }
 
 export class OverrideNewtabProcessorCache {
     public entry?: string;
-    public module = ChromeExtensionModule.Empty;
+    public module?: ChromeExtensionModule;
 }

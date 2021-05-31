@@ -3,8 +3,8 @@ import { ChromeExtensionManifest } from "@/manifest";
 import { ChromeExtensionModule } from "@/common/models";
 
 export interface IComponentProcessor {
-    resolve(entry: ChromeExtensionManifest): void;
-    build(): Promise<ChromeExtensionModule | ChromeExtensionModule[]>;
+    resolve(entry: ChromeExtensionManifest): Promise<string[]>;
+    build(): Promise<ChromeExtensionModule | ChromeExtensionModule[] | undefined>;
 }
 
 export abstract class ComponentProcessor implements IComponentProcessor {
@@ -22,7 +22,7 @@ export abstract class ComponentProcessor implements IComponentProcessor {
         this._event.emit(eventName, ...args);
     }
 
-    public abstract resolve(entry: ChromeExtensionManifest): void;
+    public abstract resolve(entry: ChromeExtensionManifest): Promise<string[]>;
     public abstract stop(): Promise<void>;
-    public abstract build(): Promise<ChromeExtensionModule | ChromeExtensionModule[]>;
+    public abstract build(): Promise<ChromeExtensionModule | ChromeExtensionModule[] | undefined>;
 }

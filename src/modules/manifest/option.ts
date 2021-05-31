@@ -1,4 +1,5 @@
 import { ChromeExtensionManifest } from "@/manifest";
+import { AliasOptions } from "vite";
 import { BackgroundProcessorOptions } from "../background";
 import { ContentScriptProcessorOptions } from "../content-script";
 import { DevtoolsProcessorOptions } from "../devtools";
@@ -9,6 +10,9 @@ import { StandaloneProcessorOptions } from "../standalone/processor";
 import { WebAccessibleResourceProcessorOptions } from "../web-accessible-resource";
 
 export interface ManifestProcessorOptions {
+    root: string;
+    outDir: string;
+    alias:  AliasOptions;
     extendManifest?: Partial<ChromeExtensionManifest> | ((manifest: ChromeExtensionManifest) => ChromeExtensionManifest);
     components?: {
         background?: boolean | BackgroundProcessorOptions,
@@ -27,6 +31,9 @@ export interface ManifestProcessorOptions {
 }
 
 export const DefaultManifestProcessorOptions: ManifestProcessorOptions = {
+    root: "",
+    outDir: "",
+    alias: [],
     components: {
         background: true,
         contentScripts: true,

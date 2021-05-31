@@ -1,16 +1,13 @@
 import fs from "fs-extra";
 import memoize from "mem";
-import { relative } from "path";
 import { cosmiconfigSync } from "cosmiconfig";
-import { EmittedAsset, PluginContext } from "rollup";
+import { PluginContext } from "rollup";
 import { ChromeExtensionManifestEntries, ChromeExtensionManifestEntryType, ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
-import { deriveFiles, ChromeExtensionManifestParser } from "./parser";
-import { reduceToRecord } from "@/manifest-input/reduceToRecord";
+import { ChromeExtensionManifestParser } from "./parser";
 import { ManifestInputPluginCache } from "@/plugin-options";
 import { manifestName } from "@/manifest-input/common/constants";
 import { validateManifest } from "@/manifest-input/manifest-parser/validate";
-import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import { PermissionProcessor, PermissionProcessorOptions } from "../permission";
 import { ChromeExtensionManifestCache } from "./cache";
 import { IComponentProcessor } from "../common";
@@ -44,19 +41,20 @@ export class ManifestProcessor {
         readFile: new Map<string, any>(),
         srcDir: null,
     } as ManifestInputPluginCache;
-    public cache = new ChromeExtensionManifestCache();
-    public manifestParser;
-    private processors = new Map<string, IComponentProcessor>();
-    public permissionProcessor: PermissionProcessor;
+    private _options: ManifestProcessorOptions;
+    public _cache = new ChromeExtensionManifestCache();
+    public _manifestParser;
+    private _processors = new Map<string, IComponentProcessor>();
+    public _permissionProcessor: PermissionProcessor;
 
-    public constructor(private options = {} as ManifestProcessorOptions) {
+    public constructor(options = {} as ManifestProcessorOptions) {
         // initial manifest parser
-        this.manifestParser = new ChromeExtensionManifestParser();
+        this._manifestParser = new ChromeExtensionManifestParser();
         // initial options
-        this.normalizeOptions(options);
+        this._options = this.normalizeOptions(options);
         // initial processors
-        this.permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
-        this.initialProcessors(options);
+        this._permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
+        this.initialProcessors(this._options);
     }
 
     // file path of manifest.json
@@ -68,41 +66,40 @@ export class ManifestProcessor {
      * Resolve entries from manifest.json
      * @param manifest: chrome extension manifest
      */
-    public resolve(manifest: ChromeExtensionManifest): void {
+    public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
         /* --------------- VALIDATE MANIFEST.JSON CONTENT --------------- */
         this.validateChromeExtensionManifest(manifest);
         /* --------------- APPLY USER CUSTOM CONFIG --------------- */
         const currentManifest = this.applyExternalManifestConfiguration(manifest);
         /* --------------- CACHE MANIFEST & ENTRIES --------------- */
-        this.cache.manifest = currentManifest;
-        this.processors.forEach(processor => processor.resolve(currentManifest));
+        this._cache.manifest = currentManifest;
+        return (await Promise.all(Array.from(this._processors.values())
+            .map(processor => processor.resolve(currentManifest))))
+            .reduce((filePool, modules) => [...filePool, ...modules], []);
     }
 
     // if reload manifest.json, then calculate diff and restart sub bundle tasks
     // this method will update cache.manifest and cache.mappings
-    public async build(): Promise<ChromeExtensionModule[]> {
+    public async build(): Promise<void> {
         // start build process
-        const bundles = [] as ChromeExtensionModule[];
         const output = (await Promise.all(
-            Array.from(this.processors).map(async ([key, processor]) => ({
+            Array.from(this._processors)
+            .map(async ([key, processor]) => ({
                 output: await processor.build(),
                 key: key as ChromeExtensionManifestEntryType
-            })))).reduce((entries, bundle) => {
-                entries[bundle.key] = bundle.output as (ChromeExtensionModule &  ChromeExtensionModule[]);
-                if (Array.isArray(bundle.output)) {
-                    bundles.push(...bundle.output);
-                } else {
-                    bundles.push(bundle.output);
-                }
+            }))))
+            .filter(bundle => bundle.output !== undefined)
+            .reduce((entries, bundle) => {
+                const build = bundle.output as (ChromeExtensionModule &  ChromeExtensionModule[]);
+                entries[bundle.key] = build
                 return entries;
             }, {} as ChromeExtensionManifestEntries);
         this.updateManifest(output);
-        return bundles;
     }
 
     public async updateManifest(bundles: ChromeExtensionManifestEntries): Promise<void> {
-        if (!this.cache.manifest) { return; }
-        const manifest = this.cache.manifest; // for shortening code
+        if (!this._cache.manifest) { return; }
+        const manifest = this._cache.manifest; // for shortening code
         bundles.background && (manifest.background = { service_worker: bundles.background.bundle });
         if (bundles["content-script"]) {
             manifest.content_scripts?.forEach(group => {
@@ -133,97 +130,23 @@ export class ManifestProcessor {
     }
 
     public toString() {
-        return JSON.stringify(this.cache.manifest, null, 4);
-    }
-
-    /**
-     * Resolve input files for rollup
-     * @param input: Input not in manifest.json but specify by user
-     * @returns
-     */
-    public resolveEntries(manifest: ChromeExtensionManifest): { [entryAlias: string]: string } {
-        if (!manifest || !this.options.rootPath) {
-            throw new TypeError("manifest and options.srcDir not initialized");
-        }
-        // Derive all static resources from manifest
-        // Dynamic entries will emit in transform hook
-        const { js, html, css, img, others } = deriveFiles(
-            manifest,
-            this.options.rootPath,
-        );
-        // Cache derived inputs
-        this.cache2.input = [...this.cache2.inputAry, ...js, ...html];
-        this.cache2.assets = [...new Set([...css, ...img, ...others])];
-        const inputs = this.cache2.input.reduce(
-            reduceToRecord(this.options.rootPath),
-            this.cache2.inputObj);
-        return inputs;
+        return JSON.stringify(this._cache.manifest, null, 4);
     }
 
     public isDynamicImportedContentScript(referenceId: string) {
         return this.cache2.dynamicImportContentScripts.includes(referenceId);
     }
 
-    /**
-     * Add watch files
-     * @param context Rollup Plugin Context
-     */
-    public addWatchFiles(context: PluginContext) {
-        // watch manifest.json file
-        context.addWatchFile(this.options.manifestPath!);
-        // watch asset files
-        this.cache2.assets.forEach(srcPath => context.addWatchFile(srcPath));
-    }
-
-    public async emitFiles(context: PluginContext) {
-        // Copy asset files
-        const assets: EmittedAsset[] = await Promise.all(
-            this.cache2.assets.map(async (srcPath) => {
-                const source = await this.readAssetAsBuffer(srcPath);
-                return {
-                    type: "asset" as const,
-                    source,
-                    fileName: relative(this.options.rootPath!, srcPath),
-                };
-            }),
-        );
-        assets.forEach((asset) => {
-            context.emitFile(asset);
-        });
-    }
-
     public clearCacheById(id: string) {
         if (id.endsWith(manifestName)) {
             // Dump cache.manifest if manifest changes
-            delete this.cache.manifest;
+            delete this._cache.manifest;
             this.cache2.assetChanged = false;
         } else {
             // Force new read of changed asset
             this.cache2.assetChanged = this.cache2.readFile.delete(id);
         }
     }
-
-    // public async generateBundle(context: PluginContext, bundle: OutputBundle) {
-    //     if (!this.cache.manifest) { throw new Error("[generate bundle] Manifest cannot be empty"); }
-    //     /* ----------------- GET CHUNKS -----------------*/
-    //     const chunks = getChunk(bundle);
-    //     const assets = getAssets(bundle);
-    //     /* ----------------- UPDATE PERMISSIONS ----------------- */
-    //     this.permissionProcessor.derivePermissions(context, chunks, this.cache.manifest);
-    //     /* ----------------- UPDATE CONTENT SCRIPTS ----------------- */
-    //     await this.contentScriptProcessor.generateBundle(context, bundle, this.cache.manifest);
-    //     await this.contentScriptProcessor.generateBundleFromDynamicImports(context, bundle, this.cache2.dynamicImportContentScripts);
-    //     /* ----------------- SETUP BACKGROUND SCRIPTS ----------------- */
-    //     await this.backgroundProcessor.generateBundle(context, bundle, this.cache.manifest);
-    //     /* ----------------- SETUP ASSETS IN WEB ACCESSIBLE RESOURCES ----------------- */
-
-    //     /* ----------------- STABLE EXTENSION ID ----------------- */
-    //     /* ----------------- OUTPUT MANIFEST.JSON ----------------- */
-    //     /* ----------- OUTPUT MANIFEST.JSON ---------- */
-    //     this.generateManifest(context, this.cache.manifest);
-    //     // validate manifest
-    //     this.validateManifest();
-    // }
 
     private validateChromeExtensionManifest(manifest: ChromeExtensionManifest) {
         const { options_page, options_ui } = manifest;
@@ -238,20 +161,20 @@ export class ManifestProcessor {
     }
 
     private validateManifest() {
-        if (this.cache.manifest) {
-            validateManifest(this.cache.manifest)
+        if (this._cache.manifest) {
+            validateManifest(this._cache.manifest)
         } else {
             throw new Error("Manifest cannot be empty");
         }
     }
 
     private applyExternalManifestConfiguration(manifest: ChromeExtensionManifest): ChromeExtensionManifest {
-        if (typeof this.options.extendManifest === "function") {
-            return this.options.extendManifest(manifest);
-        } else if (typeof this.options.extendManifest === "object") {
+        if (typeof this._options.extendManifest === "function") {
+            return this._options.extendManifest(manifest);
+        } else if (typeof this._options.extendManifest === "object") {
             return {
                 ...manifest,
-                ...this.options.extendManifest,
+                ...this._options.extendManifest,
             };
         } else {
             return manifest;
@@ -267,24 +190,9 @@ export class ManifestProcessor {
         },
     );
 
-    private generateManifest(
-        context: PluginContext,
-        manifest: ChromeExtensionManifest,
-    ) {
-        const manifestJson = JSON.stringify(manifest, null, 4)
-            // SMELL: is this necessary?
-            .replace(/\.[jt]sx?"/g, '.js"');
-        // Emit manifest.json
-        context.emitFile({
-            type: "asset",
-            fileName: manifestName,
-            source: manifestJson,
-        });
-    }
-
     private normalizeOptions(options: ManifestProcessorOptions) {
-        const defaultOptions = DefaultManifestProcessorOptions;
         return {
+            ...options,
             components: {
                 background: options.components?.background || DefaultManifestProcessorOptions.components?.background,
                 contentScripts: options.components?.contentScripts || DefaultManifestProcessorOptions.components?.contentScripts,
@@ -301,22 +209,32 @@ export class ManifestProcessor {
 
     private initialProcessors(options: ManifestProcessorOptions) {
         // create processors
-        options.components?.background && this.processors.set("background", new BackgroundProcessor(options.components.background === true ? {} : options.components.background));
-        options.components?.contentScripts && this.processors.set("content-script", new ContentScriptProcessor(options.components.contentScripts === true ? {} : options.components.contentScripts));
-        options.components?.popup && this.processors.set("popup", new PopupProcessor(options.components.popup === true ? {} : options.components.popup));
-        options.components?.options && this.processors.set("options", new OptionsProcessor(options.components.options === true ? {} : options.components.options));
-        options.components?.devtools && this.processors.set("devtools", new DevtoolsProcessor(options.components.devtools === true ? {} : options.components.devtools));
+        // background processor
+        if (options.components?.background) {
+            const backgroundOptions = options.components.background === true ? {} : options.components.background;
+            backgroundOptions.root = this._options.root;
+            this._processors.set("background", new BackgroundProcessor(backgroundOptions));
+        }
+        // content script processor
+        if (options.components?.contentScripts) {
+            const contentScriptOptions = options.components.contentScripts === true ? {} : options.components.contentScripts;
+            this._processors.set("content-script", new ContentScriptProcessor(contentScriptOptions));
+        }
+        // popup processor
+        options.components?.popup && this._processors.set("popup", new PopupProcessor(options.components.popup === true ? {} : options.components.popup));
+        options.components?.options && this._processors.set("options", new OptionsProcessor(options.components.options === true ? {} : options.components.options));
+        options.components?.devtools && this._processors.set("devtools", new DevtoolsProcessor(options.components.devtools === true ? {} : options.components.devtools));
         if (options.components?.override) {
             if (options.components.override === true) {
-                this.processors.set("bookmarks", new OverrideBookmarksProcessor());
-                this.processors.set("history", new OverrideHistoryProcessor());
-                this.processors.set("newtab", new OverrideNewtabProcessor());
+                this._processors.set("bookmarks", new OverrideBookmarksProcessor());
+                this._processors.set("history", new OverrideHistoryProcessor());
+                this._processors.set("newtab", new OverrideNewtabProcessor());
             } else {
-                options.components.override.bookmarks && this.processors.set("bookmarks", new OverrideBookmarksProcessor(options.components.override.bookmarks === true ? {} : options.components.override.bookmarks));
-                options.components.override.history && this.processors.set("history", new OverrideHistoryProcessor(options.components.override.history === true ? {} : options.components.override.history));
-                options.components.override.newtab && this.processors.set("newtab", new OverrideNewtabProcessor(options.components.override.newtab === true ? {} : options.components.override.newtab));
+                options.components.override.bookmarks && this._processors.set("bookmarks", new OverrideBookmarksProcessor(options.components.override.bookmarks === true ? {} : options.components.override.bookmarks));
+                options.components.override.history && this._processors.set("history", new OverrideHistoryProcessor(options.components.override.history === true ? {} : options.components.override.history));
+                options.components.override.newtab && this._processors.set("newtab", new OverrideNewtabProcessor(options.components.override.newtab === true ? {} : options.components.override.newtab));
             }
         }
-        options.components?.webAccessibleResources && this.processors.set("web-accessible-resource", new WebAccessibleResourceProcessor(options.components.webAccessibleResources === true ? {} : options.components.webAccessibleResources));
+        options.components?.webAccessibleResources && this._processors.set("web-accessible-resource", new WebAccessibleResourceProcessor(options.components.webAccessibleResources === true ? {} : options.components.webAccessibleResources));
     }
 }

@@ -25,28 +25,30 @@ export class DevtoolsProcessor implements IComponentProcessor {
     private _cache = new DevtoolsProcessorCache();
     private _watcher: RollupWatcher | null = null;
 
-    public resolve(manifest: ChromeExtensionManifest): void {
+    public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
         manifest.devtools_page && (this._cache.entry = manifest.devtools_page);
+        return [];
     }
 
-    public async build(): Promise<ChromeExtensionModule> {
+    public async build(): Promise<ChromeExtensionModule | undefined> {
         if (!this._cache.entry) {
-            this._cache.module = ChromeExtensionModule.Empty;
-        } else {
-            if (this._cache.module.entry !== this._cache.entry) {
-                const entry = this._cache.entry;
-                const build = await vite.build({
-                    build: {
-                        rollupOptions: { input: entry },
-                        emptyOutDir: false,
-                        watch: this._options.watch,
-                    },
-                    configFile: false, // must set to false, to avoid load config from vite.config.ts
-                }) as RollupOutput;
-                this._cache.module.entry = this._cache.entry;
-                this._cache.module.bundle = build.output[0].fileName;
-                this._cache.module.dependencies = build.output[0].referencedFiles;
-            }
+            this._cache.module = undefined;
+        } else if (!this._cache.module || this._cache.module.entry !== this._cache.entry) {
+            const entry = this._cache.entry;
+            const build = await vite.build({
+                build: {
+                    rollupOptions: { input: entry },
+                    emptyOutDir: false,
+                    watch: this._options.watch,
+                },
+                configFile: false, // must set to false, to avoid load config from vite.config.ts
+            }) as RollupOutput;
+            this._cache.module = {
+                entry: this._cache.entry,
+                bundle: build.output[0].fileName,
+                dependencies: build.output[0].referencedFiles,
+                chunks: [],
+            };
         }
         return this._cache.module;
     }

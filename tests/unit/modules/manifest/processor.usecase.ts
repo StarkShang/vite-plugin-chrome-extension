@@ -1,10 +1,10 @@
 import { ChromeExtensionManifestEntries } from "@/common/models";
-import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import { ChromeExtensionManifest } from "@/manifest";
 import { BackgroundProcessor } from "@/modules/background";
 import { ContentScriptProcessor } from "@/modules/content-script";
 import { DevtoolsProcessor } from "@/modules/devtools";
-import { ChromeExtensionManifestEntryMapping, ChromeExtensionManifestEntryMappings } from "@/modules/manifest/cache";
+import { ChromeExtensionManifestEntryMappings } from "@/modules/manifest/cache";
+import { ManifestProcessorOptions } from "@/modules/manifest/option";
 import { OptionsProcessor } from "@/modules/options";
 import { OverrideBookmarksProcessor, OverrideHistoryProcessor, OverrideNewtabProcessor } from "@/modules/override";
 import { PopupProcessor } from "@/modules/popup";
@@ -12,44 +12,40 @@ import { WebAccessibleResourceProcessor } from "@/modules/web-accessible-resourc
 import { UseCase } from "@root/tests/common/usecase";
 import { generateManifest } from "@root/tests/__fixtures__/manifests";
 
-const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined, any>[] = [{
+const constructorUseCases: UseCase<ManifestProcessorOptions | undefined, any>[] = [{
     description: "undefined options",
     input: undefined,
     output: [],
 }, {
     description: "undefined component options",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
     },
     output: [],
 }, {
     description: "undefined component options",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: undefined,
     },
     output: [],
 }, {
     description: "empty component options",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {},
     },
     output: [],
 }, {
     description: "background component option only",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
-            background: { rootPath: __dirname },
+            background: {},
         },
     },
     output: [
@@ -58,9 +54,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "content-script component option: undefined",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             contentScripts: undefined,
         },
@@ -69,9 +64,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "content-script component option: false",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             contentScripts: false,
         },
@@ -80,9 +74,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "content-script component option: true",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             contentScripts: true,
         },
@@ -93,9 +86,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "content-script component option: {}",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             contentScripts: {},
         },
@@ -106,9 +98,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "content-script component option: { watch: true }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             contentScripts: {
                 watch: true,
@@ -121,9 +112,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "popup component option: undefined",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             popup: undefined,
         },
@@ -132,9 +122,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "popup component option: false",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             popup: false,
         },
@@ -143,9 +132,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "popup component option: true",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             popup: true,
         },
@@ -156,9 +144,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "popup component option: {}",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             popup: {},
         },
@@ -169,9 +156,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "popup component option: { watch: true }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             popup: {
                 watch: true,
@@ -184,9 +170,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "options component option: undefined",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             options: undefined,
         },
@@ -195,9 +180,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "options component option: false",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             options: false,
         },
@@ -206,9 +190,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "options component option: true",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             options: true,
         },
@@ -219,9 +202,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "options component option: {}",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             options: {},
         },
@@ -232,9 +214,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "options component option: { watch: true }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             options: {
                 watch: true,
@@ -247,9 +228,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "devtools component option: undefined",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             devtools: undefined,
         },
@@ -258,9 +238,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "devtools component option: false",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             devtools: false,
         },
@@ -269,9 +248,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "devtools component option: true",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             devtools: true,
         },
@@ -282,9 +260,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "devtools component option: {}",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             devtools: {},
         },
@@ -295,9 +272,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "devtools component option: { watch: true }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             devtools: {
                 watch: true,
@@ -310,9 +286,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: undefined",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: undefined,
         },
@@ -321,9 +296,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: false",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: false,
         },
@@ -332,9 +306,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: true",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: true,
         },
@@ -347,9 +320,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: {}",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {},
         },
@@ -358,9 +330,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: { bookmarks: undefined, history: undefined, newtab: undefined }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {
                 bookmarks: undefined,
@@ -373,9 +344,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: { bookmarks: false, history: false, newtab: false }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {
                 bookmarks: false,
@@ -388,9 +358,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: { bookmarks: true }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {
                 bookmarks: true,
@@ -401,9 +370,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: { bookmarks: {} }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {
                 bookmarks: {},
@@ -414,9 +382,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: { bookmarks: { watch: true } }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {
                 bookmarks: { watch: true },
@@ -427,9 +394,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: { history: true }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {
                 history: true,
@@ -440,9 +406,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: { history: {} }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {
                 history: {},
@@ -453,9 +418,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: { history: { watch: true } }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {
                 history: { watch: true },
@@ -466,9 +430,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: { newtab: true }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {
                 newtab: true,
@@ -479,9 +442,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: { newtab: {} }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {
                 newtab: {},
@@ -492,9 +454,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "override component option: { newtab: { watch: true } }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             override: {
                 newtab: { watch: true },
@@ -505,9 +466,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "web-accessible-resource component option: undefined",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             webAccessibleResources: undefined,
         },
@@ -516,9 +476,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "web-accessible-resource component option: false",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             webAccessibleResources: false,
         },
@@ -527,9 +486,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "web-accessible-resource component option: true",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             webAccessibleResources: true,
         },
@@ -540,9 +498,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "web-accessible-resource component option: {}",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             webAccessibleResources: {},
         },
@@ -553,9 +510,8 @@ const constructorUseCases: UseCase<NormalizedChromeExtensionOptions | undefined,
 }, {
     description: "web-accessible-resource component option: { watch: true }",
     input: {
-        rootPath: __dirname,
-        manifestPath: __dirname,
-        watch: false,
+        root: __dirname,
+        alias: [],
         components: {
             webAccessibleResources: {
                 watch: true,

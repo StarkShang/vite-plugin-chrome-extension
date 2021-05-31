@@ -24,17 +24,16 @@ export class PopupProcessor implements IComponentProcessor {
     private _options: NormalizedPopupProcessorOptions;
     private _cache = new PopupProcessorCache();
 
-    public resolve(manifest: ChromeExtensionManifest): void {
+    public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
         manifest.action?.default_popup && (this._cache.entry = manifest.action.default_popup);
+        return [];
     }
 
-    public async build(): Promise<ChromeExtensionModule> {
+    public async build(): Promise<ChromeExtensionModule | undefined> {
         if (!this._cache.entry) {
-            this._cache.module = ChromeExtensionModule.Empty;
-        } else {
-            if (this._cache.module.entry !== this._cache.entry) {
-                throw new Error("Method not implemented.");
-            }
+            this._cache.module = undefined;
+        } else if (!this._cache.module || this._cache.module.entry !== this._cache.entry) {
+            throw new Error("Method not implemented.");
         }
         return this._cache.module;
     }

@@ -36,8 +36,9 @@ export type ChromeExtensionPlugin = Pick<
     Required<Plugin>,
     | "name"
     | "enforce"
-    | "options"
+    | "config"
     | "configResolved"
+    | "options"
     | "transform"
     | "outputOptions"
     | "renderChunk"
