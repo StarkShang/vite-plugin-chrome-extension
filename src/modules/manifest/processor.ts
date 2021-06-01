@@ -1,7 +1,6 @@
 import fs from "fs-extra";
 import memoize from "mem";
 import { cosmiconfigSync } from "cosmiconfig";
-import { PluginContext } from "rollup";
 import { ChromeExtensionManifestEntries, ChromeExtensionManifestEntryType, ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { ChromeExtensionManifestParser } from "./parser";
@@ -73,9 +72,10 @@ export class ManifestProcessor {
         const currentManifest = this.applyExternalManifestConfiguration(manifest);
         /* --------------- CACHE MANIFEST & ENTRIES --------------- */
         this._cache.manifest = currentManifest;
-        return (await Promise.all(Array.from(this._processors.values())
+        const modules = (await Promise.all(Array.from(this._processors.values())
             .map(processor => processor.resolve(currentManifest))))
-            .reduce((filePool, modules) => [...filePool, ...modules], []);
+            .flat();
+        return Array.from(new Set(modules));
     }
 
     // if reload manifest.json, then calculate diff and restart sub bundle tasks
@@ -219,6 +219,8 @@ export class ManifestProcessor {
         // content script processor
         if (options.components?.contentScripts) {
             const contentScriptOptions = options.components.contentScripts === true ? {} : options.components.contentScripts;
+            contentScriptOptions.root = this._options.root;
+            contentScriptOptions.outDir = this._options.outDir;
             this._processors.set("content-script", new ContentScriptProcessor(contentScriptOptions));
         }
         // popup processor

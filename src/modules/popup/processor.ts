@@ -55,12 +55,8 @@ export class PopupProcessor implements IComponentProcessor {
     }
 
     public async build(): Promise<ChromeExtensionModule | undefined> {
-        if (!this._cache.entry || !this._cache.module) {
-            return undefined;
-        }
-
+        if (!this._cache.entry || !this._cache.module) { return undefined; }
         const outputPath = path.resolve(this._options.root, this._options.outDir);
-
         if (fs.existsSync(outputPath)) {
             this._cache.module.forEach(chunk => {
                 const outputFilePath = path.resolve(outputPath, chunk.fileName);

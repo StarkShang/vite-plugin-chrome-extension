@@ -55,8 +55,8 @@ export class BackgroundProcessor implements IComponentProcessor {
             }
             return this._cache.module.map(chunk => {
                 const modules = [];
-                modules.push(chunk.fileName);
                 if (chunk.type === "chunk") {
+                    modules.push(...Object.keys(chunk.modules));
                     modules.push(...chunk.imports);
                 }
                 return modules;
@@ -67,13 +67,11 @@ export class BackgroundProcessor implements IComponentProcessor {
     }
 
     public async build(): Promise<ChromeExtensionModule | undefined> {
-        if (!this._cache.entry || !this._cache.module) {
-            return undefined;
-        }
-
-        if (existsSync(this._options.outDir)) {
+        if (!this._cache.entry || !this._cache.module) { return undefined; }
+        const outputPath = resolve(this._options.root, this._options.outDir);
+        if (existsSync(outputPath)) {
             this._cache.module.forEach(chunk => {
-                const outputFilePath = resolve(this._options.outDir, chunk.fileName);
+                const outputFilePath = resolve(outputPath, chunk.fileName);
                 const dirName = dirname(outputFilePath);
                 if (!existsSync(dirName)) { mkdirSync(dirName); }
                 if (chunk.type === "chunk") {
@@ -83,10 +81,18 @@ export class BackgroundProcessor implements IComponentProcessor {
                 }
             });
         }
-
+        const entryBundle = this._cache.module.find(module => {
+            if (module.type === "chunk") {
+                return module.facadeModuleId
+                    ? slash(module.facadeModuleId) === slash(resolve(this._options.root, this._cache.entry || ""))
+                    : false;
+            } else {
+                return module.fileName === this._cache.entry;
+            }
+        });
         return {
             entry: this._cache.entry,
-            bundle: this._cache.module[0].fileName,
+            bundle: entryBundle!.fileName,
         };
     }
 

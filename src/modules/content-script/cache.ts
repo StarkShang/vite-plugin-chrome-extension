@@ -1,6 +1,6 @@
-import { MarkableChromeExtensionModule } from "@/common/models";
+import { OutputAsset, OutputChunk } from "rollup";
 
 export class ContentScriptProcessorCache {
     public entries: string[] = [];
-    public modules = new Map<string, MarkableChromeExtensionModule>();
+    public modules = new Map<string, (OutputChunk | OutputAsset)[]>();
 }
