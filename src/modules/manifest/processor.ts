@@ -230,8 +230,18 @@ export class ManifestProcessor {
             popupOptions.outDir = this._options.outDir;
             this._processors.set("popup", new PopupProcessor(popupOptions));
         }
-        options.components?.options && this._processors.set("options", new OptionsProcessor(options.components.options === true ? {} : options.components.options));
-        options.components?.devtools && this._processors.set("devtools", new DevtoolsProcessor(options.components.devtools === true ? {} : options.components.devtools));
+        // options processor
+        if (options.components?.options) {
+            const optionsOptions = options.components.options === true ? {} : options.components.options;
+            optionsOptions.root = this._options.root;
+            optionsOptions.outDir = this._options.outDir;
+            this._processors.set("options", new OptionsProcessor(optionsOptions));
+        }
+        // devtools processor
+        if (options.components?.devtools) {
+            this._processors.set("devtools", new DevtoolsProcessor(options.components.devtools === true ? {} : options.components.devtools));
+        }
+        // override processor
         if (options.components?.override) {
             if (options.components.override === true) {
                 this._processors.set("bookmarks", new OverrideBookmarksProcessor());

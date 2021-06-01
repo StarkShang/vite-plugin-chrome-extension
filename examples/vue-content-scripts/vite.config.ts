@@ -10,13 +10,13 @@ export default defineConfig({
             "@": resolve(__dirname, "src"),
         },
     },
-    build: {
-        rollupOptions: {
-            input: "src/manifest.json"
-        }
-    },
     plugins: [
-        vue(),
-        chromeExtension()
+        chromeExtension({
+            components: {
+                contentScripts: {
+                    plugins: [vue()]
+                }
+            }
+        })
     ],
 })

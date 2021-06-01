@@ -37,7 +37,7 @@ export class PopupProcessor implements IComponentProcessor {
         if (manifest.action?.default_popup) {
             const entry = manifest.action.default_popup;
             if (!this._cache.module || entry !== this._cache.entry) {
-                console.log(chalk`{blue rebuilding popup}`);
+                console.log(chalk`{blue rebuilding popup: ${entry}}`);
                 this._cache.module = (await this.run(entry)).output;
                 this._cache.entry = entry;
             }
@@ -90,8 +90,18 @@ export class PopupProcessor implements IComponentProcessor {
 
     private normalizeOptions(options: PopupProcessorOptions): NormalizedPopupProcessorOptions {
         const normalizedOptions = { ...options };
-
-        if (!normalizedOptions.plugins) { normalizedOptions.plugins = DefaultPopupProcessorOptions.plugins; }
+        if (!normalizedOptions.root) {
+            normalizedOptions.root = DefaultPopupProcessorOptions.root;
+        }
+        if (!normalizedOptions.outDir) {
+            normalizedOptions.outDir = DefaultPopupProcessorOptions.outDir;
+        }
+        if (!normalizedOptions.alias) {
+            normalizedOptions.alias = DefaultPopupProcessorOptions.alias;
+        }
+        if (!normalizedOptions.plugins) {
+            normalizedOptions.plugins = DefaultPopupProcessorOptions.plugins;
+        }
         return normalizedOptions as NormalizedPopupProcessorOptions;
     }
 

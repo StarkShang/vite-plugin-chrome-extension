@@ -3,7 +3,7 @@ import { readJSONSync } from "fs-extra";
 import { ConfigEnv, ResolvedConfig, UserConfig } from "vite";
 import { ManifestProcessor } from "./modules/manifest";
 import { ChromeExtensionPlugin } from "./plugin-options";
-import { ChromeExtensionOptions, NormalizedChromeExtensionOptions } from "@/configs/options";
+import { ChromeExtensionOptions } from "@/configs/options";
 import { NormalizedOutputOptions, OutputOptions, RenderedChunk } from "rollup";
 import { ManifestProcessorOptions } from "./modules/manifest/option";
 export const stubChunkName = "stub__empty-chrome-extension-manifest";

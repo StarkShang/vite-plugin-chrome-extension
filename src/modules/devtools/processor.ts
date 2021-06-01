@@ -46,8 +46,6 @@ export class DevtoolsProcessor implements IComponentProcessor {
             this._cache.module = {
                 entry: this._cache.entry,
                 bundle: build.output[0].fileName,
-                dependencies: build.output[0].referencedFiles,
-                chunks: [],
             };
         }
         return this._cache.module;

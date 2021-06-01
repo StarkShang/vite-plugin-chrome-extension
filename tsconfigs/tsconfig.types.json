@@ -10,6 +10,10 @@
     "include": [
         "../src"
     ],
+    "paths": {
+        "@/*": ["src/*"],
+        "@root/*": ["./*"],
+    },
     "exclude": [
         "../**/__tests__/**/*",
         "../src/plugin-reloader-simple/client",

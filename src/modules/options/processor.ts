@@ -1,22 +1,31 @@
+import path from "path";
+import fs from "fs";
+import vite, { AliasOptions, Plugin } from "vite";
 import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
-import { WatcherOptions } from "rollup";
-import { Plugin } from "vite";
 import { IComponentProcessor } from "../common";
 import { OptionsProcessorCache } from "./cache";
+import { RollupOutput } from "rollup";
+import chalk from "chalk";
 
 export interface OptionsProcessorOptions {
-    watch?: boolean | WatcherOptions | null;
+    root?: string;
+    outDir?: string;
+    alias?: AliasOptions;
     plugins?: Plugin[];
 }
 
 export interface NormalizedOptionsProcessorOptions {
-    watch: WatcherOptions | null | undefined;
+    root: string;
+    outDir: string;
+    alias: AliasOptions;
     plugins: Plugin[],
 }
 
 const DefaultOptionsProcessorOptions: NormalizedOptionsProcessorOptions = {
-    watch: undefined,
+    root: process.cwd(),
+    outDir: path.join(process.cwd(), "dist"),
+    alias: [],
     plugins: [],
 };
 
@@ -25,21 +34,60 @@ export class OptionsProcessor implements IComponentProcessor {
     private _cache = new OptionsProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
+        let entry: string | undefined = undefined;
         if (manifest.options_ui?.page) {
-            this._cache.entry = manifest.options_ui.page;
+            entry = manifest.options_ui.page;
         } else if (manifest.options_page) {
-            this._cache.entry = manifest.options_page;
+            entry = manifest.options_page;
         }
-        return [];
+
+        if (entry) {
+            if (!this._cache.module || entry !== this._cache.entry) {
+                console.log(chalk`{blue rebuilding options: ${entry}}`);
+                this._cache.module = (await this.run(entry)).output;
+                this._cache.entry = entry;
+            }
+            return this._cache.module.map(chunk => {
+                const modules = [];
+                if (chunk.type === "chunk") {
+                    modules.push(...Object.keys(chunk.modules));
+                    modules.push(...chunk.imports);
+                }
+                return modules;
+            }).reduce((result, modules) => result.concat(modules), []);
+        } else {
+            return [];
+        }
     }
 
     public async build(): Promise<ChromeExtensionModule | undefined> {
-        if (!this._cache.entry) {
-            this._cache.module = undefined;
-        } else if (!this._cache.module || this._cache.module.entry !== this._cache.entry) {
-            throw new Error("Method not implemented.");
+        if (!this._cache.entry || !this._cache.module) { return undefined; }
+        const outputPath = path.resolve(this._options.root, this._options.outDir);
+        if (fs.existsSync(outputPath)) {
+            this._cache.module.forEach(chunk => {
+                const outputFilePath = path.resolve(outputPath, chunk.fileName);
+                const dirName = path.dirname(outputFilePath);
+                if (!fs.existsSync(dirName)) { fs.mkdirSync(dirName); }
+                if (chunk.type === "chunk") {
+                    fs.writeFileSync(outputFilePath, chunk.code);
+                } else {
+                    fs.writeFileSync(outputFilePath, chunk.source);
+                }
+            });
         }
-        return this._cache.module;
+
+        const entryBundle = this._cache.module.find(module => {
+            if (module.type === "chunk") {
+                return module.facadeModuleId === path.resolve(this._options.root, this._cache.entry || "");
+            } else {
+                return module.fileName === this._cache.entry;
+            }
+        });
+
+        return {
+            entry: this._cache.entry,
+            bundle: entryBundle!.fileName,
+        };
     }
 
     public constructor(options: OptionsProcessorOptions = {}) {
@@ -48,12 +96,34 @@ export class OptionsProcessor implements IComponentProcessor {
 
     private normalizeOptions(options: OptionsProcessorOptions): NormalizedOptionsProcessorOptions {
         const normalizedOptions = { ...options };
-        if (normalizedOptions.watch === false || normalizedOptions.watch === undefined) {
-            normalizedOptions.watch = undefined;
-        } else if (normalizedOptions.watch === true) {
-            normalizedOptions.watch = {};
+        if (!normalizedOptions.root) {
+            normalizedOptions.root = DefaultOptionsProcessorOptions.root;
         }
-        if (!normalizedOptions.plugins) { normalizedOptions.plugins = DefaultOptionsProcessorOptions.plugins; }
+        if (!normalizedOptions.outDir) {
+            normalizedOptions.outDir = DefaultOptionsProcessorOptions.outDir;
+        }
+        if (!normalizedOptions.alias) {
+            normalizedOptions.alias = DefaultOptionsProcessorOptions.alias;
+        }
+        if (!normalizedOptions.plugins) {
+            normalizedOptions.plugins = DefaultOptionsProcessorOptions.plugins;
+        }
         return normalizedOptions as NormalizedOptionsProcessorOptions;
+    }
+
+    public async run(entry: string): Promise<RollupOutput> {
+        return await vite.build({
+            root: this._options.root,
+            resolve: {
+                alias: this._options.alias,
+            },
+            plugins: this._options.plugins,
+            build: {
+                rollupOptions: { input: path.resolve(this._options.root, entry) },
+                emptyOutDir: false,
+                write: false,
+            },
+            configFile: false, // must set to false, to avoid load config from vite.config.ts
+        }) as RollupOutput;
     }
 }

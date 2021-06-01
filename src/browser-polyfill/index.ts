@@ -43,12 +43,12 @@ export function browserPolyfill({
                 ({ name }) => name === "chrome-extension",
             ) as ChromeExtensionPlugin;
 
-            if (
-                firefoxPlugin &&
-                !chromeExtensionPlugin._plugins.manifest.crossBrowser
-            ) {
-                return; // Don't need to add it
-            }
+            // if (
+            //     firefoxPlugin &&
+            //     !chromeExtensionPlugin._plugins.manifest.crossBrowser
+            // ) {
+            //     return; // Don't need to add it
+            // }
 
             const manifestAsset = bundle["manifest.json"];
             if (!isAsset(manifestAsset)) {

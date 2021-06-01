@@ -1,6 +1,6 @@
-import { ChromeExtensionModule } from "@/common/models";
+import { OutputAsset, OutputChunk } from "rollup";
 
 export class OptionsProcessorCache {
     public entry?: string;
-    public module?: ChromeExtensionModule;
+    public module?: (OutputChunk | OutputAsset)[];
 }

@@ -4,13 +4,16 @@ import { chromeExtension } from "vite-plugin-chrome-extension";
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    build: {
-        rollupOptions: {
-            input: "src/manifest.json"
-        }
-    },
     plugins: [
-        svelte(),
-        chromeExtension(),
+        chromeExtension({
+            components: {
+                popup: {
+                    plugins: [svelte()]
+                },
+                options: {
+                    plugins: [svelte()]
+                }
+            }
+        }),
     ]
 });
