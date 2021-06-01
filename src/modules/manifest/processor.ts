@@ -1,3 +1,4 @@
+import path from "path";
 import fs from "fs-extra";
 import memoize from "mem";
 import { cosmiconfigSync } from "cosmiconfig";
@@ -260,5 +261,47 @@ export class ManifestProcessor {
             webAccessibleResourceOptions.outDir = this._options.outDir;
             this._processors.set("web-accessible-resource", new WebAccessibleResourceProcessor(webAccessibleResourceOptions));
         }
+        // other resource processor
+        this._processors.set("resource", new ResourceProcessor({
+            root: this._options.root,
+            outDir: this._options.outDir,
+        }));
+    }
+}
+
+class ResourceProcessor implements IComponentProcessor {
+    private _modules = new Map<string, Buffer>();
+    constructor(private _options: { root: string, outDir: string }) {}
+
+    public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
+        if (manifest.action?.default_icon) {
+            (Object.values(manifest.action.default_icon) as string[])
+                .forEach(resource => {
+                    if (!this._modules.has(resource)) {
+                        const inputFilePath = path.resolve(this._options.root, resource);
+                        this._modules.set(resource, fs.readFileSync(inputFilePath));
+                    }
+                });
+        }
+        if (manifest.icons) {
+            (Object.values(manifest.icons) as string[])
+                .forEach(resource => {
+                    if (!this._modules.has(resource)) {
+                        const inputFilePath = path.resolve(this._options.root, resource);
+                        this._modules.set(resource, fs.readFileSync(inputFilePath));
+                    }
+                });
+        }
+        return Array.from(this._modules.keys());
+    }
+
+    public async build(): Promise<ChromeExtensionModule | undefined> {
+        const outputPath = path.resolve(this._options.root, this._options.outDir);
+        if (!fs.existsSync(outputPath)) { fs.mkdirSync(outputPath); }
+        this._modules.forEach((asset, resource) => {
+            const outputFilePath = path.resolve(outputPath, resource);
+            fs.writeFileSync(outputFilePath, asset);
+        });
+        return undefined;
     }
 }

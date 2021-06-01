@@ -4,7 +4,9 @@
 </script>
 
 <main>
-    <div style="text-align:center"><img src={logo} alt="Svelte Logo" style="width:100px" /></div>
+    <div style="text-align:center">
+        <img src={logo} alt="Svelte Logo" />
+    </div>
     <h1>Hello Typescript!</h1>
 
     <Counter />
