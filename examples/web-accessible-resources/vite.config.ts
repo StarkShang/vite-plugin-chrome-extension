@@ -9,15 +9,7 @@ export default defineConfig({
             "@": resolve(__dirname, "src"),
         },
     },
-    build: {
-        rollupOptions: {
-            input: "src/manifest.json"
-        }
-    },
     plugins: [
-        chromeExtension({
-            dynamicImportWrapper: false,
-            contentScriptWrapper: false
-        })
+        chromeExtension()
     ],
 })

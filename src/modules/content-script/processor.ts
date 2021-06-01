@@ -44,7 +44,7 @@ export class ContentScriptProcessor implements IComponentProcessor {
             .map(scripts => scripts
                 .map(async script => {
                     if (!this._cache.modules.has(script)) {
-                        console.log(chalk`{blue rebuilding content-script}`);
+                        console.log(chalk`{blue rebuilding content-script: ${script}}`);
                         this._cache.modules.set(script, (await this.run(script)).output);
                     }
                 }))

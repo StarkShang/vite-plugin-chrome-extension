@@ -243,6 +243,12 @@ export class ManifestProcessor {
                 options.components.override.newtab && this._processors.set("newtab", new OverrideNewtabProcessor(options.components.override.newtab === true ? {} : options.components.override.newtab));
             }
         }
-        options.components?.webAccessibleResources && this._processors.set("web-accessible-resource", new WebAccessibleResourceProcessor(options.components.webAccessibleResources === true ? {} : options.components.webAccessibleResources));
+        // web accessible resource processor
+        if (options.components?.webAccessibleResources) {
+            const webAccessibleResourceOptions = options.components.webAccessibleResources === true ? {} : options.components.webAccessibleResources;
+            webAccessibleResourceOptions.root = this._options.root;
+            webAccessibleResourceOptions.outDir = this._options.outDir;
+            this._processors.set("web-accessible-resource", new WebAccessibleResourceProcessor(webAccessibleResourceOptions));
+        }
     }
 }
