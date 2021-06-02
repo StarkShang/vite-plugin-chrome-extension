@@ -8,11 +8,11 @@ chrome.action.onClicked.addListener((tab) => {
     if (tab.id) {
         chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            files: [ " content-scripts/utils.ts " ]
+            files: [ "content-scripts/utils.ts" ]
         });
         chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            files: [ " content-scripts/utils2.ts " ]
+            files: [ "content-scripts/utils2.ts" ]
         });
         chrome.scripting.insertCSS({
             target: { tabId: tab.id },

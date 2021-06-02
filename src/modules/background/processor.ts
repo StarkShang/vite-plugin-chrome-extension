@@ -1,4 +1,4 @@
-import { OutputBundle, PluginContext, RollupOutput, RollupWatcher, TransformPluginContext, WatcherOptions } from "rollup";
+import { OutputBundle, OutputChunk, PluginContext, RollupOutput, RollupWatcher, TransformPluginContext, WatcherOptions } from "rollup";
 import { resolve, parse, join, dirname } from "path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import slash from "slash";
@@ -177,12 +177,27 @@ export class BackgroundProcessor implements IComponentProcessor {
     }
 
     public async run(entry: string): Promise<RollupOutput> {
+        const entryFilePath = resolve(this._options.root, entry);
         return await vite.build({
             root: this._options.root,
             resolve: {
                 alias: this._options.alias,
             },
-            plugins: this._options.plugins,
+            plugins: [...this._options.plugins, {
+                name: "chrome-extension-background",
+                generateBundle(_options, bundle) {
+                    Object.keys(bundle).forEach(key => {
+                        const chunk = bundle[key];
+                        if (chunk.type === "chunk"
+                            && chunk.facadeModuleId
+                            && slash(chunk.facadeModuleId) === slash(entryFilePath)) {
+                            chunk.fileName = parse(chunk.fileName).base;
+                            delete bundle[key];
+                            bundle[chunk.fileName] = chunk;
+                        }
+                    });
+                }
+            }],
             build: {
                 rollupOptions: { input: resolve(this._options.root, entry) },
                 emptyOutDir: false,
