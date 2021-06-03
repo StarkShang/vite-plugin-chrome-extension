@@ -93,6 +93,37 @@ export class ContentScriptProcessor implements IComponentProcessor {
             return { entry: entry, bundle: entryBundle?.fileName || "" };
         }).filter((output) => output.bundle !== "");
     }
+    public async updateManifest(manifest: ChromeExtensionManifest) {
+        manifest.content_scripts?.forEach(group => {
+            const resources: WebAccessibleResource = {
+                matches: group.matches,
+                resources: [],
+            }
+            group.js?.forEach((script, index) => {
+                const module = this._cache.modules.get(script);
+                if (module) {
+                    module.forEach(chunk => {
+                        // substitute js file
+                        if (chunk.type === "chunk" && chunk.facadeModuleId === script) {
+                            group.js?.splice(index, 1, chunk.facadeModuleId);
+                        }
+                        // add css file to web_accessible_resources
+                        else {
+                            if (chunk.fileName.endsWith(".css")) {
+                                resources.resources.push(chunk.fileName);
+                            }
+                        }
+                    });
+
+                }
+            });
+            if (manifest.web_accessible_resources) {
+                manifest.web_accessible_resources.push(resources);
+            } else {
+                manifest.web_accessible_resources = [resources];
+            }
+        });
+    }
     public async generateBundle(
         context: PluginContext,
         bundle: OutputBundle,
