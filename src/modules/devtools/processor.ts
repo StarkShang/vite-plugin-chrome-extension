@@ -23,14 +23,14 @@ const DefaultDevtoolsProcessorOptions: NormalizedDevtoolsProcessorOptions = {
 export class DevtoolsProcessor implements IComponentProcessor {
     private _options: NormalizedDevtoolsProcessorOptions;
     private _cache = new DevtoolsProcessorCache();
-    private _watcher: RollupWatcher | null = null;
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
+        this._cache.manifest = manifest;
         manifest.devtools_page && (this._cache.entry = manifest.devtools_page);
         return [];
     }
 
-    public async build(): Promise<ChromeExtensionModule | undefined> {
+    public async build(): Promise<void> {
         if (!this._cache.entry) {
             this._cache.module = undefined;
         } else if (!this._cache.module || this._cache.module.entry !== this._cache.entry) {
@@ -48,12 +48,10 @@ export class DevtoolsProcessor implements IComponentProcessor {
                 bundle: build.output[0].fileName,
             };
         }
-        return this._cache.module;
-    }
-
-    public async stop(): Promise<void> {
-        this._watcher?.close();
-        this._watcher = null;
+        // update manifest
+        if (this._cache.manifest) {
+            this._cache.manifest.devtools_page = this._cache.module?.bundle;
+        }
     }
 
     constructor(options: DevtoolsProcessorOptions = {}) {

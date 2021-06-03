@@ -1,3 +1,4 @@
+import "@/common/utils/prototype";
 import path from "path";
 import { readJSONSync } from "fs-extra";
 import { ConfigEnv, ResolvedConfig, UserConfig } from "vite";

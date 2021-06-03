@@ -34,6 +34,7 @@ export class PopupProcessor implements IComponentProcessor {
     private _cache = new PopupProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
+        this._cache.manifest = manifest;
         if (manifest.action?.default_popup) {
             const entry = manifest.action.default_popup;
             if (!this._cache.module || entry !== this._cache.entry) {
@@ -54,7 +55,7 @@ export class PopupProcessor implements IComponentProcessor {
         }
     }
 
-    public async build(): Promise<ChromeExtensionModule | undefined> {
+    public async build(): Promise<void> {
         if (!this._cache.entry || !this._cache.module) { return undefined; }
         const outputPath = path.resolve(this._options.root, this._options.outDir);
         if (fs.existsSync(outputPath)) {
@@ -77,11 +78,16 @@ export class PopupProcessor implements IComponentProcessor {
                 return module.fileName === this._cache.entry;
             }
         });
-
-        return {
-            entry: this._cache.entry,
-            bundle: entryBundle!.fileName,
-        };
+        // update manifest
+        if (this._cache.manifest) {
+            if (this._cache.manifest.action) {
+                this._cache.manifest.action.default_popup = entryBundle!.fileName;
+            } else {
+                this._cache.manifest.action = {
+                    default_popup: entryBundle!.fileName,
+                };
+            }
+        }
     }
 
     public constructor(options: PopupProcessorOptions = {}) {

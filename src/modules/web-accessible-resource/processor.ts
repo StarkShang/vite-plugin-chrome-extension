@@ -9,6 +9,7 @@ import vite, { AliasOptions, Plugin } from "vite";
 import { IComponentProcessor } from "../common";
 import { WebAccessibleResourceProcessorCache } from "./cache";
 import slash from "slash";
+import { ensureDir } from "fs-extra";
 
 export interface WebAccessibleResourceProcessorOptions {
     root?: string;
@@ -39,6 +40,7 @@ export class WebAccessibleResourceProcessor implements IComponentProcessor {
     private _cache = new WebAccessibleResourceProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
+        this._cache.manifest = manifest;
         if (!manifest.web_accessible_resources) { return []; }
         await Promise.all(manifest.web_accessible_resources.map(group => group.resources || [])
             .map(resources => resources
@@ -63,35 +65,29 @@ export class WebAccessibleResourceProcessor implements IComponentProcessor {
             .flat();
     }
 
-    public async build(): Promise<ChromeExtensionModule[] | undefined> {
-        if (this._cache.modules.size <= 0) { return undefined; }
-        const outputPath = path.resolve(this._options.root, this._options.outDir);
-        if (fs.existsSync(outputPath)) {
-            this._cache.modules.forEach(module => {
-                module.forEach(chunk => {
-                    const outputFilePath = path.resolve(outputPath, chunk.fileName);
-                    const dirName = path.dirname(outputFilePath);
-                    if (!fs.existsSync(dirName)) { fs.mkdirSync(dirName); }
-                    if (chunk.type === "chunk") {
-                        fs.writeFileSync(outputFilePath, chunk.code);
-                    } else {
-                        fs.writeFileSync(outputFilePath, chunk.source);
-                    }
-                });
-            });
-        }
-        return Array.from(this._cache.modules).map(([entry, module]) => {
-            const entryBundle = module.find(chunk => {
-                if (chunk.type === "chunk") {
-                    return chunk.facadeModuleId
-                        ? slash(chunk.facadeModuleId) === slash(path.resolve(this._options.root, entry))
-                        : false;
-                } else {
-                    return chunk.fileName === entry;
-                }
-            });
-            return { entry: entry, bundle: entryBundle?.fileName || "" };
-        }).filter((output) => output.bundle !== "");
+    public async build(): Promise<void> {
+        // if (this._cache.modules.size <= 0) { return undefined; }
+        // const outputPath = path.resolve(this._options.root, this._options.outDir);
+        // await ensureDir(outputPath);
+        // this._cache.manifest?.web_accessible_resources?.forEach(group => {
+        //     group.resources.forEach((resource, index) => {
+        //         const bundle = this._cache.modules.get(resource);
+        //         bundle?.map(async chunk => {
+        //             const outputFileName = chunk.fileName;
+        //             const outputFilePath = path.resolve(outputPath, outputFileName);
+        //             await ensureDir(path.dirname(outputFilePath));
+        //             if (chunk.type === "chunk") {
+        //                 fs.writeFileSync(outputFilePath, chunk.code);
+        //                 if (chunk.facadeModuleId &&
+        //                     slash(chunk.facadeModuleId) === slash(path.resolve(this._options.root, resource))) {
+        //                     group.resources?.splice(index, 1, outputFileName);
+        //                 }
+        //             } else {
+        //                 fs.writeFileSync(outputFilePath, chunk.source);
+        //             }
+        //         });
+        //     });
+        // });
     }
 
     public constructor(options: WebAccessibleResourceProcessorOptions = {}) {

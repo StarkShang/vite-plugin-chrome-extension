@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import slash from "slash";
 import vite, { AliasOptions, Plugin } from "vite";
-import { OutputAsset, OutputBundle, PluginContext, RollupOutput, RollupWatcher, WatcherOptions } from "rollup";
+import { OutputAsset, OutputBundle, PluginContext, RollupOutput } from "rollup";
 import { removeFileExtension } from "../../common/utils";
 import { ChromeExtensionManifest, WebAccessibleResource } from "../../manifest";
 import { findAssetByName, findChunkByName } from "../../utils/helpers";
@@ -10,8 +10,8 @@ import { updateCss } from "../../common/utils/css";
 import { mixinChunksForIIFE } from "../mixin";
 import { IComponentProcessor } from "../common";
 import { ContentScriptProcessorCache } from "./cache";
-import { ChromeExtensionModule } from "@/common/models";
 import chalk from "chalk";
+import { ensureDir } from "fs-extra";
 
 export interface ContentScriptProcessorOptions {
     root?: string;
@@ -39,8 +39,9 @@ export class ContentScriptProcessor implements IComponentProcessor {
     private _cache = new ContentScriptProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
-        if (!manifest.content_scripts) { return []; }
-        await Promise.all(manifest.content_scripts.map(group => group.js || [])
+        this._cache._manifest = manifest;
+        if (!this._cache._manifest || !this._cache._manifest.content_scripts) { return []; }
+        await Promise.all(this._cache._manifest.content_scripts.map(group => group.js || [])
             .map(scripts => scripts
                 .map(async script => {
                     if (!this._cache.modules.has(script)) {
@@ -63,64 +64,58 @@ export class ContentScriptProcessor implements IComponentProcessor {
             .flat();
     }
 
-    public async build(): Promise<ChromeExtensionModule[] | undefined> {
-        if (this._cache.modules.size <= 0) { return undefined; }
+    public async build(): Promise<void> {
+        const manifest = this._cache._manifest;
+        if (!manifest || !manifest.content_scripts) { return; }
+        if (this._cache.modules.size <= 0) { return; }
         const outputPath = path.resolve(this._options.root, this._options.outDir);
-        if (fs.existsSync(outputPath)) {
-            this._cache.modules.forEach(module => {
-                module.forEach(chunk => {
-                    const outputFilePath = path.resolve(outputPath, chunk.fileName);
-                    const dirName = path.dirname(outputFilePath);
-                    if (!fs.existsSync(dirName)) { fs.mkdirSync(dirName); }
+        await ensureDir(outputPath);
+        await manifest.content_scripts.forEachAsync(async group => {
+            // referencing assets will be added to web accessible resources
+            const assets = new Set<string>();
+            // build js files
+            if (!group.js) { return; }
+            await group.js.forEachAsync(async (script, index) => {
+                const module = this._cache.modules.get(script);
+                await module?.forEachAsync(async chunk => {
+                    const outputFileName = chunk.fileName;
+                    const outputFilePath = path.resolve(outputPath, outputFileName);
+                    await ensureDir(path.dirname(outputFilePath));
                     if (chunk.type === "chunk") {
+                        // write chunk to disk
                         fs.writeFileSync(outputFilePath, chunk.code);
+                        // update chunk to manifest
+                        if (chunk.facadeModuleId &&
+                            slash(chunk.facadeModuleId) === slash(path.resolve(this._options.root, script))) {
+                            group.js?.splice(index, 1, outputFileName);
+                        }
                     } else {
+                        // write asset to disk
                         fs.writeFileSync(outputFilePath, chunk.source);
+                        if (outputFileName.endsWith(".css")) {
+                            if (group.css) {
+                                if (!group.css.includes(outputFileName)) {
+                                    group.css.push(outputFileName);
+                                }
+                            } else {
+                                group.css = [outputFileName];
+                            }
+                        } else {
+                            assets.add(outputFileName);
+                        }
                     }
                 });
             });
-        }
-        return Array.from(this._cache.modules).map(([entry, module]) => {
-            const entryBundle = module.find(chunk => {
-                if (chunk.type === "chunk") {
-                    return chunk.facadeModuleId
-                        ? slash(chunk.facadeModuleId) === slash(path.resolve(this._options.root, entry))
-                        : false;
+            if (this._cache._manifest && assets.size > 0) {
+                const resource: WebAccessibleResource = {
+                    matches: group.matches,
+                    resources: Array.from(assets),
+                };
+                if (this._cache._manifest.web_accessible_resources) {
+                    this._cache._manifest.web_accessible_resources.push(resource);
                 } else {
-                    return chunk.fileName === entry;
+                    this._cache._manifest.web_accessible_resources = [resource];
                 }
-            });
-            return { entry: entry, bundle: entryBundle?.fileName || "" };
-        }).filter((output) => output.bundle !== "");
-    }
-    public async updateManifest(manifest: ChromeExtensionManifest) {
-        manifest.content_scripts?.forEach(group => {
-            const resources: WebAccessibleResource = {
-                matches: group.matches,
-                resources: [],
-            }
-            group.js?.forEach((script, index) => {
-                const module = this._cache.modules.get(script);
-                if (module) {
-                    module.forEach(chunk => {
-                        // substitute js file
-                        if (chunk.type === "chunk" && chunk.facadeModuleId === script) {
-                            group.js?.splice(index, 1, chunk.facadeModuleId);
-                        }
-                        // add css file to web_accessible_resources
-                        else {
-                            if (chunk.fileName.endsWith(".css")) {
-                                resources.resources.push(chunk.fileName);
-                            }
-                        }
-                    });
-
-                }
-            });
-            if (manifest.web_accessible_resources) {
-                manifest.web_accessible_resources.push(resources);
-            } else {
-                manifest.web_accessible_resources = [resources];
             }
         });
     }

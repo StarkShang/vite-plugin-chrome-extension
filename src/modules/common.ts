@@ -4,7 +4,7 @@ import { ChromeExtensionModule } from "@/common/models";
 
 export interface IComponentProcessor {
     resolve(entry: ChromeExtensionManifest): Promise<string[]>;
-    build(): Promise<ChromeExtensionModule | ChromeExtensionModule[] | undefined>;
+    build(): Promise<void>;
 }
 
 export abstract class ComponentProcessor implements IComponentProcessor {
@@ -24,5 +24,5 @@ export abstract class ComponentProcessor implements IComponentProcessor {
 
     public abstract resolve(entry: ChromeExtensionManifest): Promise<string[]>;
     public abstract stop(): Promise<void>;
-    public abstract build(): Promise<ChromeExtensionModule | ChromeExtensionModule[] | undefined>;
+    public abstract build(): Promise<void>;
 }

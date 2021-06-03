@@ -25,18 +25,25 @@ export class OverrideBookmarksProcessor implements IComponentProcessor {
     private _cache = new OverrideBookmarksProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
+        this._cache.manifest = manifest;
         manifest.chrome_url_overrides?.bookmarks
             && (this._cache.entry = manifest.chrome_url_overrides.bookmarks);
             return [];
     }
 
-    public async build(): Promise<ChromeExtensionModule | undefined> {
+    public async build(): Promise<void> {
         if (!this._cache.entry) {
             this._cache.module = undefined;
         } else if (!this._cache.module || this._cache.module.entry !== this._cache.entry) {
             throw new Error("Method not implemented.");
         }
-        return this._cache.module;
+        // update manifest
+        if (this._cache.manifest?.chrome_url_overrides) {
+            this._cache.manifest.chrome_url_overrides = {
+                ...this._cache.manifest?.chrome_url_overrides,
+                bookmarks: this._cache.module?.bundle,
+            };
+        }
     }
 
     public constructor(options: OverrideBookmarksProcessorOptions = {}) {
@@ -74,18 +81,25 @@ export class OverrideHistoryProcessor implements IComponentProcessor {
     private _cache = new OverrideHistoryProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
+        this._cache.manifest = manifest;
         manifest.chrome_url_overrides?.history
             && (this._cache.entry = manifest.chrome_url_overrides.history);
         return [];
     }
 
-    public async build(): Promise<ChromeExtensionModule | undefined> {
+    public async build(): Promise<void> {
         if (!this._cache.entry) {
             this._cache.module = undefined;
         } else if (!this._cache.module || this._cache.module.entry !== this._cache.entry) {
             throw new Error("Method not implemented.");
         }
-        return this._cache.module;
+        // update manifest
+        if (this._cache.manifest?.chrome_url_overrides) {
+            this._cache.manifest.chrome_url_overrides = {
+                ...this._cache.manifest?.chrome_url_overrides,
+                history: this._cache.module?.bundle,
+            };
+        }
     }
 
     public constructor(options: OverrideHistoryProcessorOptions = {}) {
@@ -123,18 +137,25 @@ export class OverrideNewtabProcessor implements IComponentProcessor {
     private _cache = new OverrideNewtabProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
+        this._cache.manifest = manifest;
         manifest.chrome_url_overrides?.newtab
             && (this._cache.entry = manifest.chrome_url_overrides.newtab);
         return [];
     }
 
-    public async build(): Promise<ChromeExtensionModule | undefined> {
+    public async build(): Promise<void> {
         if (!this._cache.entry) {
             this._cache.module = undefined;
         } else if (!this._cache.module || this._cache.module.entry !== this._cache.entry){
             throw new Error("Method not implemented.");
         }
-        return this._cache.module;
+        // update manifest
+        if (this._cache.manifest?.chrome_url_overrides) {
+            this._cache.manifest.chrome_url_overrides = {
+                ...this._cache.manifest?.chrome_url_overrides,
+                newtab: this._cache.module?.bundle,
+            };
+        }
     }
 
     public constructor(options: OverrideNewtabProcessorOptions = {}) {

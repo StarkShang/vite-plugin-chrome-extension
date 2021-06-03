@@ -11,6 +11,7 @@ import { IComponentProcessor } from "../common";
 import { BackgroundProcessorCache } from "./cache";
 import { ChromeExtensionModule } from "@/common/models";
 import chalk from "chalk";
+import { ensureDir } from "fs-extra";
 
 const dynamicImportAssetRex = /(?<=chrome.scripting.insertCSS\()[\s\S]*?(?=\))/gm;
 const dynamicImportScriptRex = /(?<=chrome.scripting.executeScript\()[\s\S]*?(?=\))/gm;
@@ -46,6 +47,7 @@ export class BackgroundProcessor implements IComponentProcessor {
     private _cache = new BackgroundProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
+        this._cache.manifest = manifest;
         if (manifest.background?.service_worker) {
             const entry = manifest.background.service_worker;
             if (!this._cache.module || entry !== this._cache.entry) {
@@ -66,21 +68,20 @@ export class BackgroundProcessor implements IComponentProcessor {
         }
     }
 
-    public async build(): Promise<ChromeExtensionModule | undefined> {
+    public async build(): Promise<void> {
         if (!this._cache.entry || !this._cache.module) { return undefined; }
         const outputPath = resolve(this._options.root, this._options.outDir);
-        if (existsSync(outputPath)) {
-            this._cache.module.forEach(chunk => {
-                const outputFilePath = resolve(outputPath, chunk.fileName);
-                const dirName = dirname(outputFilePath);
-                if (!existsSync(dirName)) { mkdirSync(dirName); }
-                if (chunk.type === "chunk") {
-                    writeFileSync(outputFilePath, chunk.code);
-                } else {
-                    writeFileSync(outputFilePath, chunk.source);
-                }
-            });
-        }
+        await ensureDir(outputPath);
+        this._cache.module.forEach(chunk => {
+            const outputFilePath = resolve(outputPath, chunk.fileName);
+            const dirName = dirname(outputFilePath);
+            if (!existsSync(dirName)) { mkdirSync(dirName); }
+            if (chunk.type === "chunk") {
+                writeFileSync(outputFilePath, chunk.code);
+            } else {
+                writeFileSync(outputFilePath, chunk.source);
+            }
+        });
         const entryBundle = this._cache.module.find(module => {
             if (module.type === "chunk") {
                 return module.facadeModuleId
@@ -90,10 +91,12 @@ export class BackgroundProcessor implements IComponentProcessor {
                 return module.fileName === this._cache.entry;
             }
         });
-        return {
-            entry: this._cache.entry,
-            bundle: entryBundle!.fileName,
-        };
+        // update manifest
+        if (this._cache.manifest) {
+            this._cache.manifest.background = {
+                service_worker: entryBundle!.fileName,
+            };
+        }
     }
 
     constructor(options: BackgroundProcessorOptions) {

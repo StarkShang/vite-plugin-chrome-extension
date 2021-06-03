@@ -1,5 +1,5 @@
 import path from "path";
-import fs from "fs-extra";
+import fs, { ensureDir, ensureDirSync } from "fs-extra";
 import memoize from "mem";
 import { cosmiconfigSync } from "cosmiconfig";
 import { ChromeExtensionManifestEntries, ChromeExtensionManifestEntryType, ChromeExtensionModule } from "@/common/models";
@@ -83,43 +83,14 @@ export class ManifestProcessor {
     // this method will update cache.manifest and cache.mappings
     public async build(): Promise<void> {
         // start build process
-        const output = (await Promise.all(
-            Array.from(this._processors)
-            .map(async ([key, processor]) => ({
-                output: await processor.build(),
-                key: key as ChromeExtensionManifestEntryType
-            }))))
-            .filter(bundle => bundle.output !== undefined)
-            .reduce((entries, bundle) => {
-                const build = bundle.output as (ChromeExtensionModule &  ChromeExtensionModule[]);
-                entries[bundle.key] = build
-                return entries;
-            }, {} as ChromeExtensionManifestEntries);
-        this.updateManifest(output);
+        await Promise.all(
+            Array.from(this._processors.values())
+                .map(processor => processor.build()));
     }
 
     public async updateManifest(bundles: ChromeExtensionManifestEntries): Promise<void> {
         if (!this._cache.manifest) { return; }
         const manifest = this._cache.manifest; // for shortening code
-        bundles.background && (manifest.background = { service_worker: bundles.background.bundle });
-        if (bundles["content-script"]) {
-            manifest.content_scripts?.forEach(group => {
-                group.js?.forEach((script, index) => {
-                    const output = bundles["content-script"]?.find(s => s.entry === script);
-                    output && group.js?.splice(index, 1, output.bundle);
-                });
-            });
-        }
-        bundles.popup && (manifest.action = { ...manifest.action, default_popup: bundles.popup.bundle });
-        bundles["options"] && (manifest.options_ui
-            ? manifest.options_ui = {...manifest.options_ui, page: bundles.options.bundle}
-            : manifest.options_page
-                ? manifest.options_page = bundles.options.bundle
-                : void(0));
-        bundles.devtools && (manifest.devtools_page = bundles.devtools.bundle);
-        bundles.bookmarks && (manifest.chrome_url_overrides = {...manifest.chrome_url_overrides, bookmarks: bundles.bookmarks.bundle});
-        bundles.history && (manifest.chrome_url_overrides = {...manifest.chrome_url_overrides, history: bundles.history.bundle});
-        bundles.newtab && (manifest.chrome_url_overrides = {...manifest.chrome_url_overrides, newtab: bundles.newtab.bundle});
         if (bundles["web-accessible-resource"]) {
             manifest.web_accessible_resources?.forEach(group => {
                 group.resources?.forEach((resource, index) => {
@@ -295,13 +266,13 @@ class ResourceProcessor implements IComponentProcessor {
         return Array.from(this._modules.keys());
     }
 
-    public async build(): Promise<ChromeExtensionModule | undefined> {
+    public async build(): Promise<void> {
         const outputPath = path.resolve(this._options.root, this._options.outDir);
-        if (!fs.existsSync(outputPath)) { fs.mkdirSync(outputPath); }
+        await ensureDir(outputPath);
         this._modules.forEach((asset, resource) => {
             const outputFilePath = path.resolve(outputPath, resource);
+            ensureDirSync(path.dirname(outputFilePath));
             fs.writeFileSync(outputFilePath, asset);
         });
-        return undefined;
     }
 }

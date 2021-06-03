@@ -34,6 +34,7 @@ export class OptionsProcessor implements IComponentProcessor {
     private _cache = new OptionsProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
+        this._cache.manifest = manifest;
         let entry: string | undefined = undefined;
         if (manifest.options_ui?.page) {
             entry = manifest.options_ui.page;
@@ -60,7 +61,7 @@ export class OptionsProcessor implements IComponentProcessor {
         }
     }
 
-    public async build(): Promise<ChromeExtensionModule | undefined> {
+    public async build(): Promise<void> {
         if (!this._cache.entry || !this._cache.module) { return undefined; }
         const outputPath = path.resolve(this._options.root, this._options.outDir);
         if (fs.existsSync(outputPath)) {
@@ -75,7 +76,6 @@ export class OptionsProcessor implements IComponentProcessor {
                 }
             });
         }
-
         const entryBundle = this._cache.module.find(module => {
             if (module.type === "chunk") {
                 return module.facadeModuleId === path.resolve(this._options.root, this._cache.entry || "");
@@ -83,11 +83,14 @@ export class OptionsProcessor implements IComponentProcessor {
                 return module.fileName === this._cache.entry;
             }
         });
-
-        return {
-            entry: this._cache.entry,
-            bundle: entryBundle!.fileName,
-        };
+        // update manifest
+        if (this._cache.manifest) {
+            if (this._cache.manifest.options_ui) {
+                this._cache.manifest.options_ui = {...this._cache.manifest.options_ui, page: entryBundle!.fileName};
+            } else if (this._cache.manifest.options_page) {
+                this._cache.manifest.options_page = entryBundle!.fileName;
+            }
+        }
     }
 
     public constructor(options: OptionsProcessorOptions = {}) {
