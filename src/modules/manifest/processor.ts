@@ -19,6 +19,7 @@ import { PopupProcessor } from "../popup";
 import { OverrideBookmarksProcessor, OverrideHistoryProcessor, OverrideNewtabProcessor } from "../override/processor";
 import { WebAccessibleResourceProcessor } from "../web-accessible-resource/processor";
 import { DefaultManifestProcessorOptions, ManifestProcessorOptions } from "./option";
+import { ContentScriptProcessorInternalOptions } from "../content-script/options";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -163,8 +164,12 @@ export class ManifestProcessor {
     );
 
     private normalizeOptions(options: ManifestProcessorOptions) {
+        let rootPath = options.root;
+        let outputPath = options.outDir;
         return {
             ...options,
+            root: rootPath,
+            outDir: outputPath,
             components: {
                 background: options.components?.background || DefaultManifestProcessorOptions.components?.background,
                 contentScripts: options.components?.contentScripts || DefaultManifestProcessorOptions.components?.contentScripts,
@@ -190,9 +195,9 @@ export class ManifestProcessor {
         }
         // content script processor
         if (options.components?.contentScripts) {
-            const contentScriptOptions = options.components.contentScripts === true ? {} : options.components.contentScripts;
+            const contentScriptOptions: ContentScriptProcessorInternalOptions = options.components.contentScripts === true ? {} : options.components.contentScripts;
             contentScriptOptions.root = this._options.root;
-            contentScriptOptions.outDir = this._options.outDir;
+            contentScriptOptions.outputRoot = this._options.outDir;
             this._processors.set("content-script", new ContentScriptProcessor(contentScriptOptions));
         }
         // popup processor

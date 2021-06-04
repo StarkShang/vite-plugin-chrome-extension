@@ -7,6 +7,7 @@ import { ChromeExtensionPlugin } from "./plugin-options";
 import { ChromeExtensionOptions } from "@/configs/options";
 import { NormalizedOutputOptions, OutputOptions, RenderedChunk } from "rollup";
 import { ManifestProcessorOptions } from "./modules/manifest/option";
+import slash from "slash";
 export const stubChunkName = "stub__empty-chrome-extension-manifest";
 export const chromeExtensionPluginName = "chrome-extension";
 
@@ -36,10 +37,16 @@ export const chromeExtension = (
             viteConfig = config;
             // resolve manifest.json path
             const manifestJsonPath = path.resolve(config.root, "manifest.json");
+            // normalize source directory path
+            const sourcePath = slash(config.root);
+            // normalize output directory path
+            const outputPath = path.isAbsolute(config.build.outDir)
+                ? slash(config.build.outDir)
+                : slash(path.resolve(config.root, config.build.outDir));
             // create manifest processor
             manifestProcessor = new ManifestProcessor({
-                root:  config.root,
-                outDir: config.build.outDir,
+                root:  sourcePath,
+                outDir: outputPath,
                 alias: config.resolve.alias,
                 extendManifest: options.extendManifest,
                 components: options.components,

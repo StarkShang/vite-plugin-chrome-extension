@@ -12,30 +12,10 @@ import { IComponentProcessor } from "../common";
 import { ContentScriptProcessorCache } from "./cache";
 import chalk from "chalk";
 import { ensureDir } from "fs-extra";
-
-export interface ContentScriptProcessorOptions {
-    root?: string;
-    outDir?: string;
-    alias?: AliasOptions;
-    plugins?: Plugin[];
-}
-
-export interface NormalizedContentScriptProcessorOptions {
-    root: string;
-    outDir: string;
-    alias: AliasOptions;
-    plugins: Plugin[],
-}
-
-const DefaultContentScriptProcessorOptions: NormalizedContentScriptProcessorOptions = {
-    root: process.cwd(),
-    outDir: path.join(process.cwd(), "dist"),
-    alias: [],
-    plugins: [],
-};
+import { ContentScriptProcessorInternalOptions, DefaultContentScriptProcessorOptions, ContentScriptProcessorNormalizedOptions } from "./options";
 
 export class ContentScriptProcessor implements IComponentProcessor {
-    private _options: NormalizedContentScriptProcessorOptions;
+    private _options: ContentScriptProcessorNormalizedOptions;
     private _cache = new ContentScriptProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
@@ -46,7 +26,9 @@ export class ContentScriptProcessor implements IComponentProcessor {
                 .map(async script => {
                     if (!this._cache.modules.has(script)) {
                         console.log(chalk`{blue rebuilding content-script: ${script}}`);
-                        this._cache.modules.set(script, (await this.run(script)).output);
+                        const { output } = await this.run(script);
+                        // console.log(output);
+                        this._cache.modules.set(script, output);
                     }
                 }))
             .flat());
@@ -68,7 +50,7 @@ export class ContentScriptProcessor implements IComponentProcessor {
         const manifest = this._cache._manifest;
         if (!manifest || !manifest.content_scripts) { return; }
         if (this._cache.modules.size <= 0) { return; }
-        const outputPath = path.resolve(this._options.root, this._options.outDir);
+        const outputPath = this._options.outDir;
         await ensureDir(outputPath);
         await manifest.content_scripts.forEachAsync(async group => {
             // referencing assets will be added to web accessible resources
@@ -78,30 +60,33 @@ export class ContentScriptProcessor implements IComponentProcessor {
             await group.js.forEachAsync(async (script, index) => {
                 const module = this._cache.modules.get(script);
                 await module?.forEachAsync(async chunk => {
-                    const outputFileName = chunk.fileName;
-                    const outputFilePath = path.resolve(outputPath, outputFileName);
+                    const outputFilePath = slash(path.resolve(outputPath, chunk.fileName));
+                    const relativeFilePath = slash(path.relative(this._options.outputRoot, outputFilePath));
                     await ensureDir(path.dirname(outputFilePath));
                     if (chunk.type === "chunk") {
                         // write chunk to disk
                         fs.writeFileSync(outputFilePath, chunk.code);
                         // update chunk to manifest
                         if (chunk.facadeModuleId &&
-                            slash(chunk.facadeModuleId) === slash(path.resolve(this._options.root, script))) {
-                            group.js?.splice(index, 1, outputFileName);
+                            chunk.facadeModuleId === slash(path.resolve(this._options.root, script))) {
+                            group.js?.splice(index, 1, relativeFilePath);
                         }
                     } else {
                         // write asset to disk
                         fs.writeFileSync(outputFilePath, chunk.source);
-                        if (outputFileName.endsWith(".css")) {
+                        // add css files to content script css array
+                        if (relativeFilePath.endsWith(".css")) {
                             if (group.css) {
-                                if (!group.css.includes(outputFileName)) {
-                                    group.css.push(outputFileName);
+                                if (!group.css.includes(relativeFilePath)) {
+                                    group.css.push(relativeFilePath);
                                 }
                             } else {
-                                group.css = [outputFileName];
+                                group.css = [relativeFilePath];
                             }
-                        } else {
-                            assets.add(outputFileName);
+                        }
+                        // add other assets to web accessible resources
+                        else {
+                            assets.add(relativeFilePath);
                         }
                     }
                 });
@@ -177,22 +162,22 @@ export class ContentScriptProcessor implements IComponentProcessor {
             }
         }
     }
-    public constructor(options: ContentScriptProcessorOptions = {}) {
+    public constructor(options: ContentScriptProcessorInternalOptions) {
         this._options = this.normalizeOptions(options);
     }
-    private normalizeOptions(options: ContentScriptProcessorOptions): NormalizedContentScriptProcessorOptions {
+    private normalizeOptions(options: ContentScriptProcessorInternalOptions): ContentScriptProcessorNormalizedOptions {
         const normalizedOptions = { ...options };
-        if (!normalizedOptions.root) {
-            normalizedOptions.root = DefaultContentScriptProcessorOptions.root;
-        }
         if (!normalizedOptions.outDir) {
             normalizedOptions.outDir = DefaultContentScriptProcessorOptions.outDir;
+        }
+        if (!path.isAbsolute(normalizedOptions.outDir)) {
+            normalizedOptions.outDir = path.resolve(normalizedOptions.outputRoot, normalizedOptions.outDir);
         }
         if (!normalizedOptions.alias) {
             normalizedOptions.alias = DefaultContentScriptProcessorOptions.alias;
         }
         if (!normalizedOptions.plugins) { normalizedOptions.plugins = DefaultContentScriptProcessorOptions.plugins; }
-        return normalizedOptions as NormalizedContentScriptProcessorOptions;
+        return normalizedOptions as ContentScriptProcessorNormalizedOptions;
     }
 
     private async run(entry: string): Promise<RollupOutput> {
@@ -203,7 +188,12 @@ export class ContentScriptProcessor implements IComponentProcessor {
             },
             plugins: this._options.plugins,
             build: {
-                rollupOptions: { input: path.resolve(this._options.root, entry) },
+                rollupOptions: {
+                    input: path.resolve(this._options.root, entry),
+                    output: {
+                        format: "umd",
+                    }
+                },
                 emptyOutDir: false,
                 write: false,
             },
