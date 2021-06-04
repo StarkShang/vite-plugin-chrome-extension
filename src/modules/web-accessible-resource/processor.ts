@@ -66,28 +66,28 @@ export class WebAccessibleResourceProcessor implements IComponentProcessor {
     }
 
     public async build(): Promise<void> {
-        // if (this._cache.modules.size <= 0) { return undefined; }
-        // const outputPath = path.resolve(this._options.root, this._options.outDir);
-        // await ensureDir(outputPath);
-        // this._cache.manifest?.web_accessible_resources?.forEach(group => {
-        //     group.resources.forEach((resource, index) => {
-        //         const bundle = this._cache.modules.get(resource);
-        //         bundle?.map(async chunk => {
-        //             const outputFileName = chunk.fileName;
-        //             const outputFilePath = path.resolve(outputPath, outputFileName);
-        //             await ensureDir(path.dirname(outputFilePath));
-        //             if (chunk.type === "chunk") {
-        //                 fs.writeFileSync(outputFilePath, chunk.code);
-        //                 if (chunk.facadeModuleId &&
-        //                     slash(chunk.facadeModuleId) === slash(path.resolve(this._options.root, resource))) {
-        //                     group.resources?.splice(index, 1, outputFileName);
-        //                 }
-        //             } else {
-        //                 fs.writeFileSync(outputFilePath, chunk.source);
-        //             }
-        //         });
-        //     });
-        // });
+        if (this._cache.modules.size <= 0) { return undefined; }
+        const outputPath = path.resolve(this._options.root, this._options.outDir);
+        await ensureDir(outputPath);
+        this._cache.manifest?.web_accessible_resources?.forEach(group => {
+            group.resources.forEach((resource, index) => {
+                const bundle = this._cache.modules.get(resource);
+                bundle?.map(async chunk => {
+                    const outputFileName = chunk.fileName;
+                    const outputFilePath = path.resolve(outputPath, outputFileName);
+                    await ensureDir(path.dirname(outputFilePath));
+                    if (chunk.type === "chunk") {
+                        fs.writeFileSync(outputFilePath, chunk.code);
+                        if (chunk.facadeModuleId &&
+                            slash(chunk.facadeModuleId) === slash(path.resolve(this._options.root, resource))) {
+                            group.resources?.splice(index, 1, outputFileName);
+                        }
+                    } else {
+                        fs.writeFileSync(outputFilePath, chunk.source);
+                    }
+                });
+            });
+        });
     }
 
     public constructor(options: WebAccessibleResourceProcessorOptions = {}) {

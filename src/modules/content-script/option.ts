@@ -21,7 +21,7 @@ export interface ContentScriptProcessorNormalizedOptions {
 }
 
 export const DefaultContentScriptProcessorOptions: Omit<ContentScriptProcessorNormalizedOptions, "root" | "outputRoot"> = {
-    outDir: "content-script",
+    outDir: "content-scripts",
     alias: [],
     plugins: [],
 };

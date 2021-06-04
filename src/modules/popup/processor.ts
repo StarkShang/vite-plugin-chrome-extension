@@ -1,36 +1,16 @@
 import path from "path";
 import fs from "fs";
-import vite, { AliasOptions, Plugin } from "vite";
+import vite from "vite";
 import chalk from "chalk";
-import { RollupOutput, WatcherOptions } from "rollup";
+import { RollupOutput } from "rollup";
 import { IComponentProcessor } from "../common";
 import { PopupProcessorCache } from "./cache";
 import { ChromeExtensionManifest } from "@/manifest";
-import { ChromeExtensionModule } from "@/common/models";
-
-export interface PopupProcessorOptions {
-    root?: string;
-    outDir?: string;
-    alias?: AliasOptions;
-    plugins?: Plugin[];
-}
-
-export interface NormalizedPopupProcessorOptions {
-    root: string;
-    outDir: string;
-    alias: AliasOptions;
-    plugins: Plugin[];
-}
-
-const DefaultPopupProcessorOptions: NormalizedPopupProcessorOptions = {
-    root: process.cwd(),
-    outDir: path.join(process.cwd(), "dist"),
-    alias: [],
-    plugins: [],
-};
+import { DefaultPopupProcessorOptions, PopupProcessorInternalOptions, PopupProcessorNormalizedOptions } from "./option";
+import slash from "slash";
 
 export class PopupProcessor implements IComponentProcessor {
-    private _options: NormalizedPopupProcessorOptions;
+    private _options: PopupProcessorNormalizedOptions;
     private _cache = new PopupProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
@@ -90,17 +70,19 @@ export class PopupProcessor implements IComponentProcessor {
         }
     }
 
-    public constructor(options: PopupProcessorOptions = {}) {
+    public constructor(options: PopupProcessorInternalOptions) {
         this._options = this.normalizeOptions(options);
     }
 
-    private normalizeOptions(options: PopupProcessorOptions): NormalizedPopupProcessorOptions {
+    private normalizeOptions(options: PopupProcessorInternalOptions): PopupProcessorNormalizedOptions {
         const normalizedOptions = { ...options };
-        if (!normalizedOptions.root) {
-            normalizedOptions.root = DefaultPopupProcessorOptions.root;
-        }
         if (!normalizedOptions.outDir) {
             normalizedOptions.outDir = DefaultPopupProcessorOptions.outDir;
+        }
+        if (path.isAbsolute(normalizedOptions.outDir)) {
+            normalizedOptions.outDir = slash(normalizedOptions.outDir);
+        } else {
+            normalizedOptions.outDir = slash(path.resolve(normalizedOptions.outputRoot, normalizedOptions.outDir));
         }
         if (!normalizedOptions.alias) {
             normalizedOptions.alias = DefaultPopupProcessorOptions.alias;
@@ -108,7 +90,7 @@ export class PopupProcessor implements IComponentProcessor {
         if (!normalizedOptions.plugins) {
             normalizedOptions.plugins = DefaultPopupProcessorOptions.plugins;
         }
-        return normalizedOptions as NormalizedPopupProcessorOptions;
+        return normalizedOptions as PopupProcessorNormalizedOptions;
     }
 
 

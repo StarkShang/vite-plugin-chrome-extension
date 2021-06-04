@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import fse from "fs-extra";
 import slash from "slash";
 import vite, { AliasOptions, Plugin } from "vite";
 import { OutputAsset, OutputBundle, PluginContext, RollupOutput } from "rollup";
@@ -12,26 +13,45 @@ import { IComponentProcessor } from "../common";
 import { ContentScriptProcessorCache } from "./cache";
 import chalk from "chalk";
 import { ensureDir } from "fs-extra";
-import { ContentScriptProcessorInternalOptions, DefaultContentScriptProcessorOptions, ContentScriptProcessorNormalizedOptions } from "./options";
+import { ContentScriptProcessorInternalOptions, DefaultContentScriptProcessorOptions, ContentScriptProcessorNormalizedOptions } from "./option";
+import { ChromeExtensionAssetPlugin } from "../common/plugin";
 
 export class ContentScriptProcessor implements IComponentProcessor {
     private _options: ContentScriptProcessorNormalizedOptions;
     private _cache = new ContentScriptProcessorCache();
 
     public async resolve(manifest: ChromeExtensionManifest): Promise<string[]> {
-        this._cache._manifest = manifest;
-        if (!this._cache._manifest || !this._cache._manifest.content_scripts) { return []; }
-        await Promise.all(this._cache._manifest.content_scripts.map(group => group.js || [])
+        this._cache.manifest = manifest;
+        if (!this._cache.manifest || !this._cache.manifest.content_scripts) { return []; }
+        await Promise.all(this._cache.manifest.content_scripts.map(group => group.js || [])
             .map(scripts => scripts
                 .map(async script => {
                     if (!this._cache.modules.has(script)) {
                         console.log(chalk`{blue rebuilding content-script: ${script}}`);
                         const { output } = await this.run(script);
-                        // console.log(output);
                         this._cache.modules.set(script, output);
                     }
                 }))
             .flat());
+        await this._cache.manifest.content_scripts.forEachAsync(async group => {
+            await group.js?.forEachAsync(async script => {
+                if (!this._cache.modules.has(script)) {
+                    console.log(chalk`{blue rebuilding content-script: ${script}}`);
+                    const { output } = await this.run(script);
+                    this._cache.modules.set(script, output);
+                }
+            });
+            await group.css?.forEachAsync(async css => {
+                const inputFilePath = path.resolve(this._options.root, css);
+                this._cache.modules.set(css, [{
+                    fileName: css,
+                    source: await fse.readFile(inputFilePath),
+                    isAsset: true,
+                    name: undefined,
+                    type: "asset",
+                }]);
+            });
+        });
         return Array.from(this._cache.modules.values())
             .map(module => module
                 .map(chunk => {
@@ -47,7 +67,7 @@ export class ContentScriptProcessor implements IComponentProcessor {
     }
 
     public async build(): Promise<void> {
-        const manifest = this._cache._manifest;
+        const manifest = this._cache.manifest;
         if (!manifest || !manifest.content_scripts) { return; }
         if (this._cache.modules.size <= 0) { return; }
         const outputPath = this._options.outDir;
@@ -60,12 +80,13 @@ export class ContentScriptProcessor implements IComponentProcessor {
             await group.js.forEachAsync(async (script, index) => {
                 const module = this._cache.modules.get(script);
                 await module?.forEachAsync(async chunk => {
+                    console.log("content-scripts: ", chunk.fileName);
                     const outputFilePath = slash(path.resolve(outputPath, chunk.fileName));
                     const relativeFilePath = slash(path.relative(this._options.outputRoot, outputFilePath));
                     await ensureDir(path.dirname(outputFilePath));
                     if (chunk.type === "chunk") {
                         // write chunk to disk
-                        fs.writeFileSync(outputFilePath, chunk.code);
+                        await fse.writeFile(outputFilePath, chunk.code);
                         // update chunk to manifest
                         if (chunk.facadeModuleId &&
                             chunk.facadeModuleId === slash(path.resolve(this._options.root, script))) {
@@ -73,7 +94,7 @@ export class ContentScriptProcessor implements IComponentProcessor {
                         }
                     } else {
                         // write asset to disk
-                        fs.writeFileSync(outputFilePath, chunk.source);
+                        await fse.writeFile(outputFilePath, chunk.source);
                         // add css files to content script css array
                         if (relativeFilePath.endsWith(".css")) {
                             if (group.css) {
@@ -91,15 +112,24 @@ export class ContentScriptProcessor implements IComponentProcessor {
                     }
                 });
             });
-            if (this._cache._manifest && assets.size > 0) {
+            await group.css?.forEachAsync(async script => {
+                const module = this._cache.modules.get(script) as OutputAsset[];
+                await module?.forEachAsync(async asset => {
+                    const outputFilePath = slash(path.resolve(this._options.outputRoot, asset.fileName));
+                    const relativeFilePath = slash(path.relative(this._options.outputRoot, outputFilePath));
+                    await ensureDir(path.dirname(outputFilePath));
+                    await fse.writeFile(outputFilePath, asset.source);
+                });
+            });
+            if (this._cache.manifest && assets.size > 0) {
                 const resource: WebAccessibleResource = {
                     matches: group.matches,
                     resources: Array.from(assets),
                 };
-                if (this._cache._manifest.web_accessible_resources) {
-                    this._cache._manifest.web_accessible_resources.push(resource);
+                if (this._cache.manifest.web_accessible_resources) {
+                    this._cache.manifest.web_accessible_resources.push(resource);
                 } else {
-                    this._cache._manifest.web_accessible_resources = [resource];
+                    this._cache.manifest.web_accessible_resources = [resource];
                 }
             }
         });
@@ -170,8 +200,10 @@ export class ContentScriptProcessor implements IComponentProcessor {
         if (!normalizedOptions.outDir) {
             normalizedOptions.outDir = DefaultContentScriptProcessorOptions.outDir;
         }
-        if (!path.isAbsolute(normalizedOptions.outDir)) {
-            normalizedOptions.outDir = path.resolve(normalizedOptions.outputRoot, normalizedOptions.outDir);
+        if (path.isAbsolute(normalizedOptions.outDir)) {
+            normalizedOptions.outDir = slash(normalizedOptions.outDir)
+        } else {
+            normalizedOptions.outDir = slash(path.resolve(normalizedOptions.outputRoot, normalizedOptions.outDir));
         }
         if (!normalizedOptions.alias) {
             normalizedOptions.alias = DefaultContentScriptProcessorOptions.alias;
@@ -186,7 +218,10 @@ export class ContentScriptProcessor implements IComponentProcessor {
             resolve: {
                 alias: this._options.alias,
             },
-            plugins: this._options.plugins,
+            plugins: [
+                ...this._options.plugins,
+                ChromeExtensionAssetPlugin(),
+            ],
             build: {
                 rollupOptions: {
                     input: path.resolve(this._options.root, entry),

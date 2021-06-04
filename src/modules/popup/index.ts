@@ -1,1 +1,2 @@
-export { PopupProcessor, PopupProcessorOptions } from "./processor";
+export { PopupProcessorOptions, PopupProcessorInternalOptions } from "./option";
+export { PopupProcessor } from "./processor";

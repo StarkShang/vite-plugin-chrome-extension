@@ -12,14 +12,13 @@ import { PermissionProcessor, PermissionProcessorOptions } from "../permission";
 import { ChromeExtensionManifestCache } from "./cache";
 import { IComponentProcessor } from "../common";
 import { BackgroundProcessor } from "../background";
-import { ContentScriptProcessor } from "../content-script";
+import { ContentScriptProcessor, ContentScriptProcessorInternalOptions } from "../content-script";
 import { OptionsProcessor } from "../options/processor";
 import { DevtoolsProcessor } from "../devtools";
-import { PopupProcessor } from "../popup";
+import { PopupProcessor, PopupProcessorInternalOptions } from "../popup";
 import { OverrideBookmarksProcessor, OverrideHistoryProcessor, OverrideNewtabProcessor } from "../override/processor";
 import { WebAccessibleResourceProcessor } from "../web-accessible-resource/processor";
 import { DefaultManifestProcessorOptions, ManifestProcessorOptions } from "./option";
-import { ContentScriptProcessorInternalOptions } from "../content-script/options";
 
 export const explorer = cosmiconfigSync("manifest", {
     cache: false,
@@ -195,16 +194,22 @@ export class ManifestProcessor {
         }
         // content script processor
         if (options.components?.contentScripts) {
-            const contentScriptOptions: ContentScriptProcessorInternalOptions = options.components.contentScripts === true ? {} : options.components.contentScripts;
+            const contentScriptOptions =
+                options.components.contentScripts === true
+                    ? {} as ContentScriptProcessorInternalOptions
+                    : options.components.contentScripts as ContentScriptProcessorInternalOptions;
             contentScriptOptions.root = this._options.root;
             contentScriptOptions.outputRoot = this._options.outDir;
             this._processors.set("content-script", new ContentScriptProcessor(contentScriptOptions));
         }
         // popup processor
         if (options.components?.popup) {
-            const popupOptions = options.components.popup === true ? {} : options.components.popup;
+            const popupOptions =
+                options.components.popup === true
+                    ? {} as PopupProcessorInternalOptions
+                    : options.components.popup as PopupProcessorInternalOptions;
             popupOptions.root = this._options.root;
-            popupOptions.outDir = this._options.outDir;
+            popupOptions.outputRoot = this._options.outDir;
             this._processors.set("popup", new PopupProcessor(popupOptions));
         }
         // options processor
