@@ -73,14 +73,23 @@ export class ManifestProcessor {
         const currentManifest = this.applyExternalManifestConfiguration(manifest);
         /* --------------- CACHE MANIFEST & ENTRIES --------------- */
         this._cache.manifest = currentManifest;
-        const modules = (await Promise.all(Array.from(this._processors.values())
-            .map(processor => processor.resolve(currentManifest))))
+        const modules = (await Promise.all(Array.from(this._processors)
+            .map(async ([key, processor]) => {
+                const filesNeedWatch = await processor.resolve(currentManifest);
+                filesNeedWatch.forEach(file => {
+                    const mapping = this._cache.mappings.get(file);
+                    if (mapping) {
+                        mapping.add(key);
+                    } else {
+                        this._cache.mappings.set(file, new Set<string>([key]));
+                    }
+                });
+                return filesNeedWatch;
+            })))
             .flat();
         return Array.from(new Set(modules));
     }
 
-    // if reload manifest.json, then calculate diff and restart sub bundle tasks
-    // this method will update cache.manifest and cache.mappings
     public async build(): Promise<void> {
         // start build process
         await Promise.all(
@@ -110,13 +119,11 @@ export class ManifestProcessor {
     }
 
     public clearCacheById(id: string) {
-        if (id.endsWith(manifestName)) {
-            // Dump cache.manifest if manifest changes
-            delete this._cache.manifest;
-            this.cache2.assetChanged = false;
-        } else {
-            // Force new read of changed asset
-            this.cache2.assetChanged = this.cache2.readFile.delete(id);
+        const processorKeys = this._cache.mappings.get(id);
+        if (processorKeys) {
+            processorKeys.forEach(key => {
+                this._processors.get(key)?.clearCacheByFilePath(id);
+            });
         }
     }
 
@@ -284,5 +291,11 @@ class ResourceProcessor implements IComponentProcessor {
             ensureDirSync(path.dirname(outputFilePath));
             fs.writeFileSync(outputFilePath, asset);
         });
+    }
+
+    public clearCacheByFilePath(file: string): void {
+        if (this._modules.has(file)) {
+            this._modules.delete(file);
+        }
     }
 }

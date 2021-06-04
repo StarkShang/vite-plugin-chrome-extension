@@ -70,6 +70,10 @@ export class PopupProcessor implements IComponentProcessor {
         }
     }
 
+    public clearCacheByFilePath(file: string) {
+        this._cache.module = undefined;
+    }
+
     public constructor(options: PopupProcessorInternalOptions) {
         this._options = this.normalizeOptions(options);
     }

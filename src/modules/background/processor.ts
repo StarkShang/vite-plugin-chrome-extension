@@ -99,6 +99,10 @@ export class BackgroundProcessor implements IComponentProcessor {
         }
     }
 
+    public clearCacheByFilePath(file: string): void {
+        this._cache.module = undefined;
+    }
+
     constructor(options: BackgroundProcessorOptions) {
         this._options = this.normalizeOptions(options);
     }

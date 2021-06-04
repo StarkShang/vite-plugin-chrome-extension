@@ -46,6 +46,10 @@ export class OverrideBookmarksProcessor implements IComponentProcessor {
         }
     }
 
+    public clearCacheByFilePath(file: string) {
+        this._cache.module = undefined;
+    }
+
     public constructor(options: OverrideBookmarksProcessorOptions = {}) {
         this._options = this.normalizeOptions(options);
     }
@@ -102,6 +106,10 @@ export class OverrideHistoryProcessor implements IComponentProcessor {
         }
     }
 
+    public clearCacheByFilePath(file: string) {
+        this._cache.module = undefined;
+    }
+
     public constructor(options: OverrideHistoryProcessorOptions = {}) {
         this._options = this.normalizeOptions(options);
     }
@@ -156,6 +164,10 @@ export class OverrideNewtabProcessor implements IComponentProcessor {
                 newtab: this._cache.module?.bundle,
             };
         }
+    }
+
+    public clearCacheByFilePath(file: string) {
+        this._cache.module = undefined;
     }
 
     public constructor(options: OverrideNewtabProcessorOptions = {}) {

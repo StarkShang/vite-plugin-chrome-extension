@@ -1,7 +1,6 @@
 import path from "path";
 import fs from "fs";
 import minimatch from "minimatch";
-import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import chalk from "chalk";
 import { OutputAsset, OutputChunk, RollupOutput, RollupWatcher, WatcherOptions } from "rollup";
@@ -51,14 +50,15 @@ export class WebAccessibleResourceProcessor implements IComponentProcessor {
                     }
                 }))
             .flat());
-        return Array.from(this._cache.modules.values())
-            .map(module => module
+        return Array.from(this._cache.modules)
+            .map(([entry, module]) => module
                 .map(chunk => {
                     const modules = [];
                     if (chunk.type === "chunk") {
                         modules.push(...Object.keys(chunk.modules));
                         modules.push(...chunk.imports);
                     }
+                    modules.forEach(file => this._cache.mappings.set(file, entry));
                     return modules;
                 })
                 .flat())
@@ -88,6 +88,13 @@ export class WebAccessibleResourceProcessor implements IComponentProcessor {
                 });
             });
         });
+    }
+
+    public clearCacheByFilePath(file: string) {
+        const entry = this._cache.mappings.get(file);
+        if (entry) {
+            this._cache.modules.delete(entry);
+        }
     }
 
     public constructor(options: WebAccessibleResourceProcessorOptions = {}) {

@@ -52,14 +52,15 @@ export class ContentScriptProcessor implements IComponentProcessor {
                 }]);
             });
         });
-        return Array.from(this._cache.modules.values())
-            .map(module => module
+        return Array.from(this._cache.modules)
+            .map(([entry, module]) => module
                 .map(chunk => {
                     const modules = [];
                     if (chunk.type === "chunk") {
                         modules.push(...Object.keys(chunk.modules));
                         modules.push(...chunk.imports);
                     }
+                    modules.forEach(file => this._cache.mappings.set(file, entry));
                     return modules;
                 })
                 .flat())
@@ -80,7 +81,6 @@ export class ContentScriptProcessor implements IComponentProcessor {
             await group.js.forEachAsync(async (script, index) => {
                 const module = this._cache.modules.get(script);
                 await module?.forEachAsync(async chunk => {
-                    console.log("content-scripts: ", chunk.fileName);
                     const outputFilePath = slash(path.resolve(outputPath, chunk.fileName));
                     const relativeFilePath = slash(path.relative(this._options.outputRoot, outputFilePath));
                     await ensureDir(path.dirname(outputFilePath));
@@ -134,6 +134,14 @@ export class ContentScriptProcessor implements IComponentProcessor {
             }
         });
     }
+
+    public clearCacheByFilePath(file: string): void {
+        const entry = this._cache.mappings.get(file);
+        if (entry) {
+            this._cache.modules.delete(entry);
+        }
+    }
+
     public async generateBundle(
         context: PluginContext,
         bundle: OutputBundle,

@@ -93,6 +93,10 @@ export class OptionsProcessor implements IComponentProcessor {
         }
     }
 
+    public clearCacheByFilePath(file: string) {
+        this._cache.module = undefined;
+    }
+
     public constructor(options: OptionsProcessorOptions = {}) {
         this._options = this.normalizeOptions(options);
     }

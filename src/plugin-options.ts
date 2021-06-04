@@ -40,6 +40,7 @@ export type ChromeExtensionPlugin = Pick<
     | "configResolved"
     | "options"
     | "transform"
+    | "watchChange"
     | "outputOptions"
     | "renderChunk"
 >

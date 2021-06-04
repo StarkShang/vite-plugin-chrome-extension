@@ -54,6 +54,10 @@ export class DevtoolsProcessor implements IComponentProcessor {
         }
     }
 
+    public clearCacheByFilePath(file: string): void {
+        this._cache.module = undefined;
+    }
+
     constructor(options: DevtoolsProcessorOptions = {}) {
         this._options = this.normalizeOptions(options);
     }

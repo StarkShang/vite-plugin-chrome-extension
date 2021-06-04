@@ -73,6 +73,9 @@ export const chromeExtension = (
             }
             return "console.log('chrome-extension')"; // eliminate warning for empty chunk
         },
+        watchChange(id) {
+            manifestProcessor.clearCacheById(id);
+        },
         outputOptions(options: OutputOptions): OutputOptions {
             const outputFile = path.resolve(options.dir || path.join(process.cwd(), "dist") , "manifest.json");
             return { file: outputFile, format: "es", exports: "none", sourcemap: false };
