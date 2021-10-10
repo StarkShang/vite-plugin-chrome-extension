@@ -29,7 +29,7 @@ module.exports = {
             'warn',
             {
                 multiline: {
-                    delimiter: 'comma' | 'semi',
+                    delimiter: 'comma',
                     requireLast: true,
                 },
                 singleline: {
