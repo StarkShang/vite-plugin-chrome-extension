@@ -75,6 +75,7 @@ export function manifestInput(
             permsHash: "",
             readFile: new Map<string, any>(),
             srcDir: null,
+            dynamicImportContentScripts: [],
         } as ManifestInputPluginCache,
     } = {} as ManifestInputPluginOptions,
 ): ManifestInputPlugin {
@@ -274,7 +275,7 @@ export function manifestInput(
                 if (publicKey) manifestBody.key = publicKey;
                 /* ----------- OUTPUT MANIFEST.JSON ---------- */
                 generateManifest(this, manifestBody);
-            } catch (error) {
+            } catch (error: any) {
                 // Catch here because we need the validated result in scope
                 if (error.name !== "ValidationError") throw error;
                 const errors = error.errors as ValidationErrorsArray;
