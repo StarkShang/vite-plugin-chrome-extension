@@ -5,7 +5,7 @@ import slash from "slash";
 import { ChromeExtensionManifest } from "../../manifest";
 import { removeFileExtension } from "../../common/utils";
 import { findChunkByName } from "../../utils/helpers";
-import { mixinChunksForIIFE } from "../mixin";
+import { mixinChunks } from "../mixin";
 import { NormalizedChromeExtensionOptions } from "@root/src/plugin-options";
 
 const dynamicImportAssetRex = /(?<=chrome.scripting.insertCSS\()[\s\S]*?(?=\))/gm;
@@ -74,7 +74,7 @@ export class BackgroundProcesser {
                 // mixin all dependent chunks
                 // change background chunk output in the same directory as manifest.json
                 chunk.fileName = chunk.fileName.replace(/assets\//, "");
-                manifest.background.service_worker = slash(await mixinChunksForIIFE(context, chunk, bundle));
+                manifest.background.service_worker = slash(await mixinChunks(context, chunk, bundle));
             }
         }
     }

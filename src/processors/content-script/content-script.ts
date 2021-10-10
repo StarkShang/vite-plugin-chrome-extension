@@ -5,7 +5,7 @@ import { ChromeExtensionManifest, WebAccessibleResource } from "../../manifest";
 import { NormalizedChromeExtensionOptions } from "../../plugin-options";
 import { findAssetByName, findChunkByName } from "../../utils/helpers";
 import { updateCss } from "../../common/utils/css";
-import { mixinChunksForIIFE } from "../mixin";
+import { mixinChunks } from "../mixin";
 
 export class ContentScriptProcessor {
     constructor(private options: NormalizedChromeExtensionOptions) {}
@@ -49,7 +49,7 @@ export class ContentScriptProcessor {
             for (const jsName of js) {
                 const chunk = findChunkByName(removeFileExtension(jsName), bundle);
                 if (chunk) {
-                    content_script.js.push(slash(await mixinChunksForIIFE(context, chunk, bundle)));
+                    content_script.js.push(slash(await mixinChunks(context, chunk, bundle)));
                 }
             }
         }
@@ -64,7 +64,7 @@ export class ContentScriptProcessor {
             const filename = context.getFileName(dynamicImport);
             const chunk = bundle[filename];
             if (chunk && chunk.type === "chunk") {
-                await mixinChunksForIIFE(context, chunk, bundle);
+                await mixinChunks(context, chunk, bundle);
             }
         }
     }
