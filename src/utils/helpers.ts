@@ -79,7 +79,7 @@ export const updateManifest = (
         const result = updater(manifest);
 
         manifestAsset.source = JSON.stringify(result, undefined, 2);
-    } catch (error) {
+    } catch (error: any) {
         if (handleError) {
             handleError(error.message);
         } else {
