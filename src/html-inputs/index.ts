@@ -3,7 +3,7 @@ import "array-flat-polyfill";
 import { readFile } from "fs-extra";
 
 
-import { isChunk, not } from "../utils/helpers";
+import { isChunk, not } from "../common/utils/helpers";
 import { reduceToRecord } from "../manifest-input/reduceToRecord";
 import {
     HtmlInputsOptions,

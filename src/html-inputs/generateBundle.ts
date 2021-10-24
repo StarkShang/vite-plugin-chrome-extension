@@ -1,7 +1,7 @@
 import { resolve, dirname, relative } from "path";
 import { OutputChunk, PluginContext } from "rollup";
 import { HtmlInputsOptions } from "../plugin-options";
-import { getOutputFilenameFromChunk } from "../utils/helpers";
+import { getOutputFilenameFromChunk } from "../common/utils/helpers";
 import { CheerioFile, formatHtml, getScriptElems } from "./cheerio";
 
 export function generateHtml(

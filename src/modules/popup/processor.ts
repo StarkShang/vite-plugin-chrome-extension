@@ -3,7 +3,7 @@ import fs from "fs";
 import vite from "vite";
 import chalk from "chalk";
 import { RollupOutput } from "rollup";
-import { IComponentProcessor } from "../common";
+import { IComponentProcessor } from "../../common/processors/base";
 import { PopupProcessorCache } from "./cache";
 import { ChromeExtensionManifest } from "@/manifest";
 import { DefaultPopupProcessorOptions, PopupProcessorInternalOptions, PopupProcessorNormalizedOptions } from "./option";

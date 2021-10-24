@@ -2,7 +2,7 @@ import { basename, join } from "path";
 import { OutputChunk, PluginContext } from "rollup";
 import slash from "slash";
 import memoize from "mem";
-import { findChunk, getOutputFilenameFromChunk } from "../utils/helpers";
+import { findChunk, getOutputFilenameFromChunk } from "../common/utils/helpers";
 import { ChromeExtensionManifest, ContentScript, WebAccessibleResource } from "../manifest";
 import { DynamicImportWrapperOptions, prepImportWrapperScript } from "./dynamicImportWrapper";
 import { code as ctWrapperScript } from "code ./browser/contentScriptWrapper.ts";

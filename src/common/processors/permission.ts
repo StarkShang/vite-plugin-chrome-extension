@@ -1,7 +1,7 @@
 import { OutputChunk, PluginContext } from "rollup";
-import { OutputChunkBundle } from "../common/models";
-import { ChromeExtensionManifest } from "../manifest";
-import * as permissions from "../manifest-input/manifest-parser/permissions";
+import { OutputChunkBundle } from "../models";
+import { ChromeExtensionManifest } from "../../manifest";
+import * as permissions from "../../manifest-input/manifest-parser/permissions";
 
 /* ============================================ */
 /*              DERIVE PERMISSIONS              */

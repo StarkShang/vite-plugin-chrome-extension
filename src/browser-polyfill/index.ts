@@ -1,12 +1,12 @@
 import fs from "fs-extra";
 import { Plugin } from "rollup";
-import { isAsset } from "../utils/helpers";
+import { isAsset } from "../common/utils/helpers";
 import { code as executeScriptPolyfill } from "code ./browser/executeScriptPolyfill.ts";
 import { ChromeExtensionManifest } from "../manifest.v2";
 import {
-    ChromeExtensionPlugin,
     ManifestInputPlugin,
 } from "../plugin-options";
+import { ChromeExtensionPlugin } from "@/common/types";
 
 const defaultOptions = { executeScript: true };
 export function browserPolyfill({

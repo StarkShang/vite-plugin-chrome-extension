@@ -3,7 +3,7 @@ import { simpleReloader, _internalCache } from '..'
 import { buildCRX } from '../../../__fixtures__/build-crx'
 import { context } from '../../../__fixtures__/plugin-context'
 import { ChromeExtensionManifest } from '../../manifest.v2'
-import { cloneObject } from '../../utils/cloneObject'
+import { cloneObject } from '../../common/utils/cloneObject'
 import {
   backgroundPageReloader,
   contentScriptReloader,

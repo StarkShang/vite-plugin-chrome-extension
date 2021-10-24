@@ -1,5 +1,5 @@
 import { ManifestProcessor } from "@/modules/manifest";
-import { IComponentProcessor } from "@/modules/common";
+import { IComponentProcessor } from "@/common/processors/base";
 import { assert, expect } from "chai";
 import { ChromeExtensionManifest } from "@root/src/manifest";
 import usecases from "./processor.usecase";

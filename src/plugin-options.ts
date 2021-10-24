@@ -32,19 +32,6 @@ export interface ChromeExtensionOptions {
     verbose?: boolean
 }
 
-export type ChromeExtensionPlugin = Pick<
-    Required<Plugin>,
-    | "name"
-    | "enforce"
-    | "config"
-    | "configResolved"
-    | "options"
-    | "transform"
-    | "watchChange"
-    | "outputOptions"
-    | "renderChunk"
->
-
 /* --------- MANIFEST INPUT PLUGIN OPTIONS --------- */
 
 export interface ManifestInputPluginOptions

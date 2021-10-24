@@ -3,7 +3,7 @@ import fs from "fs";
 import vite, { AliasOptions, Plugin } from "vite";
 import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
-import { IComponentProcessor } from "../common";
+import { IComponentProcessor } from "../../common/processors/base";
 import { OptionsProcessorCache } from "./cache";
 import { RollupOutput } from "rollup";
 import chalk from "chalk";

@@ -2,12 +2,12 @@ import { dirname, relative, resolve } from "path";
 import { InputOption, OutputBundle, OutputChunk, PluginContext } from "rollup";
 import flatten from "lodash.flatten";
 import { readFile } from "fs-extra";
-import { flattenRollupInput } from "../common/utils/rollup";
-import { CheerioFile, formatHtml, getCssHrefs, getImgSrcs, getJsAssets, getScriptElems, getScriptSrc, loadHtml } from "../html-inputs/cheerio";
-import { HtmlInputsPluginCache } from "../plugin-options";
+import { flattenRollupInput } from "../utils/rollup";
+import { CheerioFile, formatHtml, getCssHrefs, getImgSrcs, getJsAssets, getScriptElems, getScriptSrc, loadHtml } from "../../html-inputs/cheerio";
+import { HtmlInputsPluginCache } from "../../plugin-options";
 import { NormalizedChromeExtensionOptions } from "@/configs/options";
 import { getOutputFilenameFromChunk, isChunk, not } from "../utils/helpers";
-import { reduceToRecord } from "../manifest-input/reduceToRecord";
+import { reduceToRecord } from "../../manifest-input/reduceToRecord";
 
 const isHtml = (path: string) => /\.html?$/.test(path);
 

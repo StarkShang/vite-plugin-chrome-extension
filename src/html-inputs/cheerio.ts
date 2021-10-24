@@ -3,7 +3,7 @@ import fs from "fs-extra";
 import path from "path";
 import prettier from "prettier";
 
-import { isString } from "../utils/helpers";
+import { isString } from "../common/utils/helpers";
 import { HtmlInputsOptions } from "../plugin-options";
 
 export type HtmlFilePathData = {

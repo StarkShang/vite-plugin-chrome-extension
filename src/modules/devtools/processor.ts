@@ -2,7 +2,7 @@ import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { RollupOutput, RollupWatcher, WatcherOptions } from "rollup";
 import vite, { Plugin } from "vite";
-import { IComponentProcessor } from "../common";
+import { IComponentProcessor } from "../../common/processors/base";
 import { DevtoolsProcessorCache } from "./cache";
 
 export interface DevtoolsProcessorOptions {

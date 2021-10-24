@@ -2,7 +2,7 @@
 
 Because Chrome extensions cannot use ES6 import, the outputs of the vite-plugin-chrome-extension should in format IIFE (Immediately Invoked Function Expression) for each entry (such as service worker, content scripts).
 
-However, rollup neither support code-split for iife format([rollup/issues/2072](https://github.com/rollup/rollup/issues/2072)), nor support multiple entries([rollup/issues/3325](https://github.com/rollup/rollup/issues/3325)).
+However, rollup neither support code-split for IIFE format([rollup/issues/2072](https://github.com/rollup/rollup/issues/2072)), nor support multiple entries([rollup/issues/3325](https://github.com/rollup/rollup/issues/3325)).
 
 Current solutions is:
 
@@ -14,7 +14,7 @@ Current solutions is:
    5. web accessible resources
 2. Start main build process, and generate bundles;
 3. Start additional rollup routines to bundle IIFE outputs:
-   - background service worker
+   - service worker
    - content scripts
 4. Update path of entries in manifest.json
 
@@ -24,7 +24,7 @@ A service worker is a script that runs in the background. It doesn't have access
 
 - Should be an IIFE script;
 - Dynamically imports using `chrome.scripting.executeScript` should considered, and needn't include in `web_accessible_resources`. ⚠ Note: Currently, a maximum of a single file is supported by Chrome Extensions.;
-- Dynamically insert css using `chrome.scripting.insertCSS` should considered, and also needn't include in `web_accessible_resources` ⚠ Note: Currently, a maximum of a single file is supported by Chrome Extensions.;
+- Dynamically insert css using `chrome.scripting.insertCSS` should considered, and also needn't include in `web_accessible_resources`. ⚠ Note: Currently, a maximum of a single file is supported by Chrome Extensions.;
 
 ## Content Scripts
 

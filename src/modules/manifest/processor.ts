@@ -2,15 +2,14 @@ import path from "path";
 import fs, { ensureDir, ensureDirSync } from "fs-extra";
 import memoize from "mem";
 import { cosmiconfigSync } from "cosmiconfig";
-import { ChromeExtensionManifestEntries, ChromeExtensionManifestEntryType, ChromeExtensionModule } from "@/common/models";
+import { ChromeExtensionManifestEntries } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { ChromeExtensionManifestParser } from "./parser";
 import { ManifestInputPluginCache } from "@/plugin-options";
-import { manifestName } from "@/manifest-input/common/constants";
 import { validateManifest } from "@/manifest-input/manifest-parser/validate";
-import { PermissionProcessor, PermissionProcessorOptions } from "../permission";
+import { PermissionProcessor, PermissionProcessorOptions } from "../../common/processors/permission";
 import { ChromeExtensionManifestCache } from "./cache";
-import { IComponentProcessor } from "../common";
+import { IComponentProcessor } from "../../common/processors/base";
 import { BackgroundProcessor } from "../background";
 import { ContentScriptProcessor, ContentScriptProcessorInternalOptions } from "../content-script";
 import { OptionsProcessor } from "../options/processor";
@@ -190,6 +189,10 @@ export class ManifestProcessor {
         } as ManifestProcessorOptions;
     }
 
+    /**
+     * create processors depend on options
+     * @param options
+     */
     private initialProcessors(options: ManifestProcessorOptions) {
         // create processors
         // background processor

@@ -107,6 +107,7 @@ dist
 **/lib
 types/
 !types/index.d.ts
+!src/**/types/
 __fixtures__/extensions/kitchen-sink-dist
 __fixtures__/extensions/kitchen-sink-dist
 coverage

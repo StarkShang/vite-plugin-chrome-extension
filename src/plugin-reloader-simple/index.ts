@@ -3,7 +3,7 @@ import { code as ctClientCode } from "code ./client/content.ts";
 import { outputJson } from "fs-extra";
 import { join } from "path";
 import { Plugin } from "rollup";
-import { updateManifest } from "../utils/helpers";
+import { updateManifest } from "../common/utils/helpers";
 import {
     backgroundPageReloader,
     contentScriptReloader,

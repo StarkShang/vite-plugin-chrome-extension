@@ -1,8 +1,8 @@
 import { Plugin } from "vite";
 import { ChromeExtensionManifest } from "../manifest";
 import { BackgroundProcessorOptions } from "../modules/background/processor";
-import { ContentScriptProcessorOptions } from "../modules/content-script/processor";
-import { PopupProcessorOptions } from "../modules/popup/processor";
+import { ContentScriptProcessorOptions } from "../modules/content-script";
+import { PopupProcessorOptions } from "../modules/popup";
 import { OptionsProcessorOptions } from "../modules/options/processor";
 import { DevtoolsProcessorOptions } from "../modules/devtools/processor";
 import { OverrideBookmarksProcessorOptions, OverrideHistoryProcessorOptions, OverrideNewtabProcessorOptions } from "../modules/override/processor";

@@ -2,7 +2,7 @@ import { join } from "path";
 import { simpleReloader } from "..";
 import { buildCRX } from "../../../__fixtures__/build-crx";
 import { context } from "../../../__fixtures__/plugin-context";
-import { cloneObject } from "../../utils/cloneObject";
+import { cloneObject } from "../../common/utils/cloneObject";
 
 const fsExtra = require("fs-extra");
 const mockOutputJson = jest.spyOn(fsExtra, "outputJson");

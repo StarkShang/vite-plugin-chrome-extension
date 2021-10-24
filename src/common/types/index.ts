@@ -1,0 +1,1 @@
+export { ChromeExtensionPlugin } from "./plugin";

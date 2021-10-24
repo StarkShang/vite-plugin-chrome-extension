@@ -1,5 +1,5 @@
 import { OutputAsset, OutputBundle, OutputChunk } from "rollup";
-import { OutputAssetBundle, OutputChunkBundle } from "../common/models";
+import { OutputAssetBundle, OutputChunkBundle } from "../models";
 import { isAsset, isChunk } from "./helpers";
 
 export function getChunk(bundle: OutputBundle) {

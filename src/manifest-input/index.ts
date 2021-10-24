@@ -1,19 +1,18 @@
 import { cosmiconfigSync } from "cosmiconfig";
 import { JSONPath } from "jsonpath-plus";
 import path from "path";
-import { EmittedAsset } from "rollup";
 import {
     findChunk,
     getOutputFilenameFromChunk,
     isJsonFilePath,
-} from "../utils/helpers";
+} from "../common/utils/helpers";
 import { ChromeExtensionManifest } from "../manifest";
 import {
     ManifestInputPlugin,
     ManifestInputPluginCache,
     ManifestInputPluginOptions,
 } from "../plugin-options";
-import { cloneObject } from "../utils/cloneObject";
+import { cloneObject } from "../common/utils/cloneObject";
 import { manifestName } from "./common/constants";
 import { generateManifest } from "./generateBundle";
 import { combinePerms } from "./manifest-parser/combine";
@@ -26,7 +25,7 @@ import {
 } from "./manifest-parser/validate";
 import { reduceToRecord } from "./reduceToRecord";
 import { join } from "path";
-import { getAssets, getChunk } from "../utils/bundle";
+import { getAssets, getChunk } from "../common/utils/bundle";
 import slash from "slash";
 
 export const explorer = cosmiconfigSync("manifest", {

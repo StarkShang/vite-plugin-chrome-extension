@@ -5,7 +5,7 @@ import { ChromeExtensionManifest } from "@/manifest";
 import chalk from "chalk";
 import { OutputAsset, OutputChunk, RollupOutput, RollupWatcher, WatcherOptions } from "rollup";
 import vite, { AliasOptions, Plugin } from "vite";
-import { IComponentProcessor } from "../common";
+import { IComponentProcessor } from "../../common/processors/base";
 import { WebAccessibleResourceProcessorCache } from "./cache";
 import slash from "slash";
 import { ensureDir } from "fs-extra";

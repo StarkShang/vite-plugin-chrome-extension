@@ -2,7 +2,7 @@ import { ChromeExtensionModule } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { WatcherOptions } from "rollup";
 import { Plugin } from "vite";
-import { IComponentProcessor } from "../common";
+import { IComponentProcessor } from "../../common/processors/base";
 import { OverrideBookmarksProcessorCache, OverrideHistoryProcessorCache, OverrideNewtabProcessorCache } from "./cache";
 
 export interface OverrideBookmarksProcessorOptions {

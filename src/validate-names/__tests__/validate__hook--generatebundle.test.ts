@@ -1,6 +1,6 @@
 import { OutputBundle, OutputChunk } from "rollup";
 import { context } from "../../../__fixtures__/plugin-context";
-import { isChunk } from "../../utils/helpers";
+import { isChunk } from "../../common/utils/helpers";
 import { validateNames } from "../index";
 
 const bundle: OutputBundle = require("../../../__fixtures__/validate-names__sample-bundle.json");

@@ -1,8 +1,8 @@
 import { OutputOptions } from "rollup";
 import { OutputAsset, OutputChunk, OutputBundle } from "rollup";
 import slash from "slash";
-import { OutputChunkBundle } from "../common/models";
-import { ChromeExtensionManifest } from "../manifest.v2";
+import { OutputChunkBundle } from "../models";
+import { ChromeExtensionManifest } from "../../manifest.v2";
 
 export const not = <T>(fn: (x: T) => boolean) => (x: T) => !fn(x);
 
@@ -81,7 +81,8 @@ export const updateManifest = (
         manifestAsset.source = JSON.stringify(result, undefined, 2);
     } catch (error) {
         if (handleError) {
-            handleError(error.message);
+            // TODO: make this work
+            // handleError(error.message);
         } else {
             throw error;
         }

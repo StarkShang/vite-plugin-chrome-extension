@@ -22,7 +22,7 @@ import { context } from "../../../__fixtures__/minimal-plugin-context";
 import { getExtPath } from "../../../__fixtures__/utils";
 import { ChromeExtensionManifest } from "../../manifest.v2";
 import { ManifestInputPluginCache } from "../../plugin-options";
-import { cloneObject } from "../../utils/cloneObject";
+import { cloneObject } from "../../common/utils/cloneObject";
 import { explorer, manifestInput } from "../index";
 
 jest.spyOn(explorer, "load");

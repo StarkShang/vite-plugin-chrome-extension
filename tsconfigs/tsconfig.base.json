@@ -23,7 +23,7 @@
         "resolveJsonModule": true,
         "paths": {
             "@/*": ["src/*"],
-            "@root/*": ["./*"],
+            "@root/*": ["./*"]
         },
         "forceConsistentCasingInFileNames": true,
         "importHelpers": true,

@@ -6,15 +6,15 @@ import vite, { AliasOptions, Plugin } from "vite";
 import { OutputAsset, OutputBundle, PluginContext, RollupOutput } from "rollup";
 import { removeFileExtension } from "../../common/utils";
 import { ChromeExtensionManifest, WebAccessibleResource } from "../../manifest";
-import { findAssetByName, findChunkByName } from "../../utils/helpers";
+import { findAssetByName, findChunkByName } from "../../common/utils/helpers";
 import { updateCss } from "../../common/utils/css";
-import { mixinChunksForIIFE } from "../mixin";
-import { IComponentProcessor } from "../common";
+import { mixinChunksForIIFE } from "../../common/mixin";
+import { IComponentProcessor } from "../../common/processors/base";
 import { ContentScriptProcessorCache } from "./cache";
 import chalk from "chalk";
 import { ensureDir } from "fs-extra";
 import { ContentScriptProcessorInternalOptions, DefaultContentScriptProcessorOptions, ContentScriptProcessorNormalizedOptions } from "./option";
-import { ChromeExtensionAssetPlugin } from "../common/plugin";
+import { ChromeExtensionAssetPlugin } from "../../common/plugin";
 
 export class ContentScriptProcessor implements IComponentProcessor {
     private _options: ContentScriptProcessorNormalizedOptions;

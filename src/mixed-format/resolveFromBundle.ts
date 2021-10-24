@@ -1,7 +1,7 @@
 import path from "path";
 import { OutputBundle } from "rollup";
 import { Plugin } from "rollup";
-import { isChunk } from "../utils/helpers";
+import { isChunk } from "../common/utils/helpers";
 
 export const resolveFromBundle = (
     bundle: OutputBundle,

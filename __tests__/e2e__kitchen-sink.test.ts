@@ -1,7 +1,7 @@
 import flatten from "lodash.flatten";
 import path from "path";
 import { OutputAsset, rollup, RollupOptions, RollupOutput } from "rollup";
-import { isAsset, isChunk } from "../src/utils/helpers";
+import { isAsset, isChunk } from "../src/common/utils/helpers";
 import { getScriptSrc, loadHtml } from "../src/html-inputs/cheerio";
 import { ChromeExtensionManifest } from "../src/manifest.v2";
 import { deriveFiles } from "../src/modules/manifest/parser";

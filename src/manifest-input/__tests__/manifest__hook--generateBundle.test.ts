@@ -16,7 +16,7 @@ import {
   ManifestInputPlugin,
   ManifestInputPluginCache,
 } from '../../plugin-options'
-import { cloneObject } from '../../utils/cloneObject'
+import { cloneObject } from '../../common/utils/cloneObject'
 
 const validate = require('../manifest-parser/validate')
 jest.spyOn(validate, 'validateManifest')

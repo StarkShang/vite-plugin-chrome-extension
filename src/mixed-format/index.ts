@@ -5,7 +5,7 @@ import {
     PluginContext,
     ModuleFormat,
 } from "rollup";
-import { isChunk } from "../utils/helpers";
+import { isChunk } from "../common/utils/helpers";
 import { ManifestInputPlugin } from "../plugin-options";
 import { regenerateBundle } from "./regenerateBundle";
 
