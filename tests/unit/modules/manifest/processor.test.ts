@@ -27,14 +27,6 @@ describe("ManifestProcessor", () => {
             expect(manifestProcessor._cache.mappings).to.deep.equals(usecase.output.mappings);
         }));
     });
-    describe("updateManifest", () => {
-        usecases.updateManifest.forEach(usecase => it(usecase.description, async () => {
-            const manifestProcessor = new ManifestProcessor();
-            manifestProcessor._cache.manifest = usecase.input.manifest;
-            await manifestProcessor.updateManifest(usecase.input.bundles);
-            expect(manifestProcessor._cache.manifest).to.deep.equals(usecase.output);
-        }));
-    });
 
     describe("load", () => {
         let processor: ManifestProcessor;

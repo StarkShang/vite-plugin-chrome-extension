@@ -1,12 +1,12 @@
 import "@/common/utils/prototype";
 import path from "path";
+import slash from "slash";
 import { readJSONSync } from "fs-extra";
 import { ConfigEnv, ResolvedConfig, UserConfig } from "vite";
 import { ManifestProcessor, ManifestProcessorOptions } from "./modules/manifest";
 import { ChromeExtensionPlugin } from "@/common/types";
 import { ChromeExtensionOptions } from "@/configs/options";
 import { NormalizedOutputOptions, OutputOptions, RenderedChunk } from "rollup";
-import slash from "slash";
 export const stubChunkName = "stub__empty-chrome-extension-manifest";
 export const chromeExtensionPluginName = "chrome-extension";
 

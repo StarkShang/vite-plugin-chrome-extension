@@ -2,7 +2,6 @@ import path from "path";
 import fs, { ensureDir, ensureDirSync } from "fs-extra";
 import memoize from "mem";
 import { cosmiconfigSync } from "cosmiconfig";
-import { ChromeExtensionManifestEntries } from "@/common/models";
 import { ChromeExtensionManifest } from "@/manifest";
 import { ChromeExtensionManifestParser } from "./parser";
 import { ManifestInputPluginCache } from "@/plugin-options";
@@ -18,14 +17,6 @@ import { PopupProcessor, PopupProcessorInternalOptions } from "../popup";
 import { OverrideBookmarksProcessor, OverrideHistoryProcessor, OverrideNewtabProcessor } from "../override/processor";
 import { WebAccessibleResourceProcessor } from "../web-accessible-resource/processor";
 import { DefaultManifestProcessorOptions, ManifestProcessorOptions } from "./option";
-
-export const explorer = cosmiconfigSync("manifest", {
-    cache: false,
-});
-
-export type ExtendManifest =
-    | Partial<ChromeExtensionManifest>
-    | ((manifest: ChromeExtensionManifest) => ChromeExtensionManifest);
 
 export class ManifestProcessor {
     public cache2 = {
@@ -46,6 +37,11 @@ export class ManifestProcessor {
     private _processors = new Map<string, IComponentProcessor>();
     public _permissionProcessor: PermissionProcessor;
 
+    // file path of manifest.json
+    private _filePath = "";
+    public get filePath() { return this._filePath; }
+    public set filePath(path: string) { this._filePath = path; }
+
     public constructor(options = {} as ManifestProcessorOptions) {
         // initial manifest parser
         this._manifestParser = new ChromeExtensionManifestParser();
@@ -55,11 +51,6 @@ export class ManifestProcessor {
         this._permissionProcessor = new PermissionProcessor(new PermissionProcessorOptions());
         this.initialProcessors(this._options);
     }
-
-    // file path of manifest.json
-    private _filePath = "";
-    public get filePath() { return this._filePath; }
-    public set filePath(path: string) { this._filePath = path; }
 
     /**
      * Resolve entries from manifest.json
@@ -89,34 +80,10 @@ export class ManifestProcessor {
         return Array.from(new Set(modules));
     }
 
-    public async build(): Promise<void> {
-        // start build process
-        await Promise.all(
-            Array.from(this._processors.values())
-                .map(processor => processor.build()));
-    }
-
-    public async updateManifest(bundles: ChromeExtensionManifestEntries): Promise<void> {
-        if (!this._cache.manifest) { return; }
-        const manifest = this._cache.manifest; // for shortening code
-        if (bundles["web-accessible-resource"]) {
-            manifest.web_accessible_resources?.forEach(group => {
-                group.resources?.forEach((resource, index) => {
-                    const output = bundles["web-accessible-resource"]?.find(r => r.entry === resource);
-                    output && group.resources?.splice(index, 1, output.bundle);
-                });
-            });
-        }
-    }
-
-    public toString() {
-        return JSON.stringify(this._cache.manifest, null, 4);
-    }
-
-    public isDynamicImportedContentScript(referenceId: string) {
-        return this.cache2.dynamicImportContentScripts.includes(referenceId);
-    }
-
+    /**
+     * Remove file path in cache
+     * @param id file path need to clean
+     */
     public clearCacheById(id: string) {
         const processorKeys = this._cache.mappings.get(id);
         if (processorKeys) {
@@ -126,49 +93,32 @@ export class ManifestProcessor {
         }
     }
 
-    private validateChromeExtensionManifest(manifest: ChromeExtensionManifest) {
-        const { options_page, options_ui } = manifest;
-        if (
-            options_page !== undefined &&
-            options_ui !== undefined
-        ) {
-            throw new Error(
-                "options_ui and options_page cannot both be defined in manifest.json.",
-            );
-        }
+    /**
+     * Build project
+     *
+     * This method simply call build methods on actived entry processors.
+     */
+    public async build(): Promise<void> {
+        // start build process
+        await Promise.all(
+            Array.from(this._processors.values())
+                .map(processor => processor.build()));
     }
 
-    private validateManifest() {
-        if (this._cache.manifest) {
-            validateManifest(this._cache.manifest)
-        } else {
-            throw new Error("Manifest cannot be empty");
-        }
+    /**
+     * Get string content of manifest.json
+     * @returns JSON string of manifest.json
+     */
+    public toString() {
+        return JSON.stringify(this._cache.manifest, null, 4);
     }
 
-    private applyExternalManifestConfiguration(manifest: ChromeExtensionManifest): ChromeExtensionManifest {
-        if (typeof this._options.extendManifest === "function") {
-            return this._options.extendManifest(manifest);
-        } else if (typeof this._options.extendManifest === "object") {
-            return {
-                ...manifest,
-                ...this._options.extendManifest,
-            };
-        } else {
-            return manifest;
-        }
-    }
-
-    private readAssetAsBuffer = memoize(
-        (filepath: string) => {
-            return fs.readFile(filepath);
-        },
-        {
-            cache: this.cache2.readFile,
-        },
-    );
-
-    private normalizeOptions(options: ManifestProcessorOptions) {
+    /**
+     * normalize input options
+     * @param options input options
+     * @returns nomarlized options
+     */
+    private normalizeOptions(options: ManifestProcessorOptions): ManifestProcessorOptions {
         let rootPath = options.root;
         let outputPath = options.outDir;
         return {
@@ -257,6 +207,39 @@ export class ManifestProcessor {
             root: this._options.root,
             outDir: this._options.outDir,
         }));
+    }
+
+    private validateChromeExtensionManifest(manifest: ChromeExtensionManifest) {
+        const { options_page, options_ui } = manifest;
+        if (
+            options_page !== undefined &&
+            options_ui !== undefined
+        ) {
+            throw new Error(
+                "options_ui and options_page cannot both be defined in manifest.json.",
+            );
+        }
+    }
+
+    private validateManifest() {
+        if (this._cache.manifest) {
+            validateManifest(this._cache.manifest)
+        } else {
+            throw new Error("Manifest cannot be empty");
+        }
+    }
+
+    private applyExternalManifestConfiguration(manifest: ChromeExtensionManifest): ChromeExtensionManifest {
+        if (typeof this._options.extendManifest === "function") {
+            return this._options.extendManifest(manifest);
+        } else if (typeof this._options.extendManifest === "object") {
+            return {
+                ...manifest,
+                ...this._options.extendManifest,
+            };
+        } else {
+            return manifest;
+        }
     }
 }
 
