@@ -91,10 +91,10 @@ export const chromeExtension = (
         },
         outputOptions(options) {
             return {
-                ...options,
                 chunkFileNames: "[name].[hash].js",
                 assetFileNames: "[name].[hash].[ext]",
-                entryFileNames: "[name].js"
+                entryFileNames: "[name].js",
+                ...options
             };
         },
         async generateBundle(options, bundle, isWrite) {
