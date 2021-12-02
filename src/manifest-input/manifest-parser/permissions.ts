@@ -64,7 +64,7 @@ export const idle = (s: string) =>
 export const idltest = (s: string) =>
     /((chromep?)|(browser))[\s\n]*\.[\s\n]*idltest/.test(s);
 export const management = (s: string) =>
-    /((chromep?)|(browser))[\s\n]*\.[\s\n]*management/.test(s);
+    /((chromep?)|(browser))[\s\n]*\.[\s\n]*management(?!\s\n*\.(getSelf|uninstallSelf|getPermissionWarningsByManifest))/.test(s);
 export const nativeMessaging = (s: string) =>
     /((chromep?)|(browser))[\s\n]*\.[\s\n]*nativeMessaging/.test(s);
 export const notifications = (s: string) =>
