@@ -9,7 +9,7 @@
             "48": "assets/icon48.png",
             "128": "assets/icon128.png"
         },
-        "default_title": "Vue Popup"
+        "default_title": "Svelte Popup"
     },
     "icons": {
         "16": "assets/icon16.png",
