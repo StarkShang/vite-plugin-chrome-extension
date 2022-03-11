@@ -302,7 +302,8 @@
             "description": "Specify how this extension will behave if allowed to run in incognito mode.",
             "enum": [
                 "spanning",
-                "split"
+                "split",
+                "not_allowed"
             ],
             "default": "spanning"
         },
