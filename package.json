@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-chrome-extension-updated",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "license": "MIT",
   "author": "Daniel Chicchon",
   "description": "A plugin for building Chrome extensions. Forked from https://github.com/StarkShang/vite-plugin-chrome-extension",
