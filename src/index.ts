@@ -38,6 +38,7 @@ export const chromeExtension = (
     const validate = v();
     let manifest: ChromeExtensionManifest | undefined;
     let viteConfig: ResolvedConfig;
+    let isBuilded = false;
 
     /* ----------------- RETURN PLUGIN ----------------- */
     return {
@@ -51,6 +52,10 @@ export const chromeExtension = (
             // Do not reload manifest without changes
             if (!manifestProcessor.manifest) {
                 manifest = manifestProcessor.load(options);
+                options.input = manifestProcessor.resolveInput(options.input);
+            }
+            // Rebuild input if the function is executed more than one time (watch mode)
+            if(manifestProcessor.manifest && isBuilded) {
                 options.input = manifestProcessor.resolveInput(options.input);
             }
             // resolve scripts and assets in html
